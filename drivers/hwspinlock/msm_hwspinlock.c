@@ -17,6 +17,7 @@
 #include <linux/device.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
+#include <linux/pm_runtime.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/of_device.h>
@@ -100,8 +101,13 @@ static int msm_hwspinlock_probe(struct platform_device *pdev)
 	for (i = 0, hwlock = &bank->lock[0]; i < num_locks; i++, hwlock++)
 		hwlock->priv = iobase + i * stride;
 
+	pm_runtime_enable(&pdev->dev);
+
 	ret = hwspin_lock_register(bank, &pdev->dev, &msm_hwspinlock_ops,
 						BASE_ID, num_locks);
+	if (ret)
+		pm_runtime_disable(&pdev->dev);
+
 	return ret;
 }
 
@@ -115,6 +121,8 @@ static int msm_hwspinlock_remove(struct platform_device *pdev)
 		dev_err(&pdev->dev, "%s failed: %d\n", __func__, ret);
 		return ret;
 	}
+
+	pm_runtime_disable(&pdev->dev);
 
 	return 0;
 }
