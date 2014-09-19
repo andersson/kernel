@@ -1085,12 +1085,12 @@ static void ufs_qcom_advertise_quirks(struct ufs_hba *hba)
 {
 	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
 
-	if (host->hw_ver.major == 0x01) {
+	if (host->hw_ver.major == 0x1) {
 		hba->quirks |= UFSHCD_QUIRK_DELAY_BEFORE_DME_CMDS
 			    | UFSHCD_QUIRK_BROKEN_PA_RXHSUNTERMCAP
 			    | UFSHCD_QUIRK_DME_PEER_ACCESS_AUTO_MODE;
 
-		if (host->hw_ver.minor == 0x0001 && host->hw_ver.step == 0x0001)
+		if (host->hw_ver.minor == 0x001 && host->hw_ver.step == 0x0001)
 			hba->quirks |= UFSHCD_QUIRK_BROKEN_INTR_AGGR;
 
 		hba->quirks |= UFSHCD_QUIRK_BROKEN_LCC;
