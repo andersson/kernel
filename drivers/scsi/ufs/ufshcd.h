@@ -72,6 +72,8 @@
 #define UFSHCD "ufshcd"
 #define UFSHCD_DRIVER_VERSION "0.2"
 
+#define UFS_BIT(x)	BIT(x)
+
 struct ufs_hba;
 
 enum dev_cmd_type {
