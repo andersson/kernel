@@ -83,4 +83,30 @@ static inline int qcom_scm_remap_error(int err)
 	return -EINVAL;
 }
 
+#define SCM_SVC_INFO		0x6
+
+#define QCOM_GET_FEAT_VERSION_CMD	3
+
+extern int __qcom_scm_iommu_dump_fault_regs(struct device *dev, u32 id,
+					    u32 context, u64 addr, u32 len);
+extern int __qcom_scm_iommu_set_cp_pool_size(struct device *dev, u32 size,
+					     u32 spare);
+extern int __qcom_scm_iommu_secure_ptbl_size(struct device *dev, u32 spare,
+					     int psize[2]);
+extern int __qcom_scm_iommu_secure_ptbl_init(struct device *dev, u64 addr,
+					     u32 size, u32 spare);
+extern int __qcom_scm_iommu_secure_map(struct device *dev, u64 list,
+				       u32 list_size, u32 size,
+				       u32 id, u32 ctx_id, u64 va,
+				       u32 info_size, u32 flags);
+extern int __qcom_scm_iommu_secure_unmap(struct device *dev,
+					 u32 id, u32 ctx_id, u64 va,
+					 u32 size, u32 flags);
+
+extern int __qcom_scm_is_call_available(struct device *dev, u32 svc_id,
+					u32 cmd_id);
+extern int __qcom_scm_get_feat_version(struct device *dev, u32 feat);
+extern int __qcom_scm_restore_sec_cfg(struct device *dev, u32 device_id,
+				      u32 spare);
+
 #endif

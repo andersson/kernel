@@ -360,3 +360,180 @@ int __qcom_scm_pas_mss_reset(struct device *dev, bool reset)
 
 	return ret ? : res.a1;
 }
+
+#define SCM_SVC_UTIL			0x3
+#define SCM_SVC_MP			0xc
+#define IOMMU_DUMP_SMMU_FAULT_REGS	0xc
+
+#define IOMMU_SECURE_PTBL_SIZE		3
+#define IOMMU_SECURE_PTBL_INIT		4
+#define IOMMU_SET_CP_POOL_SIZE		5
+#define IOMMU_SECURE_MAP		6
+#define IOMMU_SECURE_UNMAP		7
+#define IOMMU_SECURE_MAP2		0xb
+#define IOMMU_SECURE_MAP2_FLAT		0x12
+#define IOMMU_SECURE_UNMAP2		0xc
+#define IOMMU_SECURE_UNMAP2_FLAT	0x13
+
+int __qcom_scm_iommu_dump_fault_regs(struct device *dev, u32 id, u32 context, u64 addr, u32 len)
+{
+	struct qcom_scm_desc desc = {0};
+	struct arm_smccc_res res;
+	int ret;
+
+	desc.args[0] = id;
+	desc.args[1] = context;
+	desc.args[2] = addr;
+	desc.args[3] = len;
+	desc.arginfo = QCOM_SCM_ARGS(4, QCOM_SCM_VAL, QCOM_SCM_VAL, QCOM_SCM_RW, QCOM_SCM_VAL);
+
+	ret = qcom_scm_call(dev, SCM_SVC_UTIL, IOMMU_DUMP_SMMU_FAULT_REGS, &desc, &res);
+
+	return ret ? : res.a1;
+}
+
+int __qcom_scm_iommu_set_cp_pool_size(struct device *dev, u32 size, u32 spare)
+{
+	struct qcom_scm_desc desc = {0};
+	struct arm_smccc_res res;
+	int ret;
+
+	desc.args[0] = size;
+	desc.args[1] = spare;
+	desc.arginfo = QCOM_SCM_ARGS(2);
+
+	ret = qcom_scm_call(dev, SCM_SVC_MP, IOMMU_SET_CP_POOL_SIZE, &desc, &res);
+
+	return ret ? : res.a1;
+}
+
+int __qcom_scm_iommu_secure_ptbl_size(struct device *dev, u32 spare, int psize[2])
+{
+	struct qcom_scm_desc desc = {0};
+	struct arm_smccc_res res;
+	int ret;
+
+	desc.args[0] = spare;
+	desc.arginfo = QCOM_SCM_ARGS(1);
+
+	ret = qcom_scm_call(dev, SCM_SVC_MP, IOMMU_SECURE_PTBL_SIZE, &desc, &res);
+
+	psize[0] = res.a1;
+	psize[1] = res.a2;
+
+	return ret;
+}
+
+int __qcom_scm_iommu_secure_ptbl_init(struct device *dev, u64 addr, u32 size, u32 spare)
+{
+	struct qcom_scm_desc desc = {0};
+	struct arm_smccc_res res;
+	u64 ptbl_ret;
+	int ret;
+
+	desc.args[0] = addr;
+	desc.args[1] = size;
+	desc.args[2] = spare;
+	desc.arginfo = QCOM_SCM_ARGS(3, QCOM_SCM_RW, QCOM_SCM_VAL, QCOM_SCM_VAL);
+
+	ret = qcom_scm_call(dev, SCM_SVC_MP, IOMMU_SECURE_PTBL_INIT, &desc, &res);
+
+	ptbl_ret = res.a1;
+
+	if (ret)
+		return ret;
+
+	if (ptbl_ret)
+		return ptbl_ret;
+
+	return 0;
+}
+
+int __qcom_scm_iommu_secure_map(struct device *dev,
+				u64 list, u32 list_size, u32 size,
+				u32 id, u32 ctx_id, u64 va, u32 info_size,
+				u32 flags)
+{
+	struct qcom_scm_desc desc = {0};
+	struct arm_smccc_res res;
+	u32 resp;
+	int ret;
+
+	desc.args[0] = list;
+	desc.args[1] = list_size;
+	desc.args[2] = size;
+	desc.args[3] = id;
+	desc.args[4] = ctx_id;
+	desc.args[5] = va;
+	desc.args[6] = info_size;
+	desc.args[7] = flags;
+	desc.arginfo = QCOM_SCM_ARGS(8, QCOM_SCM_RW, QCOM_SCM_VAL, QCOM_SCM_VAL, QCOM_SCM_VAL,
+				     QCOM_SCM_VAL, QCOM_SCM_VAL, QCOM_SCM_VAL, QCOM_SCM_VAL);
+
+	ret = qcom_scm_call(dev, SCM_SVC_MP, IOMMU_SECURE_MAP2_FLAT, &desc, &res);
+
+	resp = res.a1;
+
+	if (ret || resp)
+		return -EINVAL;
+
+	return 0;
+}
+
+int __qcom_scm_iommu_secure_unmap(struct device *dev,
+				  u32 id, u32 ctx_id, u64 va,
+				  u32 size, u32 flags)
+{
+	struct qcom_scm_desc desc = {0};
+	struct arm_smccc_res res;
+
+	desc.args[0] = id;
+	desc.args[1] = ctx_id;
+	desc.args[2] = va;
+	desc.args[3] = size;
+	desc.args[4] = flags;
+	desc.arginfo = QCOM_SCM_ARGS(5);
+
+	return qcom_scm_call(dev, SCM_SVC_MP, IOMMU_SECURE_UNMAP2_FLAT, &desc, &res);
+}
+
+int __qcom_scm_get_feat_version(struct device *dev, u32 feat)
+{
+	struct qcom_scm_desc desc = {0};
+	struct arm_smccc_res res;
+	int ret;
+
+	ret = __qcom_scm_is_call_available(dev, QCOM_SCM_SVC_INFO, QCOM_GET_FEAT_VERSION_CMD);
+	if (ret <= 0)
+		return 0;
+
+	desc.args[0] = feat;
+	desc.arginfo = QCOM_SCM_ARGS(1);
+
+	ret = qcom_scm_call(dev, QCOM_SCM_SVC_INFO, QCOM_GET_FEAT_VERSION_CMD, &desc, &res);
+	if (!ret)
+		return res.a1;
+
+	return 0;
+}
+
+#define RESTORE_SEC_CFG		2
+int __qcom_scm_restore_sec_cfg(struct device *dev, u32 device_id, u32 spare)
+{
+	struct qcom_scm_desc desc = {0};
+	struct arm_smccc_res res;
+	int ret, scm_ret = 0;
+
+	desc.args[0] = device_id;
+	desc.args[1] = spare;
+	desc.arginfo = QCOM_SCM_ARGS(2);
+
+	ret = qcom_scm_call(dev, SCM_SVC_MP, RESTORE_SEC_CFG, &desc, &res);
+
+	scm_ret = res.a1;
+
+	if (ret || scm_ret)
+		return ret ? ret : -EINVAL;
+
+	return 0;
+}

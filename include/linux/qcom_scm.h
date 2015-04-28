@@ -46,4 +46,19 @@ extern void qcom_scm_cpu_power_down(u32 flags);
 
 extern u32 qcom_scm_get_version(void);
 
+extern int qcom_scm_iommu_dump_fault_regs(u32 id, u32 context, u64 addr,
+					  u32 len);
+extern int qcom_scm_iommu_set_cp_pool_size(u32 size, u32 spare);
+extern int qcom_scm_iommu_secure_ptbl_size(u32 spare, int psize[2]);
+extern int qcom_scm_iommu_secure_ptbl_init(u64 addr, u32 size, u32 spare);
+extern int qcom_scm_iommu_secure_map(u64 list, u32 list_size, u32 size,
+				     u32 id, u32 ctx_id, u64 va,
+				     u32 info_size, u32 flags);
+extern int qcom_scm_iommu_secure_unmap(u32 id, u32 ctx_id, u64 va,
+				       u32 size, u32 flags);
+
+extern int qcom_scm_is_call_available(u32 svc_id, u32 cmd_id);
+extern int qcom_scm_get_feat_version(u32 feat);
+extern int qcom_scm_restore_sec_cfg(u32 device_id, u32 spare);
+
 #endif

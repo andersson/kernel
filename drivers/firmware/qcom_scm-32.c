@@ -37,6 +37,15 @@
 #define QCOM_SCM_FLAG_WARMBOOT_CPU2	0x10
 #define QCOM_SCM_FLAG_WARMBOOT_CPU3	0x40
 
+#define IOMMU_SECURE_PTBL_SIZE		3
+#define IOMMU_SECURE_PTBL_INIT		4
+#define IOMMU_SET_CP_POOL_SIZE		5
+#define IOMMU_SECURE_MAP		6
+#define IOMMU_SECURE_UNMAP		7
+#define IOMMU_SECURE_MAP2		0xb
+#define IOMMU_SECURE_MAP2_FLAT		0x12
+#define IOMMU_SECURE_UNMAP2		0xc
+
 struct qcom_scm_entry {
 	int flag;
 	void *entry;
@@ -559,4 +568,174 @@ int __qcom_scm_pas_mss_reset(struct device *dev, bool reset)
 			&out, sizeof(out));
 
 	return ret ? : le32_to_cpu(out);
+}
+
+#define SCM_SVC_UTIL			0x3
+#define SCM_SVC_MP			0xc
+#define IOMMU_DUMP_SMMU_FAULT_REGS	0x0c
+
+int __qcom_scm_iommu_dump_fault_regs(struct device *dev, u32 id, u32 context, u64 addr, u32 len)
+{
+	struct {
+		u32 id;
+		u32 cb_num;
+		u32 buff;
+		u32 len;
+	} req;
+	int resp = 0;
+
+	return qcom_scm_call(dev, SCM_SVC_UTIL, IOMMU_DUMP_SMMU_FAULT_REGS,
+		       &req, sizeof(req), &resp, 1);
+}
+
+int __qcom_scm_iommu_set_cp_pool_size(struct device *dev, u32 size, u32 spare)
+{
+	struct {
+		u32 size;
+		u32 spare;
+	} req;
+	int retval;
+
+	req.size = size;
+	req.spare = spare;
+
+	return qcom_scm_call(dev, SCM_SVC_MP, IOMMU_SET_CP_POOL_SIZE,
+			     &req, sizeof(req), &retval, sizeof(retval));
+}
+
+int __qcom_scm_iommu_secure_ptbl_size(struct device *dev, u32 spare, int psize[2])
+{
+	struct {
+		u32 spare;
+	} req;
+
+	req.spare = spare;
+
+	return qcom_scm_call(dev, SCM_SVC_MP, IOMMU_SECURE_PTBL_SIZE, &req,
+			     sizeof(req), psize, sizeof(psize));
+}
+
+int __qcom_scm_iommu_secure_ptbl_init(struct device *dev, u64 addr, u32 size, u32 spare)
+{
+	struct {
+		u32 addr;
+		u32 size;
+		u32 spare;
+	} req = {0};
+	int ret, ptbl_ret = 0;
+
+	req.addr = addr;
+	req.size = size;
+	req.spare = spare;
+
+	ret = qcom_scm_call(dev, SCM_SVC_MP, IOMMU_SECURE_PTBL_INIT, &req,
+			    sizeof(req), &ptbl_ret, sizeof(ptbl_ret));
+
+	if (ret)
+		return ret;
+
+	if (ptbl_ret)
+		return ptbl_ret;
+
+	return 0;
+}
+
+int __qcom_scm_iommu_secure_map(struct device *dev,
+				u64 list, u32 list_size, u32 size,
+				u32 id, u32 ctx_id, u64 va, u32 info_size,
+				u32 flags)
+{
+	struct {
+		struct {
+			unsigned int list;
+			unsigned int list_size;
+			unsigned int size;
+		} plist;
+		struct {
+			unsigned int id;
+			unsigned int ctx_id;
+			unsigned int va;
+			unsigned int size;
+		} info;
+		unsigned int flags;
+	} req;
+	u32 resp;
+	int ret;
+
+	req.plist.list = list;
+	req.plist.list_size = list_size;
+	req.plist.size = size;
+	req.info.id = id;
+	req.info.ctx_id = ctx_id;
+	req.info.va = va;
+	req.info.size = info_size;
+	req.flags = flags;
+
+	ret = qcom_scm_call(dev, SCM_SVC_MP, IOMMU_SECURE_MAP2, &req, sizeof(req),
+			    &resp, sizeof(resp));
+
+	if (ret || resp)
+		return -EINVAL;
+
+	return 0;
+}
+
+int __qcom_scm_iommu_secure_unmap(struct device *dev,
+				  u32 id, u32 ctx_id, u64 va,
+				  u32 size, u32 flags)
+{
+	struct {
+		struct {
+			unsigned int id;
+			unsigned int ctx_id;
+			unsigned int va;
+			unsigned int size;
+		} info;
+		unsigned int flags;
+	} req;
+	int ret, scm_ret;
+
+	req.info.id = id;
+	req.info.ctx_id = ctx_id;
+	req.info.va = va;
+	req.info.size = size;
+	req.flags = flags;
+
+	return qcom_scm_call(dev, SCM_SVC_MP, IOMMU_SECURE_UNMAP2, &req,
+			     sizeof(req), &scm_ret, sizeof(scm_ret));
+}
+
+int __qcom_scm_get_feat_version(struct device *dev, u32 feat)
+{
+	int ret;
+
+	if (__qcom_scm_is_call_available(dev, SCM_SVC_INFO, QCOM_GET_FEAT_VERSION_CMD)) {
+		u32 version;
+
+		if (!qcom_scm_call(dev, SCM_SVC_INFO, QCOM_GET_FEAT_VERSION_CMD, &feat,
+				   sizeof(feat), &version, sizeof(version)))
+			return version;
+	}
+
+	return 0;
+}
+
+#define RESTORE_SEC_CFG		2
+int __qcom_scm_restore_sec_cfg(struct device *dev, u32 device_id, u32 spare)
+{
+	struct {
+		u32 device_id;
+		u32 spare;
+	} req;
+	int ret, scm_ret = 0;
+
+	req.device_id = device_id;
+	req.spare = spare;
+
+	ret = qcom_scm_call(dev, SCM_SVC_MP, RESTORE_SEC_CFG, &req, sizeof(req),
+			    scm_ret, sizeof(scm_ret));
+	if (ret || scm_ret)
+		return ret ? ret : -EINVAL;
+
+	return 0;
 }
