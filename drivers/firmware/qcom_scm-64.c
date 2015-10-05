@@ -439,3 +439,14 @@ int __qcom_scm_iommu_secure_ptbl_init(struct device *dev, u64 addr, u32 size,
 
 	return ret;
 }
+
+int __qcom_scm_ocmem_lock(uint32_t id, uint32_t offset, uint32_t size,
+		uint32_t mode)
+{
+	return -ENOTSUPP;
+}
+
+int __qcom_scm_ocmem_unlock(uint32_t id, uint32_t offset, uint32_t size)
+{
+	return -ENOTSUPP;
+}
