@@ -601,6 +601,10 @@
 		};
 	};
 
+	adreno@fdb00000 {
+		status = "ok";
+	};
+
 	mdss_mdp@fd900000 {
 		status = "ok";
 	};
