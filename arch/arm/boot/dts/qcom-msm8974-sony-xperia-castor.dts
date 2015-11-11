@@ -631,6 +631,14 @@
 	mdss_dsi_phy@fd922a00 {
 		status = "ok";
 	};
+
+	usb-phy@f9a55000 {
+		status = "ok";
+	};
+
+	usb@f9a55000 {
+		status = "ok";
+	};
 };
 
 &spmi_bus {
