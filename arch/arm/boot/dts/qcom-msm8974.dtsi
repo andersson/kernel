@@ -643,6 +643,11 @@
 				compatible = "qcom,rpm-msm8974";
 				qcom,smd-channels = "rpm_requests";
 
+				rpmcc: qcom,rpmcc {
+					compatible = "qcom,rpmcc-msm8974";
+					#clock-cells = <1>;
+				};
+
 				pm8841-regulators {
 					compatible = "qcom,rpm-pm8841-regulators";
 
