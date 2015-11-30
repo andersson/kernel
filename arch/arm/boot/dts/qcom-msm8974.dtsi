@@ -4,6 +4,7 @@
 #include <dt-bindings/clock/qcom,gcc-msm8974.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/reset/qcom,gcc-msm8974.h>
+#include <dt-bindings/clock/qcom,rpmcc.h>
 #include "skeleton.dtsi"
 
 / {
@@ -26,7 +27,7 @@
 			no-map;
 		};
 
-		reserved@0d200000 {
+		wcnss_region: wcnss@0d200000 {
 			reg = <0x0d200000 0xa00000>;
 			no-map;
 		};
@@ -636,6 +637,69 @@
 			reg = <0xf9bff000 0x200>;
 			clocks = <&gcc GCC_PRNG_AHB_CLK>;
 			clock-names = "core";
+		};
+
+		pronto: wcnss-rproc@fb202000 {
+			compatible = "qcom,pronto-v2-pil", "qcom,pronto";
+			reg = <0xfb204000 0x2000>, <0xfb202000 0x1000>, <0xfb21b000 0x3000>;
+			reg-names = "ccu", "dxe", "pmu";
+
+			memory-region = <&wcnss_region>;
+
+			interrupts-extended = <&intc 0 149 IRQ_TYPE_EDGE_RISING>,
+					      <&wcnss_smp2p_in 0 IRQ_TYPE_EDGE_RISING>,
+					      <&wcnss_smp2p_in 1 IRQ_TYPE_EDGE_RISING>,
+					      <&wcnss_smp2p_in 2 IRQ_TYPE_EDGE_RISING>,
+					      <&wcnss_smp2p_in 3 IRQ_TYPE_EDGE_RISING>;
+			interrupt-names = "wdog", "fatal", "ready", "handover", "stop-ack";
+
+			vddpx-supply = <&pm8941_s3>;
+
+			qcom,smem-states = <&wcnss_smp2p_out 0>;
+			qcom,smem-state-names = "stop";
+
+			status = "disabled";
+
+			iris {
+				compatible = "qcom,wcn3680";
+
+				clocks = <&rpmcc RPM_CXO_A2>;
+				clock-names = "xo";
+
+				vddxo-supply = <&pm8941_l6>;
+				vddrfa-supply = <&pm8941_l11>;
+				vddpa-supply = <&pm8941_l19>;
+				vdddig-supply = <&pm8941_s3>;
+			};
+
+			smd-edge {
+				interrupts = <0 142 IRQ_TYPE_EDGE_RISING>;
+
+				qcom,ipc = <&apcs 8 17>;
+				qcom,smd-edge = <6>;
+
+				wcnss {
+					compatible = "qcom,wcnss";
+					qcom,smd-channels = "WCNSS_CTRL";
+					status = "disabled";
+
+					qcom,mmio = <&pronto>;
+
+					bt {
+						compatible = "qcom,wcnss-bt";
+					};
+
+					wifi {
+						compatible = "qcom,wcnss-wlan";
+
+						interrupts = <0 145 0>, <0 146 0>;
+						interrupt-names = "tx", "rx";
+
+						qcom,smem-states = <&apps_smsm 10>, <&apps_smsm 9>;
+						qcom,smem-state-names = "tx-enable", "tx-rings-empty";
+					};
+				};
+			};
 		};
 
 		msmgpio: pinctrl@fd510000 {
