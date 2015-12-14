@@ -59,6 +59,18 @@
 	};
 
 	smd {
+		pronto {
+			status = "ok";
+
+			wcnss {
+				status = "ok";
+
+				wifi {
+					local-mac-address = [ 18 00 2d 88 9c a9 ];
+				};
+			};
+		};
+
 		rpm {
 			rpm_requests {
 				pm8841-regulators {
