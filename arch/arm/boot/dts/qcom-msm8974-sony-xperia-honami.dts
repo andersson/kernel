@@ -338,6 +338,14 @@
 
 		pinctrl-names = "default";
 		pinctrl-0 = <&wcnss_pin_a>;
+
+		smd-edge {
+			wcnss {
+				wifi {
+					local-mac-address = [ 18 00 2d 88 9c a9 ];
+				};
+			};
+		};
 	};
 
 	pinctrl@fd510000 {
