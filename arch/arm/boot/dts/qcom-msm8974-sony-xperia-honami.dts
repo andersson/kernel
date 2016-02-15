@@ -349,6 +349,16 @@
 			};
 		};
 
+		i2c2_pins: i2c2 {
+			mux {
+				pins = "gpio6", "gpio7";
+				function = "blsp_i2c2";
+
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+
 		sdhc1_pin_a: sdhc1-pin-active {
 			clk {
 				pins = "sdc1_clk";
@@ -385,6 +395,17 @@
 			};
 		};
 
+		ts_int_pin: touch-int {
+			pin {
+				pins = "gpio61";
+				function = "gpio";
+
+				drive-strength = <2>;
+				bias-disable;
+				input-enable;
+			};
+		};
+
 		wcnss_pin_a: wcnss-pin-active {
 			wlan {
 				pins =  "gpio36", "gpio37", "gpio38", "gpio39", "gpio40";
@@ -408,6 +429,43 @@
 
 				drive-strength = <2>;
 				bias-pull-down;
+			};
+		};
+	};
+
+	i2c@f9924000 {
+		status = "ok";
+
+		clock-frequency = <355000>;
+		qcom,src-freq = <50000000>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&i2c2_pins>;
+
+		synaptics@2c {
+			compatible = "syna,rmi4-i2c";
+			reg = <0x2c>;
+
+			interrupts-extended = <&msmgpio 61 IRQ_TYPE_EDGE_FALLING>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			vdd-supply = <&pm8941_l22>;
+			vio-supply = <&pm8941_lvs3>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&ts_int_pin>;
+
+			rmi4-f01@1 {
+				reg = <0x1>;
+				syna,nosleep-mode = <1>;
+			};
+
+			rmi4-f11@11 {
+				reg = <0x11>;
+				touchscreen-inverted-x;
+				syna,sensor-type = <1>;
 			};
 		};
 	};
