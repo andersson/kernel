@@ -62,6 +62,7 @@
 #include <linux/usb/chipidea.h>
 #include <linux/usb/of.h>
 #include <linux/of.h>
+#include <linux/of_device.h>
 #include <linux/phy.h>
 #include <linux/regulator/consumer.h>
 #include <linux/usb/ehci_def.h>
@@ -836,6 +837,9 @@ struct platform_device *ci_hdrc_add_device(struct device *dev,
 	pdev->dev.dma_mask = dev->dma_mask;
 	pdev->dev.dma_parms = dev->dma_parms;
 	dma_set_coherent_mask(&pdev->dev, dev->coherent_dma_mask);
+
+	if (IS_ENABLED(CONFIG_OF) && dev->of_node)
+		of_dma_configure(&pdev->dev, dev->of_node);
 
 	ret = platform_device_add_resources(pdev, res, nres);
 	if (ret)
