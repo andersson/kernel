@@ -34,7 +34,7 @@
 			no-map;
 		};
 
-		venus@0f500000 {
+		venus_region: venus@0f500000 {
 			reg = <0x0f500000 0x500000>;
 			no-map;
 		};
@@ -538,6 +538,12 @@
 			#dma-cells = <1>;
 			qcom,ee = <0>;
 		};
+	};
+
+	venus-pil {
+		compatible = "qcom,venus-pil";
+
+		memory-region = <&venus_region>;
 	};
 
 	smd {
