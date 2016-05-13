@@ -593,9 +593,11 @@ static int rpm_smd_clk_probe(struct platform_device *pdev)
 			goto err;
 	}
 
+#if 0
 	ret = clk_smd_rpm_enable_scaling(rpm);
 	if (ret)
 		goto err;
+#endif
 
 	for (i = 0; i < num_clks; i++) {
 		if (!rpm_smd_clks[i])
