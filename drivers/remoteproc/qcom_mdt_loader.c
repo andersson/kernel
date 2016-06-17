@@ -80,9 +80,12 @@ int qcom_mdt_parse(const struct firmware *fw, phys_addr_t *fw_addr, size_t *fw_s
 			max_addr = round_up(phdr->p_paddr + phdr->p_memsz, SZ_4K);
 	}
 
-	*fw_addr = min_addr;
-	*fw_size = max_addr - min_addr;
-	*fw_relocate = relocate;
+	if (fw_addr)
+		*fw_addr = min_addr;
+	if (fw_size)
+		*fw_size = max_addr - min_addr;
+	if (fw_relocate)
+		*fw_relocate = relocate;
 
 	return 0;
 }
@@ -93,18 +96,12 @@ EXPORT_SYMBOL_GPL(qcom_mdt_parse);
  * @rproc:	rproc handle
  * @pas_id:	PAS identifier to load this firmware into
  * @fw:		frimware object for the header
- * @mem_phys:	physical address of reserved memory region for the firmware
- * @mem_region:	pointer to a mapping of the reserved memory region
- * @mem_size:	size of the reserved memory region
  *
  * Returns 0 on success, negative errno otherwise.
  */
 int qcom_mdt_load(struct rproc *rproc,
 		  const struct firmware *fw,
-		  const char *firmware,
-		  phys_addr_t mem_phys,
-		  void *mem_region,
-		  size_t mem_size)
+		  const char *firmware)
 {
 	const struct elf32_phdr *phdrs;
 	const struct elf32_phdr *phdr;
@@ -138,8 +135,8 @@ int qcom_mdt_load(struct rproc *rproc,
 		if (!phdr->p_memsz)
 			continue;
 
-		ptr = mem_region + phdr->p_paddr - mem_phys;
-		if (ptr < mem_region || ptr + phdr->p_memsz > mem_region + mem_size) {
+		ptr = rproc_da_to_va(rproc, phdr->p_paddr, phdr->p_memsz);
+		if (!ptr) {
 			dev_err(&rproc->dev, "segment outside memory range\n");
 			ret = -EINVAL;
 			break;

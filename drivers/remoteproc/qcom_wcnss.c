@@ -93,6 +93,7 @@ struct qcom_wcnss {
 	struct completion stop_done;
 
 	phys_addr_t mem_phys;
+	phys_addr_t mem_reloc;
 	void *mem_region;
 	size_t mem_size;
 };
@@ -166,6 +167,8 @@ static int wcnss_load(struct rproc *rproc, const struct firmware *fw)
 	}
 
 	if (relocate) {
+		wcnss->mem_reloc = fw_addr;
+
 		ret = qcom_scm_pas_mem_setup(WCNSS_PAS_ID, wcnss->mem_phys, fw_size);
 		if (ret) {
 			dev_err(&rproc->dev, "unable to setup memory for image\n");
@@ -173,8 +176,7 @@ static int wcnss_load(struct rproc *rproc, const struct firmware *fw)
 		}
 	}
 
-	return qcom_mdt_load(rproc, fw, rproc->firmware, fw_addr,
-			     wcnss->mem_region, wcnss->mem_size);
+	return qcom_mdt_load(rproc, fw, rproc->firmware);
 }
 
 static const struct rproc_fw_ops wcnss_fw_ops = {
@@ -318,9 +320,22 @@ static int wcnss_stop(struct rproc *rproc)
 	return ret;
 }
 
+static void *wcnss_da_to_va(struct rproc *rproc, u64 da, int len)
+{
+	struct qcom_wcnss *wcnss = (struct qcom_wcnss *)rproc->priv;
+	int offset;
+
+	offset = da - wcnss->mem_reloc;
+	if (offset < 0 || offset + len > wcnss->mem_size)
+		return NULL;
+
+	return wcnss->mem_region + offset;
+}
+
 static const struct rproc_ops wcnss_ops = {
 	.start = wcnss_start,
 	.stop = wcnss_stop,
+	.da_to_va = wcnss_da_to_va,
 };
 
 static irqreturn_t wcnss_wdog_interrupt(int irq, void *dev)
@@ -459,7 +474,7 @@ static int wcnss_alloc_memory_region(struct qcom_wcnss *wcnss)
 	if (ret)
 		return ret;
 
-	wcnss->mem_phys = r.start;
+	wcnss->mem_phys = wcnss->mem_reloc = r.start;
 	wcnss->mem_size = resource_size(&r);
 	wcnss->mem_region = devm_ioremap_wc(wcnss->dev, wcnss->mem_phys, wcnss->mem_size);
 	if (!wcnss->mem_region) {
