@@ -17,17 +17,17 @@
 		#size-cells = <1>;
 		ranges;
 
-		mpss@08000000 {
+		mpss_region: mpss@08000000 {
 			reg = <0x08000000 0x5100000>;
 			no-map;
 		};
 
-		mba@00d100000 {
+		mba_region: mba@00d100000 {
 			reg = <0x0d100000 0x100000>;
 			no-map;
 		};
 
-		reserved@0d200000 {
+		wcnss_region: wcnss@0d200000 {
 			reg = <0x0d200000 0xa00000>;
 			no-map;
 		};
@@ -37,7 +37,7 @@
 			no-map;
 		};
 
-		venus@0f500000 {
+		venus_region: venus@0f500000 {
 			reg = <0x0f500000 0x500000>;
 			no-map;
 		};
@@ -65,6 +65,17 @@
 		unused@0ff00000 {
 			reg = <0x0ff00000 0x10100000>;
 			no-map;
+		};
+	};
+
+	firmware {
+		compatible = "simple-bus";
+
+		scm {
+			compatible = "qcom,scm";
+			clocks = <&gcc GCC_CE1_CLK> , <&gcc GCC_CE1_AXI_CLK>,
+				 <&gcc GCC_CE1_AHB_CLK>;
+			clock-names = "core", "bus", "iface";
 		};
 	};
 
@@ -260,6 +271,20 @@
 
 			interrupt-controller;
 			#interrupt-cells = <2>;
+		};
+	};
+
+	clocks {
+		xo_board {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <19200000>;
+		};
+
+		sleep_clk {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
 		};
 	};
 
@@ -461,6 +486,78 @@
 			reg = <0xf9bff000 0x200>;
 			clocks = <&gcc GCC_PRNG_AHB_CLK>;
 			clock-names = "core";
+		};
+
+		modem-rproc@fc880000 {
+			compatible = "qcom,q6v5-pil";
+			reg = <0xfc880000 0x100>,
+			      <0xfc820000 0x020>;
+			reg-names = "qdsp6", "rmb";
+
+			interrupts-extended = <&intc 0 24 1>,
+					      <&modem_smp2p_in 0 0>,
+					      <&modem_smp2p_in 1 0>,
+					      <&modem_smp2p_in 2 0>,
+					      <&modem_smp2p_in 3 0>;
+			interrupt-names = "wdog", "fatal", "ready", "handover", "stop-ack";
+
+			clocks = <&gcc GCC_MSS_Q6_BIMC_AXI_CLK>, <&gcc GCC_MSS_CFG_AHB_CLK>, <&gcc GCC_BOOT_ROM_AHB_CLK>;
+			clock-names = "iface", "bus", "mem";
+
+			resets = <&gcc GCC_MSS_RESTART>;
+			reset-names = "mss_restart";
+
+			mss-supply = <&pm8841_s3>;
+			cx-supply = <&pm8841_s2>;
+			mx-supply = <&pm8841_s1>;
+			pll-supply = <&pm8941_l12>;
+
+			qcom,halt-regs = <&tcsr_mutex_block 0x1180 0x1200 0x1280>;
+
+			qcom,smem-states = <&modem_smp2p_out 0>;
+			qcom,smem-state-names = "stop";
+
+			mba {
+				memory-region = <&mba_region>;
+			};
+
+			mpss {
+				memory-region = <&mpss_region>;
+			};
+		};
+
+		pronto: wcnss-rproc@fb202000 {
+			compatible = "qcom,pronto-v2-pil", "qcom,pronto";
+			reg = <0xfb204000 0x2000>, <0xfb202000 0x1000>, <0xfb21b000 0x3000>;
+			reg-names = "ccu", "dxe", "pmu";
+
+			memory-region = <&wcnss_region>;
+
+			interrupts-extended = <&intc 0 149 IRQ_TYPE_EDGE_RISING>,
+					      <&wcnss_smp2p_in 0 IRQ_TYPE_EDGE_RISING>,
+					      <&wcnss_smp2p_in 1 IRQ_TYPE_EDGE_RISING>,
+					      <&wcnss_smp2p_in 2 IRQ_TYPE_EDGE_RISING>,
+					      <&wcnss_smp2p_in 3 IRQ_TYPE_EDGE_RISING>;
+			interrupt-names = "wdog", "fatal", "ready", "handover", "stop-ack";
+
+			vddpx-supply = <&pm8941_s3>;
+
+			qcom,smem-states = <&wcnss_smp2p_out 0>;
+			qcom,smem-state-names = "stop";
+
+			status = "disabled";
+
+			iris {
+				compatible = "qcom,wcn3680";
+
+				clocks = <&rpmcc RPM_CXO_A2>;
+				clock-names = "xo";
+
+				vddxo-supply = <&pm8941_l6>;
+				vddrfa-supply = <&pm8941_l11>;
+				vddpa-supply = <&pm8941_l19>;
+				vdddig-supply = <&pm8941_s3>;
+			};
 		};
 
 		msmgpio: pinctrl@fd510000 {
@@ -689,6 +786,12 @@
 		};
 	};
 
+	venus-pil {
+		compatible = "qcom,venus-pil";
+
+		memory-region = <&venus_region>;
+	};
+
 	smd {
 		compatible = "qcom,smd";
 
@@ -697,6 +800,36 @@
 
 			qcom,ipc = <&apcs 8 12>;
 			qcom,smd-edge = <0>;
+		};
+
+		pronto {
+			status = "disabled";
+			interrupts = <0 142 IRQ_TYPE_EDGE_RISING>;
+
+			qcom,ipc = <&apcs 8 17>;
+			qcom,smd-edge = <6>;
+
+			wcnss {
+				compatible = "qcom,wcnss";
+				qcom,smd-channels = "WCNSS_CTRL";
+				status = "disabled";
+
+				qcom,mmio = <&pronto>;
+
+				bt {
+					compatible = "qcom,wcnss-bt";
+				};
+
+				wifi {
+					compatible = "qcom,wcnss-wlan";
+
+					interrupts = <0 145 0>, <0 146 0>;
+					interrupt-names = "tx", "rx";
+
+					qcom,smem-states = <&apps_smsm 10>, <&apps_smsm 9>;
+					qcom,smem-state-names = "tx-enable", "tx-rings-empty";
+				};
+			};
 		};
 
 		rpm {
