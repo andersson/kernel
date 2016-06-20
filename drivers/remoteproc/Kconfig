@@ -110,4 +110,13 @@ config QCOM_VENUS_PIL
 	help
 	  Peripheral Image Loader for the Venus block.
 
+config QCOM_WCNSS_PIL
+	tristate "Qualcomm WCNSS Peripheral Image Loader"
+	depends on OF && ARCH_QCOM
+	select REMOTEPROC
+	select QCOM_MDT_LOADER
+	select QCOM_SCM
+	help
+	  Peripherial Image Loader for the WCNSS block.
+
 endmenu
