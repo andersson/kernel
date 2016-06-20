@@ -168,23 +168,6 @@ static inline void *qcom_scm_get_response_buffer(const struct qcom_scm_response 
 	return (void *)rsp + le32_to_cpu(rsp->buf_offset);
 }
 
-static int qcom_scm_remap_error(int err)
-{
-	pr_err("qcom_scm_call failed with error code %d\n", err);
-	switch (err) {
-	case QCOM_SCM_ERROR:
-		return -EIO;
-	case QCOM_SCM_EINVAL_ADDR:
-	case QCOM_SCM_EINVAL_ARG:
-		return -EINVAL;
-	case QCOM_SCM_EOPNOTSUPP:
-		return -EOPNOTSUPP;
-	case QCOM_SCM_ENOMEM:
-		return -ENOMEM;
-	}
-	return -EINVAL;
-}
-
 static u32 smc(u32 cmd_addr)
 {
 	int context_id;
@@ -498,4 +481,99 @@ int __qcom_scm_hdcp_req(struct qcom_scm_hdcp_req *req, u32 req_cnt, u32 *resp)
 
 	return qcom_scm_call(QCOM_SCM_SVC_HDCP, QCOM_SCM_CMD_HDCP,
 		req, req_cnt * sizeof(*req), resp, sizeof(*resp));
+}
+
+bool __qcom_scm_pas_supported(u32 peripheral)
+{
+	__le32 out;
+	__le32 in;
+	int ret;
+
+	in = cpu_to_le32(peripheral);
+	ret = qcom_scm_call(QCOM_SCM_SVC_PIL, QCOM_SCM_PAS_IS_SUPPORTED_CMD,
+			    &in, sizeof(in),
+			    &out, sizeof(out));
+
+	return ret ? false : !!out;
+}
+
+int __qcom_scm_pas_init_image(u32 peripheral, dma_addr_t metadata_phys)
+{
+	__le32 scm_ret;
+	int ret;
+	struct {
+		__le32 proc;
+		__le32 image_addr;
+	} request;
+
+	request.proc = cpu_to_le32(peripheral);
+	request.image_addr = cpu_to_le32(metadata_phys);
+
+	ret = qcom_scm_call(QCOM_SCM_SVC_PIL, QCOM_SCM_PAS_INIT_IMAGE_CMD,
+			    &request, sizeof(request),
+			    &scm_ret, sizeof(scm_ret));
+
+	return ret ? : le32_to_cpu(scm_ret);
+}
+
+int __qcom_scm_pas_mem_setup(u32 peripheral, phys_addr_t addr, phys_addr_t size)
+{
+	__le32 scm_ret;
+	int ret;
+	struct {
+		__le32 proc;
+		__le32 addr;
+		__le32 len;
+	} request;
+
+	request.proc = cpu_to_le32(peripheral);
+	request.addr = cpu_to_le32(addr);
+	request.len = cpu_to_le32(size);
+
+	ret = qcom_scm_call(QCOM_SCM_SVC_PIL, QCOM_SCM_PAS_MEM_SETUP_CMD,
+			    &request, sizeof(request),
+			    &scm_ret, sizeof(scm_ret));
+
+	return ret ? : le32_to_cpu(scm_ret);
+}
+
+int __qcom_scm_pas_auth_and_reset(u32 peripheral)
+{
+	__le32 out;
+	__le32 in;
+	int ret;
+
+	in = cpu_to_le32(peripheral);
+	ret = qcom_scm_call(QCOM_SCM_SVC_PIL, QCOM_SCM_PAS_AUTH_AND_RESET_CMD,
+			    &in, sizeof(in),
+			    &out, sizeof(out));
+
+	return ret ? : le32_to_cpu(out);
+}
+
+int __qcom_scm_pas_shutdown(u32 peripheral)
+{
+	__le32 out;
+	__le32 in;
+	int ret;
+
+	in = cpu_to_le32(peripheral);
+	ret = qcom_scm_call(QCOM_SCM_SVC_PIL, QCOM_SCM_PAS_SHUTDOWN_CMD,
+			    &in, sizeof(in),
+			    &out, sizeof(out));
+
+	return ret ? : le32_to_cpu(out);
+}
+
+int __qcom_scm_pas_mss_reset(bool reset)
+{
+	__le32 out;
+	__le32 in = cpu_to_le32(reset);
+	int ret;
+
+	ret = qcom_scm_call(QCOM_SCM_SVC_PIL, QCOM_SCM_PAS_MSS_RESET,
+			&in, sizeof(in),
+			&out, sizeof(out));
+
+	return ret ? : le32_to_cpu(out);
 }
