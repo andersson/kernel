@@ -157,6 +157,9 @@ static int btqcomsmd_remove(struct platform_device *pdev)
 	hci_unregister_dev(btq->hdev);
 	hci_free_dev(btq->hdev);
 
+	qcom_smd_close_channel(btq->cmd_channel);
+	qcom_smd_close_channel(btq->acl_channel);
+
 	return 0;
 }
 
