@@ -684,8 +684,9 @@ static void rpmsg_downref_sleepers(struct virtproc_info *vrp)
  *
  * Returns 0 on success and an appropriate error value on failure.
  */
-int rpmsg_send_offchannel_raw(struct rpmsg_channel *rpdev, u32 src, u32 dst,
-					void *data, int len, bool wait)
+static int rpmsg_send_offchannel_raw(struct rpmsg_device *rpdev,
+				     u32 src, u32 dst,
+				     void *data, int len, bool wait)
 {
 	struct virtproc_info *vrp = rpdev->vrp;
 	struct device *dev = &rpdev->dev;
@@ -778,7 +779,159 @@ out:
 	mutex_unlock(&vrp->tx_lock);
 	return err;
 }
-EXPORT_SYMBOL(rpmsg_send_offchannel_raw);
+
+/**
+ * rpmsg_send() - send a message across to the remote processor
+ * @rpdev: the rpmsg channel
+ * @data: payload of message
+ * @len: length of payload
+ *
+ * This function sends @data of length @len on the @rpdev channel.
+ * The message will be sent to the remote processor which the @rpdev
+ * channel belongs to, using @rpdev's source and destination addresses.
+ * In case there are no TX buffers available, the function will block until
+ * one becomes available, or a timeout of 15 seconds elapses. When the latter
+ * happens, -ERESTARTSYS is returned.
+ *
+ * Can only be called from process context (for now).
+ *
+ * Returns 0 on success and an appropriate error value on failure.
+ */
+int rpmsg_send(struct rpmsg_device *rpdev, void *data, int len)
+{
+	u32 src = rpdev->src, dst = rpdev->dst;
+
+	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, true);
+}
+EXPORT_SYMBOL(rpmsg_send);
+
+/**
+ * rpmsg_sendto() - send a message across to the remote processor, specify dst
+ * @rpdev: the rpmsg channel
+ * @data: payload of message
+ * @len: length of payload
+ * @dst: destination address
+ *
+ * This function sends @data of length @len to the remote @dst address.
+ * The message will be sent to the remote processor which the @rpdev
+ * channel belongs to, using @rpdev's source address.
+ * In case there are no TX buffers available, the function will block until
+ * one becomes available, or a timeout of 15 seconds elapses. When the latter
+ * happens, -ERESTARTSYS is returned.
+ *
+ * Can only be called from process context (for now).
+ *
+ * Returns 0 on success and an appropriate error value on failure.
+ */
+int rpmsg_sendto(struct rpmsg_device *rpdev, void *data, int len, u32 dst)
+{
+	u32 src = rpdev->src;
+
+	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, true);
+}
+EXPORT_SYMBOL(rpmsg_sendto);
+
+/**
+ * rpmsg_send_offchannel() - send a message using explicit src/dst addresses
+ * @rpdev: the rpmsg channel
+ * @src: source address
+ * @dst: destination address
+ * @data: payload of message
+ * @len: length of payload
+ *
+ * This function sends @data of length @len to the remote @dst address,
+ * and uses @src as the source address.
+ * The message will be sent to the remote processor which the @rpdev
+ * channel belongs to.
+ * In case there are no TX buffers available, the function will block until
+ * one becomes available, or a timeout of 15 seconds elapses. When the latter
+ * happens, -ERESTARTSYS is returned.
+ *
+ * Can only be called from process context (for now).
+ *
+ * Returns 0 on success and an appropriate error value on failure.
+ */
+int rpmsg_send_offchannel(struct rpmsg_device *rpdev, u32 src, u32 dst,
+			  void *data, int len)
+{
+	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, true);
+}
+EXPORT_SYMBOL(rpmsg_send_offchannel);
+
+/**
+ * rpmsg_trysend() - send a message across to the remote processor
+ * @rpdev: the rpmsg channel
+ * @data: payload of message
+ * @len: length of payload
+ *
+ * This function sends @data of length @len on the @rpdev channel.
+ * The message will be sent to the remote processor which the @rpdev
+ * channel belongs to, using @rpdev's source and destination addresses.
+ * In case there are no TX buffers available, the function will immediately
+ * return -ENOMEM without waiting until one becomes available.
+ *
+ * Can only be called from process context (for now).
+ *
+ * Returns 0 on success and an appropriate error value on failure.
+ */
+int rpmsg_trysend(struct rpmsg_device *rpdev, void *data, int len)
+{
+	u32 src = rpdev->src, dst = rpdev->dst;
+
+	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, false);
+}
+EXPORT_SYMBOL(rpmsg_trysend);
+
+/**
+ * rpmsg_sendto() - send a message across to the remote processor, specify dst
+ * @rpdev: the rpmsg channel
+ * @data: payload of message
+ * @len: length of payload
+ * @dst: destination address
+ *
+ * This function sends @data of length @len to the remote @dst address.
+ * The message will be sent to the remote processor which the @rpdev
+ * channel belongs to, using @rpdev's source address.
+ * In case there are no TX buffers available, the function will immediately
+ * return -ENOMEM without waiting until one becomes available.
+ *
+ * Can only be called from process context (for now).
+ *
+ * Returns 0 on success and an appropriate error value on failure.
+ */
+int rpmsg_trysendto(struct rpmsg_device *rpdev, void *data, int len, u32 dst)
+{
+	u32 src = rpdev->src;
+
+	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, false);
+}
+EXPORT_SYMBOL(rpmsg_trysendto);
+
+/**
+ * rpmsg_send_offchannel() - send a message using explicit src/dst addresses
+ * @rpdev: the rpmsg channel
+ * @src: source address
+ * @dst: destination address
+ * @data: payload of message
+ * @len: length of payload
+ *
+ * This function sends @data of length @len to the remote @dst address,
+ * and uses @src as the source address.
+ * The message will be sent to the remote processor which the @rpdev
+ * channel belongs to.
+ * In case there are no TX buffers available, the function will immediately
+ * return -ENOMEM without waiting until one becomes available.
+ *
+ * Can only be called from process context (for now).
+ *
+ * Returns 0 on success and an appropriate error value on failure.
+ */
+int rpmsg_trysend_offchannel(struct rpmsg_device *rpdev, u32 src, u32 dst,
+			     void *data, int len)
+{
+	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, false);
+}
+EXPORT_SYMBOL(rpmsg_trysend_offchannel);
 
 static int rpmsg_recv_single(struct virtproc_info *vrp, struct device *dev,
 			     struct rpmsg_hdr *msg, unsigned int len)
