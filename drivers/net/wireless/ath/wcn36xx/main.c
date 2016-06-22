@@ -1243,6 +1243,8 @@ static int wcn36xx_remove(struct platform_device *pdev)
 
 	ieee80211_unregister_hw(hw);
 
+	qcom_smd_close_channel(wcn->smd_channel);
+
 	qcom_smem_state_put(wcn->tx_enable_state);
 	qcom_smem_state_put(wcn->tx_rings_empty_state);
 
