@@ -74,6 +74,21 @@ struct virtproc_info {
 	struct rpmsg_endpoint *ns_ept;
 };
 
+/**
+ * @vrp: the remote processor this channel belongs to
+ */
+struct virtio_rpmsg_channel {
+	struct rpmsg_channel rpch;
+
+	struct virtproc_info *vrp;
+};
+
+static inline struct virtio_rpmsg_channel *to_virtio_rpmsg_channel(struct device *d)
+{
+	struct rpmsg_channel *rpch = to_rpmsg_channel(d);
+	return container_of(rpch, struct virtio_rpmsg_channel, rpch);
+}
+
 /*
  * We're allocating buffers of 512 bytes each for communications. The
  * number of buffers will be computed from the number of buffers supported
@@ -191,7 +206,8 @@ static struct rpmsg_endpoint *virtio_rpmsg_create_ept(struct rpmsg_device *rpdev
 						      rpmsg_rx_cb_t cb,
 						      void *priv, u32 addr)
 {
-	return __rpmsg_create_ept(rpdev->vrp, rpdev, cb, priv, addr);
+	struct virtio_rpmsg_channel *vch = to_virtio_rpmsg_channel(&rpdev->dev);
+	return __rpmsg_create_ept(vch->vrp, rpdev, cb, priv, addr);
 }
 
 /**
@@ -222,12 +238,14 @@ __rpmsg_destroy_ept(struct virtproc_info *vrp, struct rpmsg_endpoint *ept)
 
 static void virtio_rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
 {
-	__rpmsg_destroy_ept(ept->rpdev->vrp, ept);
+	struct virtio_rpmsg_channel *vch = to_virtio_rpmsg_channel(&ept->rpdev->dev);
+	__rpmsg_destroy_ept(vch->vrp, ept);
 }
 
 static int virtio_rpmsg_announce_create(struct rpmsg_device *rpdev)
 {
-	struct virtproc_info *vrp = rpdev->vrp;
+	struct virtio_rpmsg_channel *vch = to_virtio_rpmsg_channel(&rpdev->dev);
+	struct virtproc_info *vrp = vch->vrp;
 	struct device *dev = &rpdev->dev;
 	int err = 0;
 
@@ -250,7 +268,8 @@ static int virtio_rpmsg_announce_create(struct rpmsg_device *rpdev)
 
 static int virtio_rpmsg_announce_destroy(struct rpmsg_device *rpdev)
 {
-	struct virtproc_info *vrp = rpdev->vrp;
+	struct virtio_rpmsg_channel *vch = to_virtio_rpmsg_channel(&rpdev->dev);
+	struct virtproc_info *vrp = vch->vrp;
 	struct device *dev = &rpdev->dev;
 	int err = 0;
 
@@ -279,6 +298,7 @@ static int virtio_rpmsg_announce_destroy(struct rpmsg_device *rpdev)
 static struct rpmsg_device *rpmsg_create_channel(struct virtproc_info *vrp,
 				struct rpmsg_channel_info *chinfo)
 {
+	struct virtio_rpmsg_channel *vch;
 	struct rpmsg_channel *rpch;
 	struct rpmsg_device *rpdev;
 	struct device *tmp, *dev = &vrp->vdev->dev;
@@ -294,11 +314,13 @@ static struct rpmsg_device *rpmsg_create_channel(struct virtproc_info *vrp,
 		return NULL;
 	}
 
-	rpch = kzalloc(sizeof(*rpch), GFP_KERNEL);
-	if (!rpch) {
+	vch = kzalloc(sizeof(*vch), GFP_KERNEL);
+	if (!vch) {
 		pr_err("kzalloc failed\n");
 		return NULL;
 	}
+
+	vch->vrp = vrp;
 
 	rpch = &vch->rpch;
 	rpch->create_ept = virtio_rpmsg_create_ept;
@@ -313,7 +335,6 @@ static struct rpmsg_device *rpmsg_create_channel(struct virtproc_info *vrp,
 	rpch->announce_destroy = virtio_rpmsg_announce_destroy;
 
 	rpdev = &rpch->rpdev;
-	rpdev->vrp = vrp;
 	rpdev->src = chinfo->src;
 	rpdev->dst = chinfo->dst;
 
@@ -451,7 +472,8 @@ static int rpmsg_send_offchannel_raw(struct rpmsg_device *rpdev,
 				     u32 src, u32 dst,
 				     void *data, int len, bool wait)
 {
-	struct virtproc_info *vrp = rpdev->vrp;
+	struct virtio_rpmsg_channel *vch = to_virtio_rpmsg_channel(&rpdev->dev);
+	struct virtproc_info *vrp = vch->vrp;
 	struct device *dev = &rpdev->dev;
 	struct scatterlist sg;
 	struct rpmsg_hdr *msg;
