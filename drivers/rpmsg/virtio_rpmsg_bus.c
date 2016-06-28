@@ -382,7 +382,6 @@ static int rpmsg_dev_probe(struct device *dev)
 {
 	struct rpmsg_channel *rpdev = to_rpmsg_channel(dev);
 	struct rpmsg_driver *rpdrv = to_rpmsg_driver(rpdev->dev.driver);
-	struct virtproc_info *vrp = rpdev->vrp;
 	struct rpmsg_endpoint *ept;
 	int err;
 
@@ -403,6 +402,17 @@ static int rpmsg_dev_probe(struct device *dev)
 		goto out;
 	}
 
+	err = rpdev->announce_create(rpdev);
+out:
+	return err;
+}
+
+static int virtio_rpmsg_announce_create(struct rpmsg_channel *rpdev)
+{
+	struct virtproc_info *vrp = rpdev->vrp;
+	struct device *dev = &rpdev->dev;
+	int err = 0;
+
 	/* need to tell remote processor's name service about this channel ? */
 	if (rpdev->announce &&
 			virtio_has_feature(vrp->vdev, VIRTIO_RPMSG_F_NS)) {
@@ -417,15 +427,13 @@ static int rpmsg_dev_probe(struct device *dev)
 			dev_err(dev, "failed to announce service %d\n", err);
 	}
 
-out:
 	return err;
 }
 
-static int rpmsg_dev_remove(struct device *dev)
+static int virtio_rpmsg_announce_destroy(struct rpmsg_channel *rpdev)
 {
-	struct rpmsg_channel *rpdev = to_rpmsg_channel(dev);
-	struct rpmsg_driver *rpdrv = to_rpmsg_driver(rpdev->dev.driver);
 	struct virtproc_info *vrp = rpdev->vrp;
+	struct device *dev = &rpdev->dev;
 	int err = 0;
 
 	/* tell remote processor's name service we're removing this channel */
@@ -441,6 +449,17 @@ static int rpmsg_dev_remove(struct device *dev)
 		if (err)
 			dev_err(dev, "failed to announce service %d\n", err);
 	}
+
+	return err;
+}
+
+static int rpmsg_dev_remove(struct device *dev)
+{
+	struct rpmsg_channel *rpdev = to_rpmsg_channel(dev);
+	struct rpmsg_driver *rpdrv = to_rpmsg_driver(rpdev->dev.driver);
+	int err = 0;
+
+	err = rpdev->announce_destroy(rpdev);
 
 	rpdrv->remove(rpdev);
 
@@ -551,6 +570,8 @@ static struct rpmsg_channel *rpmsg_create_channel(struct virtproc_info *vrp,
 	rpdev->trysend = virtio_rpmsg_trysend;
 	rpdev->trysendto = virtio_rpmsg_trysendto;
 	rpdev->trysend_offchannel = virtio_rpmsg_trysend_offchannel;
+	rpdev->announce_create = virtio_rpmsg_announce_create;
+	rpdev->announce_destroy = virtio_rpmsg_announce_destroy;
 
 	rpdev->vrp = vrp;
 	rpdev->src = chinfo->src;

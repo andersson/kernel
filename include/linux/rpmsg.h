@@ -133,6 +133,8 @@ struct rpmsg_channel {
 	int (*trysendto)(struct rpmsg_channel *rpdev, void *data, int len, u32 dst);
 	int (*trysend_offchannel)(struct rpmsg_channel *rpdev, u32 src, u32 dst,
 			     void *data, int len);
+	int (*announce_create)(struct rpmsg_channel *rpdev);
+	int (*announce_destroy)(struct rpmsg_channel *rpdev);
 };
 
 /**
