@@ -35,6 +35,32 @@ struct rpmsg_channel_info {
 	u32 dst;
 };
 
+struct rpmsg_channel {
+	struct rpmsg_device rpdev;
+
+	struct rpmsg_endpoint *(*create_ept)(struct rpmsg_device *rpdev,
+					    rpmsg_rx_cb_t cb, void *priv, u32 addr);
+	void (*destroy_ept)(struct rpmsg_endpoint *ept);
+
+	int (*send)(struct rpmsg_device *rpdev, void *data, int len);
+	int (*sendto)(struct rpmsg_device *rpdev, void *data, int len, u32 dst);
+	int (*send_offchannel)(struct rpmsg_device *rpdev, u32 src, u32 dst,
+				  void *data, int len);
+
+	int (*trysend)(struct rpmsg_device *rpdev, void *data, int len);
+	int (*trysendto)(struct rpmsg_device *rpdev, void *data, int len, u32 dst);
+	int (*trysend_offchannel)(struct rpmsg_device *rpdev, u32 src, u32 dst,
+			     void *data, int len);
+	int (*announce_create)(struct rpmsg_device *rpdev);
+	int (*announce_destroy)(struct rpmsg_device *rpdev);
+};
+
+static inline struct rpmsg_channel *to_rpmsg_channel(struct device *d)
+{
+	struct rpmsg_device *rpdev = to_rpmsg_device(d);
+	return container_of(rpdev, struct rpmsg_channel, rpdev);
+}
+
 int rpmsg_register_device(struct rpmsg_device *rpdev);
 int rpmsg_unregister_device(struct device *parent,
 			    struct rpmsg_channel_info *chinfo);
