@@ -80,7 +80,8 @@
 struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_device *rpdev,
 				rpmsg_rx_cb_t cb, void *priv, u32 addr)
 {
-	return rpdev->create_ept(rpdev, cb, priv, addr);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
+	return rpch->create_ept(rpdev, cb, priv, addr);
 }
 EXPORT_SYMBOL(rpmsg_create_ept);
 
@@ -93,7 +94,8 @@ EXPORT_SYMBOL(rpmsg_create_ept);
  */
 void rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
 {
-	ept->rpdev->destroy_ept(ept);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&ept->rpdev->dev);
+	rpch->destroy_ept(ept);
 }
 EXPORT_SYMBOL(rpmsg_destroy_ept);
 
@@ -116,7 +118,8 @@ EXPORT_SYMBOL(rpmsg_destroy_ept);
  */
 int rpmsg_send(struct rpmsg_device *rpdev, void *data, int len)
 {
-	return rpdev->send(rpdev, data, len);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
+	return rpch->send(rpdev, data, len);
 }
 EXPORT_SYMBOL(rpmsg_send);
 
@@ -140,7 +143,8 @@ EXPORT_SYMBOL(rpmsg_send);
  */
 int rpmsg_sendto(struct rpmsg_device *rpdev, void *data, int len, u32 dst)
 {
-	return rpdev->sendto(rpdev, data, len, dst);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
+	return rpch->sendto(rpdev, data, len, dst);
 }
 EXPORT_SYMBOL(rpmsg_sendto);
 
@@ -167,7 +171,8 @@ EXPORT_SYMBOL(rpmsg_sendto);
 int rpmsg_send_offchannel(struct rpmsg_device *rpdev, u32 src, u32 dst,
 			  void *data, int len)
 {
-	return rpdev->send_offchannel(rpdev, src, dst, data, len);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
+	return rpch->send_offchannel(rpdev, src, dst, data, len);
 }
 EXPORT_SYMBOL(rpmsg_send_offchannel);
 
@@ -189,7 +194,8 @@ EXPORT_SYMBOL(rpmsg_send_offchannel);
  */
 int rpmsg_trysend(struct rpmsg_device *rpdev, void *data, int len)
 {
-	return rpdev->trysend(rpdev, data, len);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
+	return rpch->trysend(rpdev, data, len);
 }
 EXPORT_SYMBOL(rpmsg_trysend);
 
@@ -212,7 +218,8 @@ EXPORT_SYMBOL(rpmsg_trysend);
  */
 int rpmsg_trysendto(struct rpmsg_device *rpdev, void *data, int len, u32 dst)
 {
-	return rpdev->trysendto(rpdev, data, len, dst);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
+	return rpch->trysendto(rpdev, data, len, dst);
 }
 EXPORT_SYMBOL(rpmsg_trysendto);
 
@@ -238,7 +245,8 @@ EXPORT_SYMBOL(rpmsg_trysendto);
 int rpmsg_trysend_offchannel(struct rpmsg_device *rpdev, u32 src, u32 dst,
 			     void *data, int len)
 {
-	return rpdev->trysend_offchannel(rpdev, src, dst, data, len);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
+	return rpch->trysend_offchannel(rpdev, src, dst, data, len);
 }
 EXPORT_SYMBOL(rpmsg_trysend_offchannel);
 
@@ -317,6 +325,7 @@ static int rpmsg_uevent(struct device *dev, struct kobj_uevent_env *env)
  */
 static int rpmsg_dev_probe(struct device *dev)
 {
+	struct rpmsg_channel *rpch = to_rpmsg_channel(dev);
 	struct rpmsg_device *rpdev = to_rpmsg_device(dev);
 	struct rpmsg_driver *rpdrv = to_rpmsg_driver(rpdev->dev.driver);
 	struct rpmsg_endpoint *ept;
@@ -339,20 +348,21 @@ static int rpmsg_dev_probe(struct device *dev)
 		goto out;
 	}
 
-	if (rpdev->announce_create)
-		err = rpdev->announce_create(rpdev);
+	if (rpch->announce_create)
+		err = rpch->announce_create(rpdev);
 out:
 	return err;
 }
 
 static int rpmsg_dev_remove(struct device *dev)
 {
+	struct rpmsg_channel *rpch = to_rpmsg_channel(dev);
 	struct rpmsg_device *rpdev = to_rpmsg_device(dev);
 	struct rpmsg_driver *rpdrv = to_rpmsg_driver(rpdev->dev.driver);
 	int err = 0;
 
-	if (rpdev->announce_destroy)
-		err = rpdev->announce_destroy(rpdev);
+	if (rpch->announce_destroy)
+		err = rpch->announce_destroy(rpdev);
 
 	rpdrv->remove(rpdev);
 
