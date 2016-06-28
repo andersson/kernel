@@ -20,7 +20,7 @@
 #ifndef __RPMSG_INTERNAL_H__
 #define __RPMSG_INTERNAL_H__
 
-#define to_rpmsg_channel(d) container_of(d, struct rpmsg_channel, dev)
+#define to_rpmsg_device(d) container_of(d, struct rpmsg_device, dev)
 #define to_rpmsg_driver(d) container_of(d, struct rpmsg_driver, drv)
 
 /**
@@ -35,7 +35,7 @@ struct rpmsg_channel_info {
 	u32 dst;
 };
 
-int rpmsg_register_device(struct rpmsg_channel *rpdev);
+int rpmsg_register_device(struct rpmsg_device *rpdev);
 int rpmsg_unregister_device(struct device *parent,
 			    struct rpmsg_channel_info *chinfo);
 

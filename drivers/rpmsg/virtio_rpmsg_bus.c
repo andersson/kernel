@@ -105,15 +105,15 @@ struct virtproc_info {
 /* Address 53 is reserved for advertising remote services */
 #define RPMSG_NS_ADDR			(53)
 
-static int virtio_rpmsg_send(struct rpmsg_channel *rpdev, void *data, int len);
-static int virtio_rpmsg_sendto(struct rpmsg_channel *rpdev, void *data, int len,
+static int virtio_rpmsg_send(struct rpmsg_device *rpdev, void *data, int len);
+static int virtio_rpmsg_sendto(struct rpmsg_device *rpdev, void *data, int len,
 			       u32 dst);
-static int virtio_rpmsg_send_offchannel(struct rpmsg_channel *rpdev, u32 src,
+static int virtio_rpmsg_send_offchannel(struct rpmsg_device *rpdev, u32 src,
 					u32 dst, void *data, int len);
-static int virtio_rpmsg_trysend(struct rpmsg_channel *rpdev, void *data, int len);
-static int virtio_rpmsg_trysendto(struct rpmsg_channel *rpdev, void *data,
+static int virtio_rpmsg_trysend(struct rpmsg_device *rpdev, void *data, int len);
+static int virtio_rpmsg_trysendto(struct rpmsg_device *rpdev, void *data,
 				  int len, u32 dst);
-static int virtio_rpmsg_trysend_offchannel(struct rpmsg_channel *rpdev, u32 src,
+static int virtio_rpmsg_trysend_offchannel(struct rpmsg_device *rpdev, u32 src,
 					   u32 dst, void *data, int len);
 
 /**
@@ -138,7 +138,7 @@ static void __ept_release(struct kref *kref)
 
 /* for more info, see below documentation of rpmsg_create_ept() */
 static struct rpmsg_endpoint *__rpmsg_create_ept(struct virtproc_info *vrp,
-		struct rpmsg_channel *rpdev, rpmsg_rx_cb_t cb,
+		struct rpmsg_device *rpdev, rpmsg_rx_cb_t cb,
 		void *priv, u32 addr)
 {
 	int id_min, id_max, id;
@@ -187,7 +187,7 @@ free_ept:
 	return NULL;
 }
 
-static struct rpmsg_endpoint *virtio_rpmsg_create_ept(struct rpmsg_channel *rpdev,
+static struct rpmsg_endpoint *virtio_rpmsg_create_ept(struct rpmsg_device *rpdev,
 						      rpmsg_rx_cb_t cb,
 						      void *priv, u32 addr)
 {
@@ -225,7 +225,7 @@ static void virtio_rpmsg_destroy_ept(struct rpmsg_endpoint *ept)
 	__rpmsg_destroy_ept(ept->rpdev->vrp, ept);
 }
 
-static int virtio_rpmsg_announce_create(struct rpmsg_channel *rpdev)
+static int virtio_rpmsg_announce_create(struct rpmsg_device *rpdev)
 {
 	struct virtproc_info *vrp = rpdev->vrp;
 	struct device *dev = &rpdev->dev;
@@ -248,7 +248,7 @@ static int virtio_rpmsg_announce_create(struct rpmsg_channel *rpdev)
 	return err;
 }
 
-static int virtio_rpmsg_announce_destroy(struct rpmsg_channel *rpdev)
+static int virtio_rpmsg_announce_destroy(struct rpmsg_device *rpdev)
 {
 	struct virtproc_info *vrp = rpdev->vrp;
 	struct device *dev = &rpdev->dev;
@@ -276,10 +276,10 @@ static int virtio_rpmsg_announce_destroy(struct rpmsg_channel *rpdev)
  * this function will be used to create both static and dynamic
  * channels.
  */
-static struct rpmsg_channel *rpmsg_create_channel(struct virtproc_info *vrp,
+static struct rpmsg_device *rpmsg_create_channel(struct virtproc_info *vrp,
 				struct rpmsg_channel_info *chinfo)
 {
-	struct rpmsg_channel *rpdev;
+	struct rpmsg_device *rpdev;
 	struct device *tmp, *dev = &vrp->vdev->dev;
 	int ret;
 
@@ -293,7 +293,7 @@ static struct rpmsg_channel *rpmsg_create_channel(struct virtproc_info *vrp,
 		return NULL;
 	}
 
-	rpdev = kzalloc(sizeof(struct rpmsg_channel), GFP_KERNEL);
+	rpdev = kzalloc(sizeof(struct rpmsg_device), GFP_KERNEL);
 	if (!rpdev) {
 		pr_err("kzalloc failed\n");
 		return NULL;
@@ -444,7 +444,7 @@ static void rpmsg_downref_sleepers(struct virtproc_info *vrp)
  *
  * Returns 0 on success and an appropriate error value on failure.
  */
-static int rpmsg_send_offchannel_raw(struct rpmsg_channel *rpdev,
+static int rpmsg_send_offchannel_raw(struct rpmsg_device *rpdev,
 				     u32 src, u32 dst,
 				     void *data, int len, bool wait)
 {
@@ -540,14 +540,14 @@ out:
 	return err;
 }
 
-static int virtio_rpmsg_send(struct rpmsg_channel *rpdev, void *data, int len)
+static int virtio_rpmsg_send(struct rpmsg_device *rpdev, void *data, int len)
 {
 	u32 src = rpdev->src, dst = rpdev->dst;
 
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, true);
 }
 
-static int virtio_rpmsg_sendto(struct rpmsg_channel *rpdev, void *data, int len,
+static int virtio_rpmsg_sendto(struct rpmsg_device *rpdev, void *data, int len,
 			       u32 dst)
 {
 	u32 src = rpdev->src;
@@ -555,20 +555,20 @@ static int virtio_rpmsg_sendto(struct rpmsg_channel *rpdev, void *data, int len,
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, true);
 }
 
-static int virtio_rpmsg_send_offchannel(struct rpmsg_channel *rpdev, u32 src,
+static int virtio_rpmsg_send_offchannel(struct rpmsg_device *rpdev, u32 src,
 					u32 dst, void *data, int len)
 {
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, true);
 }
 
-static int virtio_rpmsg_trysend(struct rpmsg_channel *rpdev, void *data, int len)
+static int virtio_rpmsg_trysend(struct rpmsg_device *rpdev, void *data, int len)
 {
 	u32 src = rpdev->src, dst = rpdev->dst;
 
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, false);
 }
 
-static int virtio_rpmsg_trysendto(struct rpmsg_channel *rpdev, void *data,
+static int virtio_rpmsg_trysendto(struct rpmsg_device *rpdev, void *data,
 				  int len, u32 dst)
 {
 	u32 src = rpdev->src;
@@ -576,7 +576,7 @@ static int virtio_rpmsg_trysendto(struct rpmsg_channel *rpdev, void *data,
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, false);
 }
 
-static int virtio_rpmsg_trysend_offchannel(struct rpmsg_channel *rpdev, u32 src,
+static int virtio_rpmsg_trysend_offchannel(struct rpmsg_device *rpdev, u32 src,
 					   u32 dst, void *data, int len)
 {
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, false);
@@ -694,11 +694,11 @@ static void rpmsg_xmit_done(struct virtqueue *svq)
 }
 
 /* invoked when a name service announcement arrives */
-static void rpmsg_ns_cb(struct rpmsg_channel *rpdev, void *data, int len,
+static void rpmsg_ns_cb(struct rpmsg_device *rpdev, void *data, int len,
 							void *priv, u32 src)
 {
 	struct rpmsg_ns_msg *msg = data;
-	struct rpmsg_channel *newch;
+	struct rpmsg_device *newch;
 	struct rpmsg_channel_info chinfo;
 	struct virtproc_info *vrp = priv;
 	struct device *dev = &vrp->vdev->dev;
