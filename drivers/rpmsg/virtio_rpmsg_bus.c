@@ -280,6 +280,7 @@ static int virtio_rpmsg_announce_destroy(struct rpmsg_device *rpdev)
 static struct rpmsg_device *rpmsg_create_channel(struct virtproc_info *vrp,
 				struct rpmsg_channel_info *chinfo)
 {
+	struct rpmsg_channel *rpch;
 	struct rpmsg_device *rpdev;
 	struct device *tmp, *dev = &vrp->vdev->dev;
 	int ret;
@@ -294,23 +295,25 @@ static struct rpmsg_device *rpmsg_create_channel(struct virtproc_info *vrp,
 		return NULL;
 	}
 
-	rpdev = kzalloc(sizeof(struct rpmsg_device), GFP_KERNEL);
-	if (!rpdev) {
+	rpch = kzalloc(sizeof(*rpch), GFP_KERNEL);
+	if (!rpch) {
 		pr_err("kzalloc failed\n");
 		return NULL;
 	}
 
-	rpdev->create_ept = virtio_rpmsg_create_ept;
-	rpdev->destroy_ept = virtio_rpmsg_destroy_ept;
-	rpdev->send = virtio_rpmsg_send;
-	rpdev->sendto = virtio_rpmsg_sendto;
-	rpdev->send_offchannel = virtio_rpmsg_send_offchannel;
-	rpdev->trysend = virtio_rpmsg_trysend;
-	rpdev->trysendto = virtio_rpmsg_trysendto;
-	rpdev->trysend_offchannel = virtio_rpmsg_trysend_offchannel;
-	rpdev->announce_create = virtio_rpmsg_announce_create;
-	rpdev->announce_destroy = virtio_rpmsg_announce_destroy;
+	rpch = &vch->rpch;
+	rpch->create_ept = virtio_rpmsg_create_ept;
+	rpch->destroy_ept = virtio_rpmsg_destroy_ept;
+	rpch->send = virtio_rpmsg_send;
+	rpch->sendto = virtio_rpmsg_sendto;
+	rpch->send_offchannel = virtio_rpmsg_send_offchannel;
+	rpch->trysend = virtio_rpmsg_trysend;
+	rpch->trysendto = virtio_rpmsg_trysendto;
+	rpch->trysend_offchannel = virtio_rpmsg_trysend_offchannel;
+	rpch->announce_create = virtio_rpmsg_announce_create;
+	rpch->announce_destroy = virtio_rpmsg_announce_destroy;
 
+	rpdev = &rpch->rpdev;
 	rpdev->vrp = vrp;
 	rpdev->src = chinfo->src;
 	rpdev->dst = chinfo->dst;
