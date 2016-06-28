@@ -96,6 +96,10 @@ enum rpmsg_ns_flags {
 #define RPMSG_ADDR_ANY		0xFFFFFFFF
 
 struct virtproc_info;
+struct rpmsg_channel;
+struct rpmsg_endpoint;
+
+typedef void (*rpmsg_rx_cb_t)(struct rpmsg_channel *, void *, int, void *, u32);
 
 /**
  * rpmsg_channel - devices that belong to the rpmsg bus are called channels
@@ -115,9 +119,21 @@ struct rpmsg_channel {
 	u32 dst;
 	struct rpmsg_endpoint *ept;
 	bool announce;
-};
 
-typedef void (*rpmsg_rx_cb_t)(struct rpmsg_channel *, void *, int, void *, u32);
+	struct rpmsg_endpoint *(*create_ept)(struct rpmsg_channel *rpdev,
+					    rpmsg_rx_cb_t cb, void *priv, u32 addr);
+	void (*destroy_ept)(struct rpmsg_endpoint *ept);
+
+	int (*send)(struct rpmsg_channel *rpdev, void *data, int len);
+	int (*sendto)(struct rpmsg_channel *rpdev, void *data, int len, u32 dst);
+	int (*send_offchannel)(struct rpmsg_channel *rpdev, u32 src, u32 dst,
+				  void *data, int len);
+
+	int (*trysend)(struct rpmsg_channel *rpdev, void *data, int len);
+	int (*trysendto)(struct rpmsg_channel *rpdev, void *data, int len, u32 dst);
+	int (*trysend_offchannel)(struct rpmsg_channel *rpdev, u32 src, u32 dst,
+			     void *data, int len);
+};
 
 /**
  * struct rpmsg_endpoint - binds a local rpmsg address to its user
