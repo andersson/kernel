@@ -98,7 +98,7 @@ enum rpmsg_ns_flags {
 struct virtproc_info;
 
 /**
- * rpmsg_channel - devices that belong to the rpmsg bus are called channels
+ * rpmsg_device - device that belong to the rpmsg bus
  * @vrp: the remote processor this channel belongs to
  * @dev: the device struct
  * @id: device id (used to match between rpmsg drivers and devices)
@@ -107,7 +107,7 @@ struct virtproc_info;
  * @ept: the rpmsg endpoint of this channel
  * @announce: if set, rpmsg will announce the creation/removal of this channel
  */
-struct rpmsg_channel {
+struct rpmsg_device {
 	struct virtproc_info *vrp;
 	struct device dev;
 	struct rpmsg_device_id id;
@@ -117,7 +117,7 @@ struct rpmsg_channel {
 	bool announce;
 };
 
-typedef void (*rpmsg_rx_cb_t)(struct rpmsg_channel *, void *, int, void *, u32);
+typedef void (*rpmsg_rx_cb_t)(struct rpmsg_device *, void *, int, void *, u32);
 
 /**
  * struct rpmsg_endpoint - binds a local rpmsg address to its user
@@ -143,7 +143,7 @@ typedef void (*rpmsg_rx_cb_t)(struct rpmsg_channel *, void *, int, void *, u32);
  * create additional endpoints by themselves (see rpmsg_create_ept()).
  */
 struct rpmsg_endpoint {
-	struct rpmsg_channel *rpdev;
+	struct rpmsg_device *rpdev;
 	struct kref refcount;
 	rpmsg_rx_cb_t cb;
 	struct mutex cb_lock;
@@ -162,17 +162,17 @@ struct rpmsg_endpoint {
 struct rpmsg_driver {
 	struct device_driver drv;
 	const struct rpmsg_device_id *id_table;
-	int (*probe)(struct rpmsg_channel *dev);
-	void (*remove)(struct rpmsg_channel *dev);
-	void (*callback)(struct rpmsg_channel *, void *, int, void *, u32);
+	int (*probe)(struct rpmsg_device *dev);
+	void (*remove)(struct rpmsg_device *dev);
+	void (*callback)(struct rpmsg_device *, void *, int, void *, u32);
 };
 
-int register_rpmsg_device(struct rpmsg_channel *dev);
-void unregister_rpmsg_device(struct rpmsg_channel *dev);
+int register_rpmsg_device(struct rpmsg_device *dev);
+void unregister_rpmsg_device(struct rpmsg_device *dev);
 int __register_rpmsg_driver(struct rpmsg_driver *drv, struct module *owner);
 void unregister_rpmsg_driver(struct rpmsg_driver *drv);
 void rpmsg_destroy_ept(struct rpmsg_endpoint *);
-struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_channel *,
+struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_device *,
 				rpmsg_rx_cb_t cb, void *priv, u32 addr);
 
 /* use a macro to avoid include chaining to get THIS_MODULE */
@@ -191,14 +191,14 @@ struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_channel *,
 	module_driver(__rpmsg_driver, register_rpmsg_driver, \
 			unregister_rpmsg_driver)
 
-int rpmsg_send(struct rpmsg_channel *rpdev, void *data, int len);
-int rpmsg_sendto(struct rpmsg_channel *rpdev, void *data, int len, u32 dst);
-int rpmsg_send_offchannel(struct rpmsg_channel *rpdev, u32 src, u32 dst,
+int rpmsg_send(struct rpmsg_device *rpdev, void *data, int len);
+int rpmsg_sendto(struct rpmsg_device *rpdev, void *data, int len, u32 dst);
+int rpmsg_send_offchannel(struct rpmsg_device *rpdev, u32 src, u32 dst,
 			  void *data, int len);
 
-int rpmsg_trysend(struct rpmsg_channel *rpdev, void *data, int len);
-int rpmsg_trysendto(struct rpmsg_channel *rpdev, void *data, int len, u32 dst);
-int rpmsg_trysend_offchannel(struct rpmsg_channel *rpdev, u32 src, u32 dst,
+int rpmsg_trysend(struct rpmsg_device *rpdev, void *data, int len);
+int rpmsg_trysendto(struct rpmsg_device *rpdev, void *data, int len, u32 dst);
+int rpmsg_trysend_offchannel(struct rpmsg_device *rpdev, u32 src, u32 dst,
 			     void *data, int len);
 
 #endif /* _LINUX_RPMSG_H */
