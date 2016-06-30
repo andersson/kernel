@@ -23,23 +23,12 @@
 #define to_rpmsg_device(d) container_of(d, struct rpmsg_device, dev)
 #define to_rpmsg_driver(d) container_of(d, struct rpmsg_driver, drv)
 
-/**
- * struct rpmsg_channel_info - internal channel info representation
- * @name: name of service
- * @src: local address
- * @dst: destination address
- */
-struct rpmsg_channel_info {
-	char name[RPMSG_NAME_SIZE];
-	u32 src;
-	u32 dst;
-};
-
 struct rpmsg_channel {
 	struct rpmsg_device rpdev;
 
 	struct rpmsg_endpoint *(*create_ept)(struct rpmsg_device *rpdev,
-					    rpmsg_rx_cb_t cb, void *priv, u32 addr);
+					    rpmsg_rx_cb_t cb, void *priv,
+					    struct rpmsg_channel_info chinfo);
 	void (*destroy_ept)(struct rpmsg_endpoint *ept);
 
 	int (*send)(struct rpmsg_endpoint *ept, void *data, int len);
