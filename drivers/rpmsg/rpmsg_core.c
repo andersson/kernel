@@ -33,6 +33,7 @@
 #include <linux/wait.h>
 #include <linux/rpmsg.h>
 #include <linux/mutex.h>
+#include <linux/of_device.h>
 
 #include "rpmsg_internal.h"
 
@@ -310,7 +311,7 @@ static int rpmsg_dev_match(struct device *dev, struct device_driver *drv)
 		if (rpmsg_id_match(rpdev, &ids[i]))
 			return 1;
 
-	return 0;
+	return of_driver_match_device(dev, drv);
 }
 
 static int rpmsg_uevent(struct device *dev, struct kobj_uevent_env *env)
