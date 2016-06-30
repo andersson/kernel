@@ -78,10 +78,11 @@
  * Returns a pointer to the endpoint on success, or NULL on error.
  */
 struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_device *rpdev,
-				rpmsg_rx_cb_t cb, void *priv, u32 addr)
+				rpmsg_rx_cb_t cb, void *priv,
+				struct rpmsg_channel_info chinfo)
 {
 	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
-	return rpch->create_ept(rpdev, cb, priv, addr);
+	return rpch->create_ept(rpdev, cb, priv, chinfo);
 }
 EXPORT_SYMBOL(rpmsg_create_ept);
 
@@ -328,10 +329,15 @@ static int rpmsg_dev_probe(struct device *dev)
 	struct rpmsg_channel *rpch = to_rpmsg_channel(dev);
 	struct rpmsg_device *rpdev = to_rpmsg_device(dev);
 	struct rpmsg_driver *rpdrv = to_rpmsg_driver(rpdev->dev.driver);
+	struct rpmsg_channel_info chinfo = {};
 	struct rpmsg_endpoint *ept;
 	int err;
 
-	ept = rpmsg_create_ept(rpdev, rpdrv->callback, NULL, rpdev->src);
+	strncpy(chinfo.name, rpdev->id.name, RPMSG_NAME_SIZE);
+	chinfo.src = rpdev->src;
+	chinfo.dst = RPMSG_ADDR_ANY;
+
+	ept = rpmsg_create_ept(rpdev, rpdrv->callback, NULL, chinfo);
 	if (!ept) {
 		dev_err(dev, "failed to create endpoint\n");
 		err = -ENOMEM;
