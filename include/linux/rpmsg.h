@@ -101,6 +101,18 @@ struct rpmsg_endpoint;
 typedef void (*rpmsg_rx_cb_t)(struct rpmsg_device *, void *, int, void *, u32);
 
 /**
+ * struct rpmsg_channel_info - internal channel info representation
+ * @name: name of service
+ * @src: local address
+ * @dst: destination address
+ */
+struct rpmsg_channel_info {
+	char name[RPMSG_NAME_SIZE];
+	u32 src;
+	u32 dst;
+};
+
+/**
  * rpmsg_device - device that belong to the rpmsg bus
  * @dev: the device struct
  * @id: device id (used to match between rpmsg drivers and devices)
@@ -172,7 +184,8 @@ int __register_rpmsg_driver(struct rpmsg_driver *drv, struct module *owner);
 void unregister_rpmsg_driver(struct rpmsg_driver *drv);
 void rpmsg_destroy_ept(struct rpmsg_endpoint *);
 struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_device *,
-				rpmsg_rx_cb_t cb, void *priv, u32 addr);
+				rpmsg_rx_cb_t cb, void *priv,
+				struct rpmsg_channel_info chinfo);
 
 /* use a macro to avoid include chaining to get THIS_MODULE */
 #define register_rpmsg_driver(drv) \

@@ -204,10 +204,11 @@ free_ept:
 
 static struct rpmsg_endpoint *virtio_rpmsg_create_ept(struct rpmsg_device *rpdev,
 						      rpmsg_rx_cb_t cb,
-						      void *priv, u32 addr)
+						      void *priv,
+						      struct rpmsg_channel_info chinfo)
 {
 	struct virtio_rpmsg_channel *vch = to_virtio_rpmsg_channel(&rpdev->dev);
-	return __rpmsg_create_ept(vch->vrp, rpdev, cb, priv, addr);
+	return __rpmsg_create_ept(vch->vrp, rpdev, cb, priv, chinfo.src);
 }
 
 /**
