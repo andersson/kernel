@@ -42,14 +42,14 @@ struct rpmsg_channel {
 					    rpmsg_rx_cb_t cb, void *priv, u32 addr);
 	void (*destroy_ept)(struct rpmsg_endpoint *ept);
 
-	int (*send)(struct rpmsg_device *rpdev, void *data, int len);
-	int (*sendto)(struct rpmsg_device *rpdev, void *data, int len, u32 dst);
-	int (*send_offchannel)(struct rpmsg_device *rpdev, u32 src, u32 dst,
+	int (*send)(struct rpmsg_endpoint *ept, void *data, int len);
+	int (*sendto)(struct rpmsg_endpoint *ept, void *data, int len, u32 dst);
+	int (*send_offchannel)(struct rpmsg_endpoint *ept, u32 src, u32 dst,
 				  void *data, int len);
 
-	int (*trysend)(struct rpmsg_device *rpdev, void *data, int len);
-	int (*trysendto)(struct rpmsg_device *rpdev, void *data, int len, u32 dst);
-	int (*trysend_offchannel)(struct rpmsg_device *rpdev, u32 src, u32 dst,
+	int (*trysend)(struct rpmsg_endpoint *ept, void *data, int len);
+	int (*trysendto)(struct rpmsg_endpoint *ept, void *data, int len, u32 dst);
+	int (*trysend_offchannel)(struct rpmsg_endpoint *ept, u32 src, u32 dst,
 			     void *data, int len);
 	int (*announce_create)(struct rpmsg_device *rpdev);
 	int (*announce_destroy)(struct rpmsg_device *rpdev);

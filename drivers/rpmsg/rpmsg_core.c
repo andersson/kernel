@@ -115,10 +115,10 @@ EXPORT_SYMBOL(rpmsg_destroy_ept);
  *
  * Returns 0 on success and an appropriate error value on failure.
  */
-int rpmsg_send(struct rpmsg_device *rpdev, void *data, int len)
+int rpmsg_send(struct rpmsg_endpoint *ept, void *data, int len)
 {
-	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
-	return rpch->send(rpdev, data, len);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&ept->rpdev->dev);
+	return rpch->send(ept, data, len);
 }
 EXPORT_SYMBOL(rpmsg_send);
 
@@ -140,10 +140,10 @@ EXPORT_SYMBOL(rpmsg_send);
  *
  * Returns 0 on success and an appropriate error value on failure.
  */
-int rpmsg_sendto(struct rpmsg_device *rpdev, void *data, int len, u32 dst)
+int rpmsg_sendto(struct rpmsg_endpoint *ept, void *data, int len, u32 dst)
 {
-	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
-	return rpch->sendto(rpdev, data, len, dst);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&ept->rpdev->dev);
+	return rpch->sendto(ept, data, len, dst);
 }
 EXPORT_SYMBOL(rpmsg_sendto);
 
@@ -167,11 +167,11 @@ EXPORT_SYMBOL(rpmsg_sendto);
  *
  * Returns 0 on success and an appropriate error value on failure.
  */
-int rpmsg_send_offchannel(struct rpmsg_device *rpdev, u32 src, u32 dst,
+int rpmsg_send_offchannel(struct rpmsg_endpoint *ept, u32 src, u32 dst,
 			  void *data, int len)
 {
-	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
-	return rpch->send_offchannel(rpdev, src, dst, data, len);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&ept->rpdev->dev);
+	return rpch->send_offchannel(ept, src, dst, data, len);
 }
 EXPORT_SYMBOL(rpmsg_send_offchannel);
 
@@ -191,10 +191,10 @@ EXPORT_SYMBOL(rpmsg_send_offchannel);
  *
  * Returns 0 on success and an appropriate error value on failure.
  */
-int rpmsg_trysend(struct rpmsg_device *rpdev, void *data, int len)
+int rpmsg_trysend(struct rpmsg_endpoint *ept, void *data, int len)
 {
-	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
-	return rpch->trysend(rpdev, data, len);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&ept->rpdev->dev);
+	return rpch->trysend(ept, data, len);
 }
 EXPORT_SYMBOL(rpmsg_trysend);
 
@@ -215,10 +215,10 @@ EXPORT_SYMBOL(rpmsg_trysend);
  *
  * Returns 0 on success and an appropriate error value on failure.
  */
-int rpmsg_trysendto(struct rpmsg_device *rpdev, void *data, int len, u32 dst)
+int rpmsg_trysendto(struct rpmsg_endpoint *ept, void *data, int len, u32 dst)
 {
-	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
-	return rpch->trysendto(rpdev, data, len, dst);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&ept->rpdev->dev);
+	return rpch->trysendto(ept, data, len, dst);
 }
 EXPORT_SYMBOL(rpmsg_trysendto);
 
@@ -241,11 +241,11 @@ EXPORT_SYMBOL(rpmsg_trysendto);
  *
  * Returns 0 on success and an appropriate error value on failure.
  */
-int rpmsg_trysend_offchannel(struct rpmsg_device *rpdev, u32 src, u32 dst,
+int rpmsg_trysend_offchannel(struct rpmsg_endpoint *ept, u32 src, u32 dst,
 			     void *data, int len)
 {
-	struct rpmsg_channel *rpch = to_rpmsg_channel(&rpdev->dev);
-	return rpch->trysend_offchannel(rpdev, src, dst, data, len);
+	struct rpmsg_channel *rpch = to_rpmsg_channel(&ept->rpdev->dev);
+	return rpch->trysend_offchannel(ept, src, dst, data, len);
 }
 EXPORT_SYMBOL(rpmsg_trysend_offchannel);
 

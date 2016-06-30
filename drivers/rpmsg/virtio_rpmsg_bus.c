@@ -120,15 +120,15 @@ static inline struct virtio_rpmsg_channel *to_virtio_rpmsg_channel(struct device
 /* Address 53 is reserved for advertising remote services */
 #define RPMSG_NS_ADDR			(53)
 
-static int virtio_rpmsg_send(struct rpmsg_device *rpdev, void *data, int len);
-static int virtio_rpmsg_sendto(struct rpmsg_device *rpdev, void *data, int len,
+static int virtio_rpmsg_send(struct rpmsg_endpoint *ept, void *data, int len);
+static int virtio_rpmsg_sendto(struct rpmsg_endpoint *ept, void *data, int len,
 			       u32 dst);
-static int virtio_rpmsg_send_offchannel(struct rpmsg_device *rpdev, u32 src,
+static int virtio_rpmsg_send_offchannel(struct rpmsg_endpoint *ept, u32 src,
 					u32 dst, void *data, int len);
-static int virtio_rpmsg_trysend(struct rpmsg_device *rpdev, void *data, int len);
-static int virtio_rpmsg_trysendto(struct rpmsg_device *rpdev, void *data,
+static int virtio_rpmsg_trysend(struct rpmsg_endpoint *ept, void *data, int len);
+static int virtio_rpmsg_trysendto(struct rpmsg_endpoint *ept, void *data,
 				  int len, u32 dst);
-static int virtio_rpmsg_trysend_offchannel(struct rpmsg_device *rpdev, u32 src,
+static int virtio_rpmsg_trysend_offchannel(struct rpmsg_endpoint *ept, u32 src,
 					   u32 dst, void *data, int len);
 
 /**
@@ -258,7 +258,7 @@ static int virtio_rpmsg_announce_create(struct rpmsg_device *rpdev)
 		nsm.addr = rpdev->src;
 		nsm.flags = RPMSG_NS_CREATE;
 
-		err = rpmsg_sendto(rpdev, &nsm, sizeof(nsm), RPMSG_NS_ADDR);
+		err = rpmsg_sendto(rpdev->ept, &nsm, sizeof(nsm), RPMSG_NS_ADDR);
 		if (err)
 			dev_err(dev, "failed to announce service %d\n", err);
 	}
@@ -282,7 +282,7 @@ static int virtio_rpmsg_announce_destroy(struct rpmsg_device *rpdev)
 		nsm.addr = rpdev->src;
 		nsm.flags = RPMSG_NS_DESTROY;
 
-		err = rpmsg_sendto(rpdev, &nsm, sizeof(nsm), RPMSG_NS_ADDR);
+		err = rpmsg_sendto(rpdev->ept, &nsm, sizeof(nsm), RPMSG_NS_ADDR);
 		if (err)
 			dev_err(dev, "failed to announce service %d\n", err);
 	}
@@ -565,45 +565,51 @@ out:
 	return err;
 }
 
-static int virtio_rpmsg_send(struct rpmsg_device *rpdev, void *data, int len)
+static int virtio_rpmsg_send(struct rpmsg_endpoint *ept, void *data, int len)
 {
+	struct rpmsg_device *rpdev = ept->rpdev;
 	u32 src = rpdev->src, dst = rpdev->dst;
 
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, true);
 }
 
-static int virtio_rpmsg_sendto(struct rpmsg_device *rpdev, void *data, int len,
+static int virtio_rpmsg_sendto(struct rpmsg_endpoint *ept, void *data, int len,
 			       u32 dst)
 {
+	struct rpmsg_device *rpdev = ept->rpdev;
 	u32 src = rpdev->src;
 
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, true);
 }
 
-static int virtio_rpmsg_send_offchannel(struct rpmsg_device *rpdev, u32 src,
+static int virtio_rpmsg_send_offchannel(struct rpmsg_endpoint *ept, u32 src,
 					u32 dst, void *data, int len)
 {
+	struct rpmsg_device *rpdev = ept->rpdev;
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, true);
 }
 
-static int virtio_rpmsg_trysend(struct rpmsg_device *rpdev, void *data, int len)
+static int virtio_rpmsg_trysend(struct rpmsg_endpoint *ept, void *data, int len)
 {
+	struct rpmsg_device *rpdev = ept->rpdev;
 	u32 src = rpdev->src, dst = rpdev->dst;
 
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, false);
 }
 
-static int virtio_rpmsg_trysendto(struct rpmsg_device *rpdev, void *data,
+static int virtio_rpmsg_trysendto(struct rpmsg_endpoint *ept, void *data,
 				  int len, u32 dst)
 {
+	struct rpmsg_device *rpdev = ept->rpdev;
 	u32 src = rpdev->src;
 
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, false);
 }
 
-static int virtio_rpmsg_trysend_offchannel(struct rpmsg_device *rpdev, u32 src,
+static int virtio_rpmsg_trysend_offchannel(struct rpmsg_endpoint *ept, u32 src,
 					   u32 dst, void *data, int len)
 {
+	struct rpmsg_device *rpdev = ept->rpdev;
 	return rpmsg_send_offchannel_raw(rpdev, src, dst, data, len, false);
 }
 
