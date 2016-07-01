@@ -46,7 +46,7 @@
 struct rpmsg_device;
 struct rpmsg_endpoint;
 
-typedef void (*rpmsg_rx_cb_t)(struct rpmsg_device *, void *, int, void *, u32);
+typedef int (*rpmsg_rx_cb_t)(struct rpmsg_device *, void *, int, void *, u32);
 
 /**
  * struct rpmsg_channel_info - internal channel info representation
@@ -123,7 +123,7 @@ struct rpmsg_driver {
 	const struct rpmsg_device_id *id_table;
 	int (*probe)(struct rpmsg_device *dev);
 	void (*remove)(struct rpmsg_device *dev);
-	void (*callback)(struct rpmsg_device *, void *, int, void *, u32);
+	int (*callback)(struct rpmsg_device *, void *, int, void *, u32);
 };
 
 int register_rpmsg_device(struct rpmsg_device *dev);
