@@ -3,7 +3,10 @@ menu "Rpmsg drivers"
 # RPMSG always gets selected by whoever wants it
 config RPMSG
 	tristate
-	select VIRTIO
-	select VIRTUALIZATION
+
+config RPMSG_VIRTIO
+	tristate
+	select RPMSG
+
 
 endmenu
