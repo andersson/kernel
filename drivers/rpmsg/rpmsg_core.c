@@ -358,7 +358,10 @@ static int rpmsg_dev_probe(struct device *dev)
 	struct rpmsg_endpoint *ept;
 	int err;
 
+	strncpy(chinfo.name, rpdev->id.name, RPMSG_NAME_SIZE);
 	chinfo.src = rpdev->src;
+	chinfo.dst = RPMSG_ADDR_ANY;
+
 	ept = rpmsg_create_ept(rpdev, rpdrv->callback, NULL, chinfo);
 	if (!ept) {
 		dev_err(dev, "failed to create endpoint\n");
