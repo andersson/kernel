@@ -308,9 +308,10 @@ static int rpmsg_dev_match(struct device *dev, struct device_driver *drv)
 	const struct rpmsg_device_id *ids = rpdrv->id_table;
 	unsigned int i;
 
-	for (i = 0; ids[i].name[0]; i++)
-		if (rpmsg_id_match(rpdev, &ids[i]))
-			return 1;
+	if (ids)
+		for (i = 0; ids[i].name[0]; i++)
+			if (rpmsg_id_match(rpdev, &ids[i]))
+				return 1;
 
 	return of_driver_match_device(dev, drv);
 }
