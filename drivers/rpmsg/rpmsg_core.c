@@ -407,8 +407,7 @@ int rpmsg_register_device(struct rpmsg_device *rpdev)
 	struct device *dev = &rpdev->dev;
 	int ret;
 
-	/* very simple device indexing plumbing which is enough for now */
-	dev_set_name(&rpdev->dev, "rpmsg%d", rpmsg_dev_index++);
+	dev_set_name(&rpdev->dev, "%s:%s", dev_name(dev->parent), rpdev->id.name);
 
 	rpdev->dev.bus = &rpmsg_bus;
 	rpdev->dev.release = rpmsg_release_device;
