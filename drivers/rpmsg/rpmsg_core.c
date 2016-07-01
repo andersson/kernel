@@ -331,7 +331,8 @@ static int rpmsg_dev_remove(struct device *dev)
 	struct rpmsg_driver *rpdrv = to_rpmsg_driver(rpdev->dev.driver);
 	int err = 0;
 
-	err = rpch->announce_destroy(rpdev);
+	if (rpch->announce_destroy)
+		err = rpch->announce_destroy(rpdev);
 
 	rpdrv->remove(rpdev);
 
@@ -375,7 +376,9 @@ static int rpmsg_dev_probe(struct device *dev)
 		goto out;
 	}
 
-	err = rpch->announce_create(rpdev);
+	if (rpch->announce_create)
+		err = rpch->announce_create(rpdev);
+
 out:
 	return err;
 }
