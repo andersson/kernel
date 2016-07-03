@@ -59,18 +59,6 @@
 	};
 
 	smd {
-		pronto {
-			status = "ok";
-
-			wcnss {
-				status = "ok";
-
-				wifi {
-					local-mac-address = [ 18 00 2d 88 9c a9 ];
-				};
-			};
-		};
-
 		rpm {
 			rpm_requests {
 				pm8841-regulators {
@@ -328,6 +316,19 @@
 
 		pinctrl-names = "default";
 		pinctrl-0 = <&wcnss_pin_a>;
+
+		smd-edge {
+			status = "ok";
+
+			wcnss {
+				status = "ok";
+
+				wifi {
+					local-mac-address = [ 18 00 2d 88 9c a9 ];
+				};
+			};
+		};
+
 	};
 
 	pinctrl@fd510000 {

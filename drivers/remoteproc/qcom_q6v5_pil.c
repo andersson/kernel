@@ -875,6 +875,8 @@ static int q6v5_probe(struct platform_device *pdev)
 	if (IS_ERR(qproc->state))
 		goto free_rproc;
 
+	rproc->smd_node = of_get_child_by_name(pdev->dev.of_node, "smd-edge");
+
 	ret = rproc_add(rproc);
 	if (ret)
 		goto free_rproc;
