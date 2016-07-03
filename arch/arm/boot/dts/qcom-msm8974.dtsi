@@ -524,6 +524,13 @@
 			mpss {
 				memory-region = <&mpss_region>;
 			};
+
+			smd-edge {
+				interrupts = <0 25 IRQ_TYPE_EDGE_RISING>;
+
+				qcom,ipc = <&apcs 8 12>;
+				qcom,smd-edge = <0>;
+			};
 		};
 
 		pronto: wcnss-rproc@fb202000 {
@@ -557,6 +564,36 @@
 				vddrfa-supply = <&pm8941_l11>;
 				vddpa-supply = <&pm8941_l19>;
 				vdddig-supply = <&pm8941_s3>;
+			};
+
+			smd-edge {
+				status = "disabled";
+				interrupts = <0 142 IRQ_TYPE_EDGE_RISING>;
+
+				qcom,ipc = <&apcs 8 17>;
+				qcom,smd-edge = <6>;
+
+				wcnss {
+					compatible = "qcom,wcnss";
+					qcom,smd-channels = "WCNSS_CTRL";
+					status = "disabled";
+
+					qcom,mmio = <&pronto>;
+
+					bt {
+						compatible = "qcom,wcnss-bt";
+					};
+
+					wifi {
+						compatible = "qcom,wcnss-wlan";
+
+						interrupts = <0 145 0>, <0 146 0>;
+						interrupt-names = "tx", "rx";
+
+						qcom,smem-states = <&apps_smsm 10>, <&apps_smsm 9>;
+						qcom,smem-state-names = "tx-enable", "tx-rings-empty";
+					};
+				};
 			};
 		};
 
@@ -794,43 +831,6 @@
 
 	smd {
 		compatible = "qcom,smd";
-
-		modem {
-			interrupts = <0 25 IRQ_TYPE_EDGE_RISING>;
-
-			qcom,ipc = <&apcs 8 12>;
-			qcom,smd-edge = <0>;
-		};
-
-		pronto {
-			status = "disabled";
-			interrupts = <0 142 IRQ_TYPE_EDGE_RISING>;
-
-			qcom,ipc = <&apcs 8 17>;
-			qcom,smd-edge = <6>;
-
-			wcnss {
-				compatible = "qcom,wcnss";
-				qcom,smd-channels = "WCNSS_CTRL";
-				status = "disabled";
-
-				qcom,mmio = <&pronto>;
-
-				bt {
-					compatible = "qcom,wcnss-bt";
-				};
-
-				wifi {
-					compatible = "qcom,wcnss-wlan";
-
-					interrupts = <0 145 0>, <0 146 0>;
-					interrupt-names = "tx", "rx";
-
-					qcom,smem-states = <&apps_smsm 10>, <&apps_smsm 9>;
-					qcom,smem-state-names = "tx-enable", "tx-rings-empty";
-				};
-			};
-		};
 
 		rpm {
 			interrupts = <0 168 1>;

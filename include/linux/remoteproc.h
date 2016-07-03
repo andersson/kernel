@@ -379,6 +379,8 @@ enum rproc_crash_type {
 	RPROC_FATAL_ERROR,
 };
 
+struct qcom_smd_edge;
+
 /**
  * struct rproc - represents a physical remote processor device
  * @node: list node of this rproc object
@@ -443,6 +445,9 @@ struct rproc {
 	struct resource_table *cached_table;
 	u32 table_csum;
 	bool has_iommu;
+
+	struct qcom_smd_edge *smd_edge;
+	struct device_node *smd_node;
 };
 
 /* we currently support only two vrings per rvdev */

@@ -52,6 +52,9 @@ typedef int (*rproc_handle_resources_t)(struct rproc *rproc,
 typedef int (*rproc_handle_resource_t)(struct rproc *rproc,
 				 void *, int offset, int avail);
 
+extern struct qcom_smd_edge *qcom_smd_register_edge(struct device *parent, struct device_node *node);
+extern int qcom_smd_unregister_edge(struct qcom_smd_edge *edge);
+
 /* Unique indices for remoteproc devices */
 static DEFINE_IDA(rproc_dev_index);
 
@@ -843,6 +846,14 @@ static int rproc_fw_boot(struct rproc *rproc, const struct firmware *fw)
 		goto clean_up;
 	}
 
+	if (rproc->smd_node) {
+		rproc->smd_edge = qcom_smd_register_edge(&rproc->dev, rproc->smd_node);
+		if (IS_ERR(rproc->smd_edge)) {
+			dev_err(&rproc->dev, "failed to register smd edge\n");
+			rproc->smd_edge = NULL;
+		}
+	}
+
 	/* load the ELF segments to memory */
 	ret = rproc_load_segments(rproc, fw);
 	if (ret) {
@@ -987,11 +998,30 @@ int rproc_trigger_recovery(struct rproc *rproc)
 	list_for_each_entry_safe(rvdev, rvtmp, &rproc->rvdevs, node)
 		rproc_remove_virtio_dev(rvdev);
 
+	if (rproc->smd_edge) {
+		rproc->ops->stop(rproc);
+
+		qcom_smd_unregister_edge(rproc->smd_edge);
+		rproc->smd_edge = NULL;
+		complete(&rproc->crash_comp);
+	}
+
 	/* wait until there is no more rproc users */
 	wait_for_completion(&rproc->crash_comp);
 
 	/* Free the copy of the resource table */
 	kfree(rproc->cached_table);
+
+	if (rproc->smd_node) {
+		rproc->smd_edge = qcom_smd_register_edge(&rproc->dev, rproc->smd_node);
+		if (IS_ERR(rproc->smd_edge)) {
+			dev_err(&rproc->dev, "failed to register smd edge\n");
+			rproc->smd_edge = NULL;
+		}
+
+		rproc->ops->start(rproc);
+		rproc->state = RPROC_RUNNING;
+	}
 
 	return rproc_add_virtio_devices(rproc);
 }
@@ -1159,6 +1189,11 @@ void rproc_shutdown(struct rproc *rproc)
 	/* if the remote proc is still needed, bail out */
 	if (!atomic_dec_and_test(&rproc->power))
 		goto out;
+
+	if (rproc->smd_edge) {
+		qcom_smd_unregister_edge(rproc->smd_edge);
+		rproc->smd_edge = NULL;
+	}
 
 	/* power off the remote processor */
 	ret = rproc->ops->stop(rproc);
