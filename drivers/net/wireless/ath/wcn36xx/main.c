@@ -1193,14 +1193,12 @@ static int wcn36xx_probe(struct platform_device *pdev)
 
 	INIT_WORK(&wcn->scan_work, wcn36xx_hw_scan_worker);
 
-	wcn->smd_channel = qcom_wcnss_open_channel(wcnss, "WLAN_CTRL", wcn36xx_smd_rsp_process);
+	wcn->smd_channel = qcom_wcnss_open_channel(wcnss, "WLAN_CTRL", wcn36xx_smd_rsp_process, hw);
 	if (IS_ERR(wcn->smd_channel)) {
 		wcn36xx_err("failed to open WLAN_CTRL channel\n");
 		ret = PTR_ERR(wcn->smd_channel);
 		goto out_wq;
 	}
-
-	qcom_smd_set_drvdata(wcn->smd_channel, hw);
 
 	addr = of_get_property(pdev->dev.of_node, "local-mac-address", &ret);
 	if (addr && ret != ETH_ALEN) {
@@ -1243,7 +1241,7 @@ static int wcn36xx_remove(struct platform_device *pdev)
 
 	ieee80211_unregister_hw(hw);
 
-	qcom_smd_close_channel(wcn->smd_channel);
+	rpmsg_destroy_ept(wcn->smd_channel);
 
 	qcom_smem_state_put(wcn->tx_enable_state);
 	qcom_smem_state_put(wcn->tx_rings_empty_state);
