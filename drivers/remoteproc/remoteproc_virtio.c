@@ -138,9 +138,6 @@ static void rproc_virtio_del_vqs(struct virtio_device *vdev)
 {
 	struct rproc *rproc = vdev_to_rproc(vdev);
 
-	/* power down the remote processor before deleting vqs */
-	rproc_shutdown(rproc);
-
 	__rproc_virtio_del_vqs(vdev);
 }
 
@@ -158,13 +155,6 @@ static int rproc_virtio_find_vqs(struct virtio_device *vdev, unsigned nvqs,
 			ret = PTR_ERR(vqs[i]);
 			goto error;
 		}
-	}
-
-	/* now that the vqs are all set, boot the remote processor */
-	ret = rproc_boot_nowait(rproc);
-	if (ret) {
-		dev_err(&rproc->dev, "rproc_boot() failed %d\n", ret);
-		goto error;
 	}
 
 	return 0;
