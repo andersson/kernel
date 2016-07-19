@@ -1362,7 +1362,6 @@ static int mmc_select_hs200(struct mmc_card *card)
 		if (err)
 			goto err;
 		old_timing = host->ios.timing;
-		mmc_set_timing(host, MMC_TIMING_MMC_HS200);
 
 		err = mmc_switch_status(card);
 		/*
@@ -1371,6 +1370,7 @@ static int mmc_select_hs200(struct mmc_card *card)
 		 */
 		if (err == -EBADMSG)
 			mmc_set_timing(host, old_timing);
+		mmc_set_timing(host, MMC_TIMING_MMC_HS200);
 	}
 err:
 	if (err) {
