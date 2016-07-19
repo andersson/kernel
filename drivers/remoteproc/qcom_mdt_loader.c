@@ -21,6 +21,9 @@
 #include <linux/module.h>
 #include <linux/remoteproc.h>
 #include <linux/slab.h>
+#include <linux/stddef.h>
+
+#include <uapi/linux/virtio_ids.h>
 
 #include "remoteproc_internal.h"
 #include "qcom_mdt_loader.h"
@@ -37,10 +40,32 @@ struct resource_table *qcom_mdt_find_rsc_table(struct rproc *rproc,
 					       const struct firmware *fw,
 					       int *tablesz)
 {
-	static struct resource_table table = { .ver = 1, };
+	struct mytable {
+		struct resource_table hdr;
+		u32 offsets[1];
+
+		struct fw_rsc_hdr vdev_hdr;
+		struct fw_rsc_vdev vdev;
+		struct fw_rsc_vdev_vring vring[2];
+	} __packed;
+
+	static struct mytable table = {};
+
+	table.hdr.ver = 1;
+	table.hdr.num = 1;
+	table.offsets[0] = offsetof(struct mytable, vdev_hdr);
+	table.vdev_hdr.type = RSC_VDEV;
+	table.vdev.id = VIRTIO_ID_RPMSG;
+	table.vdev.num_of_vrings = 2;
+	table.vring[0].da = 0;
+	table.vring[0].align = 4096;
+	table.vring[0].num = 16;
+	table.vring[1].da = 0;
+	table.vring[1].align = 4096;
+	table.vring[1].num = 16;
 
 	*tablesz = sizeof(table);
-	return &table;
+	return &table.hdr;
 }
 EXPORT_SYMBOL_GPL(qcom_mdt_find_rsc_table);
 

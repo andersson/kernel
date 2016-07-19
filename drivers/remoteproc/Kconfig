@@ -87,6 +87,7 @@ config QCOM_Q6V5_PIL
 	select MFD_SYSCON
 	select QCOM_MDT_LOADER
 	select REMOTEPROC
+	select RPMSG
 	help
 	  Say y here to support the Qualcomm Peripherial Image Loader for the
 	  Hexagon V5 based remote processors.
