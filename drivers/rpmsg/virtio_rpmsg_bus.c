@@ -342,6 +342,19 @@ static int virtio_rpmsg_announce_destroy(struct rpmsg_device *rpdev)
 	return err;
 }
 
+static const struct rpmsg_channel virtio_rpmsg_ops = {
+	.create_ept = virtio_rpmsg_create_ept,
+	.destroy_ept = virtio_rpmsg_destroy_ept,
+	.send = virtio_rpmsg_send,
+	.sendto = virtio_rpmsg_sendto,
+	.send_offchannel = virtio_rpmsg_send_offchannel,
+	.trysend = virtio_rpmsg_trysend,
+	.trysendto = virtio_rpmsg_trysendto,
+	.trysend_offchannel = virtio_rpmsg_trysend_offchannel,
+	.announce_create = virtio_rpmsg_announce_create,
+	.announce_destroy = virtio_rpmsg_announce_destroy,
+};
+
 /*
  * create an rpmsg channel using its name and address info.
  * this function will be used to create both static and dynamic
@@ -372,21 +385,14 @@ static struct rpmsg_device *rpmsg_create_channel(struct virtproc_info *vrp,
 		return NULL;
 	}
 
+	/* Link the channel to our vrp */
 	vch->vrp = vrp;
 
-	rpch = &vch->rpch;
-	rpch->create_ept = virtio_rpmsg_create_ept;
-	rpch->destroy_ept = virtio_rpmsg_destroy_ept;
-	rpch->send = virtio_rpmsg_send;
-	rpch->sendto = virtio_rpmsg_sendto;
-	rpch->send_offchannel = virtio_rpmsg_send_offchannel;
-	rpch->trysend = virtio_rpmsg_trysend;
-	rpch->trysendto = virtio_rpmsg_trysendto;
-	rpch->trysend_offchannel = virtio_rpmsg_trysend_offchannel;
-	rpch->announce_create = virtio_rpmsg_announce_create;
-	rpch->announce_destroy = virtio_rpmsg_announce_destroy;
+	/* Assign callbacks for rpmsg_channel */
+	vch->rpch = virtio_rpmsg_ops;
 
-	rpdev = &rpch->rpdev;
+	/* Assign public information to the rpmsg_device */
+	rpdev = &vch->rpch.rpdev;
 	rpdev->src = chinfo->src;
 	rpdev->dst = chinfo->dst;
 
