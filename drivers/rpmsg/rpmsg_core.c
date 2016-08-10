@@ -338,9 +338,9 @@ static int rpmsg_dev_probe(struct device *dev)
 	chinfo.dst = RPMSG_ADDR_ANY;
 
 	ept = rpmsg_create_ept(rpdev, rpdrv->callback, NULL, chinfo);
-	if (!ept) {
+	if (IS_ERR(ept)) {
 		dev_err(dev, "failed to create endpoint\n");
-		err = -ENOMEM;
+		err = -PTR_ERR(ept);
 		goto out;
 	}
 
