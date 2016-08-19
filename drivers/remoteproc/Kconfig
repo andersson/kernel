@@ -107,6 +107,18 @@ config QCOM_WCNSS_PIL
 	  Say y here to support the Peripheral Image Loader for the Qualcomm
 	  Wireless Connectivity Subsystem.
 
+config QCOM_VENUS_PIL
+	tristate "Qualcomm Venus Peripheral Image Loader"
+	depends on OF && ARCH_QCOM
+	depends on QCOM_SCM
+	select QCOM_MDT_LOADER
+	select REMOTEPROC
+	help
+	  Say y here to support Qualcomm Peripherial Image Loader for the
+	  Venus remote processor. The Venus remote processor is a
+	  micro-controller plus dedicated hardware for video acceleration
+	  of video decoding and encoding operations.
+
 config ST_REMOTEPROC
 	tristate "ST remoteproc support"
 	depends on ARCH_STI
