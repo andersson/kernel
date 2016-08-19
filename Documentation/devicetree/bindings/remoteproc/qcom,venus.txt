@@ -1,0 +1,33 @@
+Qualcomm Venus Peripheral Image Loader
+
+This document defines the binding for a component that loads and boots firmware
+on the Qualcomm Venus remote processor core.
+
+- compatible:
+	Usage: required
+	Value type: <string>
+	Definition: must contain "qcom,venus-pil"
+
+- memory-region:
+	Usage: required
+	Value type: <phandle>
+	Definition: a phandle to a node describing reserved memory
+
+* An example
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		venus_mem: venus@89900000 {
+			compatible = "shared-dma-pool";
+			reg = <0x0 0x89900000 0x0 0x800000>;
+			alignment = <0x1000>;
+			no-map;
+		};
+	};
+
+	rproc-venus {
+		compatible = "qcom,venus-pil";
+		memory-region = <&venus_mem>;
+	};
