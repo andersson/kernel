@@ -102,4 +102,7 @@
 #define RPM_SMD_CXO_A2_PIN			60
 #define RPM_SMD_CXO_A2_A_PIN			61
 
+#define MSM8996_RPM_SMD_LN_BB_CLK		70
+#define MSM8996_RPM_SMD_LN_BB_A_CLK		71
+
 #endif
