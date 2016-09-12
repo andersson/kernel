@@ -396,6 +396,17 @@
 			status = "disabled";
 		};
 
+		qfprom: qfprom@74000 {
+			compatible = "qcom,qfprom";
+			reg = <0x00074000 0x8ff>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			qusb2p_hstx_trim: hstx_trim@24e {
+				reg = <0x24e 0x2>;
+				bits = <5 4>;
+			};
+		};
+
 		sdhc2: sdhci@74a4900 {
 			 status = "disabled";
 			 compatible = "qcom,sdhci-msm-v4";
