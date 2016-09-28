@@ -134,6 +134,9 @@ static int qcom_scm_call(struct device *dev, u32 svc_id, u32 cmd_id,
 		res->a6 = 0;
 
 		do {
+			if (res->a0 == QCOM_SCM_INTERRUPTED)
+				cmd = res->a0;
+
 			arm_smccc_smc(cmd, desc->arginfo, desc->args[0],
 				      desc->args[1], desc->args[2], x5, res->a6,
 				      0, res);
