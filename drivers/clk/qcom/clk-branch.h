@@ -26,6 +26,7 @@
  * @halt_reg: halt register
  * @halt_bit: ANDed with @halt_reg to test for clock halted
  * @halt_check: type of halt checking to perform
+ * @udelay: custom udelay incase of BRANCH_HALT_DELAY, default is 10us
  * @clkr: handle between common and hardware-specific interfaces
  *
  * Clock which can gate its output.
@@ -43,6 +44,7 @@ struct clk_branch {
 #define BRANCH_HALT_ENABLE_VOTED	(BRANCH_HALT_ENABLE | BRANCH_VOTED)
 #define BRANCH_HALT_DELAY		2 /* No bit to check; just delay */
 
+	u32	udelay;
 	struct clk_regmap clkr;
 };
 
