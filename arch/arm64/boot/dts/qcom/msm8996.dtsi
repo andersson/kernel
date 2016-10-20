@@ -271,6 +271,11 @@
 			reg = <0x740000 0x20000>;
 		};
 
+		rpm_msg_ram: memory@68000 {
+			compatible = "qcom,rpm-msg-ram";
+			reg = <0x68000 0x6000>;
+		};
+
 		intc: interrupt-controller@9bc0000 {
 			compatible = "arm,gic-v3";
 			#interrupt-cells = <3>;
