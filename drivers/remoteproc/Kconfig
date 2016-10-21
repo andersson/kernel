@@ -99,6 +99,7 @@ config QCOM_WCNSS_PIL
 	tristate "Qualcomm WCNSS Peripheral Image Loader"
 	depends on OF && ARCH_QCOM
 	depends on QCOM_SMEM
+	depends on RPMSG_QCOM_SMD || RPMSG_QCOM_SMD=n
 	select QCOM_MDT_LOADER
 	select QCOM_SCM
 	select QCOM_WCNSS_IRIS
