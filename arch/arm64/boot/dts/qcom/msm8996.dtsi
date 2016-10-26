@@ -725,7 +725,8 @@
 				<&gcc GCC_PCIE_2_SLV_AXI_CLK>,
 				<&gcc GCC_PCIE_CLKREF_CLK>,
 				<&gcc GCC_AGGRE0_SNOC_AXI_CLK>,
-				<&gcc GCC_AGGRE0_CNOC_AHB_CLK>;
+				<&gcc GCC_AGGRE0_CNOC_AHB_CLK>,
+				<&gcc GCC_SMMU_AGGRE0_AXI_CLK>;
 
 			clock-names =  "pipe",
 					"bus",
@@ -735,7 +736,8 @@
 					"slave",
 					"ref",
 					"axi",
-					"ahb";
+					"ahb",
+					"smmu_axi";
 		};
 	};
 
