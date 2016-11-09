@@ -437,6 +437,15 @@ config PHY_STIH407_USB
 	  Enable this support to enable the picoPHY device used by USB2
 	  and USB3 controllers on STMicroelectronics STiH407 SoC families.
 
+config PHY_QCOM_QMP
+	tristate "Qualcomm QMP PHY Driver"
+	depends on OF && (ARCH_QCOM || COMPILE_TEST)
+	select GENERIC_PHY
+	select RESET_CONTROLLER
+	help
+	  Enable this to support the QMP PHY transceiver that is used
+	  with controllers such as PCIe, UFS, and USB on Qualcomm chips.
+
 config PHY_QCOM_UFS
 	tristate "Qualcomm UFS PHY driver"
 	depends on OF && ARCH_QCOM
