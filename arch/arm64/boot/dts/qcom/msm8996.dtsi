@@ -518,6 +518,47 @@
 		};
 	};
 
+	adsp-pil {
+		compatible = "qcom,msm8996-adsp-pil";
+
+		interrupts-extended = <&intc 0 162 IRQ_TYPE_EDGE_RISING>,
+				      <&adsp_smp2p_in 0 IRQ_TYPE_EDGE_RISING>,
+				      <&adsp_smp2p_in 1 IRQ_TYPE_EDGE_RISING>,
+				      <&adsp_smp2p_in 2 IRQ_TYPE_EDGE_RISING>,
+				      <&adsp_smp2p_in 3 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "wdog", "fatal", "ready",
+				  "handover", "stop-ack";
+
+		clocks = <&xo_board>;
+		clock-names = "xo";
+
+		cx-supply = <&pm8994_s1>;
+
+		memory-region = <&adsp_region>;
+
+		qcom,smem-states = <&adsp_smp2p_out 0>;
+		qcom,smem-state-names = "stop";
+
+		glink-edge {
+			compatible = "qcom,glink-smem";
+			interrupts = <0 157 IRQ_TYPE_EDGE_RISING>;
+
+			label = "lpass";
+			qcom,ipc = <&apcs 16 9>;
+			qcom,remote-pid = <2>;
+
+		};
+
+		smd-edge {
+			interrupts = <0 156 IRQ_TYPE_EDGE_RISING>;
+
+			label = "lpass";
+			qcom,ipc = <&apcs 16 8>;
+			qcom,smd-edge = <1>;
+			qcom,remote-pid = <2>;
+		};
+	};
+
 	adsp-smp2p {
 		compatible = "qcom,smp2p";
 		qcom,smem = <443>, <429>;
