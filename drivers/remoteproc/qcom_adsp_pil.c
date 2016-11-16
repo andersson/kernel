@@ -28,6 +28,7 @@
 #include <linux/remoteproc.h>
 #include <linux/soc/qcom/smem.h>
 #include <linux/soc/qcom/smem_state.h>
+#include <linux/rpmsg/qcom_smd.h>
 
 #include "qcom_mdt_loader.h"
 #include "remoteproc_internal.h"
@@ -60,6 +61,14 @@ struct qcom_adsp {
 	phys_addr_t mem_reloc;
 	void *mem_region;
 	size_t mem_size;
+
+	struct device *glink_dev;
+	struct device_node *glink_node;
+	struct rproc_subdev glink_subdev;
+
+	struct device_node *smd_node;
+	struct qcom_smd_edge *smd_edge;
+	struct rproc_subdev smd_subdev;
 };
 
 static int adsp_load(struct rproc *rproc, const struct firmware *fw)
@@ -232,6 +241,37 @@ static irqreturn_t adsp_stop_ack_interrupt(int irq, void *dev)
 	return IRQ_HANDLED;
 }
 
+static int adsp_glink_probe(struct rproc_subdev *subdev)
+{
+	struct qcom_adsp *adsp = container_of(subdev, struct qcom_adsp, glink_subdev);
+
+	return of_platform_populate(adsp->dev->of_node, NULL, NULL, adsp->dev);
+}
+
+static void adsp_glink_remove(struct rproc_subdev *subdev)
+{
+	struct qcom_adsp *adsp = container_of(subdev, struct qcom_adsp, glink_subdev);
+
+	of_platform_depopulate(adsp->dev);
+}
+
+static int adsp_smd_probe(struct rproc_subdev *subdev)
+{
+	struct qcom_adsp *adsp = container_of(subdev, struct qcom_adsp, smd_subdev);
+
+	adsp->smd_edge = qcom_smd_register_edge(adsp->dev, adsp->smd_node);
+
+	return IS_ERR(adsp->smd_edge) ? PTR_ERR(adsp->smd_edge) : 0;
+}
+
+static void adsp_smd_remove(struct rproc_subdev *subdev)
+{
+	struct qcom_adsp *adsp = container_of(subdev, struct qcom_adsp, smd_subdev);
+
+	qcom_smd_unregister_edge(adsp->smd_edge);
+	adsp->smd_edge = NULL;
+}
+
 static int adsp_init_clock(struct qcom_adsp *adsp)
 {
 	int ret;
@@ -318,11 +358,6 @@ static int adsp_probe(struct platform_device *pdev)
 	if (!qcom_scm_is_available())
 		return -EPROBE_DEFER;
 
-	if (!qcom_scm_pas_supported(ADSP_PAS_ID)) {
-		dev_err(&pdev->dev, "PAS is not available for ADSP\n");
-		return -ENXIO;
-	}
-
 	rproc = rproc_alloc(&pdev->dev, pdev->name, &adsp_ops,
 			    ADSP_FIRMWARE_NAME, sizeof(*adsp));
 	if (!rproc) {
@@ -383,6 +418,14 @@ static int adsp_probe(struct platform_device *pdev)
 		ret = PTR_ERR(adsp->state);
 		goto free_rproc;
 	}
+
+	adsp->smd_node = of_get_child_by_name(pdev->dev.of_node, "smd-edge");
+	if (adsp->smd_node)
+		rproc_add_subdev(rproc, &adsp->smd_subdev, adsp_smd_probe, adsp_smd_remove);
+
+	adsp->glink_node = of_get_child_by_name(pdev->dev.of_node, "glink-edge");
+	if (adsp->glink_node)
+		rproc_add_subdev(rproc, &adsp->glink_subdev, adsp_glink_probe, adsp_glink_remove);
 
 	ret = rproc_add(rproc);
 	if (ret)
