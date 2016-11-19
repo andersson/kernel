@@ -499,6 +499,10 @@
 			};
 		};
 
+		hexagon@4080000 {
+			status = "okay";
+		};
+
 		wcnss@a21b000 {
 			status = "okay";
 		};
