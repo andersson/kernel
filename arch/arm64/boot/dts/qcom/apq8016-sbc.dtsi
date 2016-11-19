@@ -310,6 +310,10 @@
 		wcnss@a21b000 {
 			status = "okay";
 		};
+
+		hexagon@4080000 {
+			status = "okay";
+		};
 	};
 
 	usb2513 {
