@@ -30,6 +30,7 @@
 #include <linux/reset.h>
 #include <linux/soc/qcom/smem.h>
 #include <linux/soc/qcom/smem_state.h>
+#include <linux/rpmsg/qcom_smd.h>
 
 #include "remoteproc_internal.h"
 #include "qcom_mdt_loader.h"
@@ -128,6 +129,10 @@ struct q6v5 {
 	phys_addr_t mpss_reloc;
 	void *mpss_region;
 	size_t mpss_size;
+	
+	struct device_node *smd_node;
+	struct qcom_smd_edge *smd_edge;
+	struct rproc_subdev smd_subdev;
 };
 
 enum {
@@ -667,6 +672,23 @@ static irqreturn_t q6v5_stop_ack_interrupt(int irq, void *dev)
 	return IRQ_HANDLED;
 }
 
+static int qproc_smd_probe(struct rproc_subdev *subdev)
+{
+	struct q6v5 *qproc = container_of(subdev, struct q6v5, smd_subdev);
+
+	qproc->smd_edge = qcom_smd_register_edge(qproc->dev, qproc->smd_node);
+
+	return IS_ERR(qproc->smd_edge) ? PTR_ERR(qproc->smd_edge) : 0;
+}
+
+static void qproc_smd_remove(struct rproc_subdev *subdev)
+{
+	struct q6v5 *qproc = container_of(subdev, struct q6v5, smd_subdev);
+
+	qcom_smd_unregister_edge(qproc->smd_edge);
+	qproc->smd_edge = NULL;
+}
+
 static int q6v5_init_mem(struct q6v5 *qproc, struct platform_device *pdev)
 {
 	struct of_phandle_args args;
@@ -867,6 +889,10 @@ static int q6v5_probe(struct platform_device *pdev)
 		ret = PTR_ERR(qproc->state);
 		goto free_rproc;
 	}
+	
+	qproc->smd_node = of_get_child_by_name(pdev->dev.of_node, "smd-edge");
+	if (qproc->smd_node)
+		rproc_add_subdev(rproc, &qproc->smd_subdev, qproc_smd_probe, qproc_smd_remove);
 
 	ret = rproc_add(rproc);
 	if (ret)
