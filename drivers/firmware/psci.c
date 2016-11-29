@@ -126,7 +126,7 @@ static unsigned long __invoke_psci_fn_smc(unsigned long function_id,
 {
 	struct arm_smccc_res res;
 
-	arm_smccc_smc(function_id, arg0, arg1, arg2, 0, 0, 0, 0, &res);
+	arm_smccc_smc(function_id, arg0, arg1, arg2, 0, 0, 0, 0, &res, NULL);
 	return res.a0;
 }
 

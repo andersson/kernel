@@ -50,7 +50,7 @@ static void artpec6_l2c310_write_sec(unsigned long val, unsigned reg)
 	struct arm_smccc_res res;
 
 	arm_smccc_smc(SECURE_OP_L2C_WRITEREG, reg, val, 0,
-		      0, 0, 0, 0, &res);
+		      0, 0, 0, 0, &res, NULL);
 
 	WARN_ON(res.a0);
 }

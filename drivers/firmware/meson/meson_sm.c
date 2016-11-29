@@ -74,7 +74,7 @@ static u32 __meson_sm_call(u32 cmd, u32 arg0, u32 arg1, u32 arg2,
 {
 	struct arm_smccc_res res;
 
-	arm_smccc_smc(cmd, arg0, arg1, arg2, arg3, arg4, 0, 0, &res);
+	arm_smccc_smc(cmd, arg0, arg1, arg2, arg3, arg4, 0, 0, &res, NULL);
 	return res.a0;
 }
 

@@ -243,7 +243,7 @@ static int qcom_scm_call(struct device *dev, u32 svc_id, u32 cmd_id,
 		do {
 			arm_smccc_smc(cmd, desc->arginfo, desc->args[0],
 				      desc->args[1], desc->args[2], x5, 0, 0,
-				      res);
+				      res, NULL);
 		} while (res->a0 == QCOM_SCM_INTERRUPTED);
 
 		mutex_unlock(&qcom_scm_lock);
@@ -365,7 +365,7 @@ void __qcom_scm_init(void)
 				 ARM_SMCCC_OWNER_SIP, function);
 
 	arm_smccc_smc(cmd, QCOM_SCM_ARGS(1), cmd & (~BIT(ARM_SMCCC_TYPE_SHIFT)),
-		      0, 0, 0, 0, 0, &res);
+		      0, 0, 0, 0, 0, &res, NULL);
 
 	if (!res.a0 && res.a1)
 		qcom_smccc_convention = ARM_SMCCC_SMC_64;

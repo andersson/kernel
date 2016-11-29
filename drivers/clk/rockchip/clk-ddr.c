@@ -45,7 +45,7 @@ static int rockchip_ddrclk_sip_set_rate(struct clk_hw *hw, unsigned long drate,
 	spin_lock_irqsave(ddrclk->lock, flags);
 	arm_smccc_smc(ROCKCHIP_SIP_DRAM_FREQ, drate, 0,
 		      ROCKCHIP_SIP_CONFIG_DRAM_SET_RATE,
-		      0, 0, 0, 0, &res);
+		      0, 0, 0, 0, &res, NULL);
 	spin_unlock_irqrestore(ddrclk->lock, flags);
 
 	return res.a0;
@@ -59,7 +59,7 @@ rockchip_ddrclk_sip_recalc_rate(struct clk_hw *hw,
 
 	arm_smccc_smc(ROCKCHIP_SIP_DRAM_FREQ, 0, 0,
 		      ROCKCHIP_SIP_CONFIG_DRAM_GET_RATE,
-		      0, 0, 0, 0, &res);
+		      0, 0, 0, 0, &res, NULL);
 
 	return res.a0;
 }
@@ -72,7 +72,7 @@ static long rockchip_ddrclk_sip_round_rate(struct clk_hw *hw,
 
 	arm_smccc_smc(ROCKCHIP_SIP_DRAM_FREQ, rate, 0,
 		      ROCKCHIP_SIP_CONFIG_DRAM_ROUND_RATE,
-		      0, 0, 0, 0, &res);
+		      0, 0, 0, 0, &res, NULL);
 
 	return res.a0;
 }

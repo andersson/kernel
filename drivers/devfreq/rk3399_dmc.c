@@ -258,7 +258,7 @@ static irqreturn_t rk3399_dmc_irq(int irq, void *dev_id)
 	/* Clear the DCF interrupt */
 	arm_smccc_smc(ROCKCHIP_SIP_DRAM_FREQ, 0, 0,
 		      ROCKCHIP_SIP_CONFIG_DRAM_CLR_IRQ,
-		      0, 0, 0, 0, &res);
+		      0, 0, 0, 0, &res, NULL);
 
 	return IRQ_HANDLED;
 }
@@ -395,7 +395,7 @@ static int rk3399_dmcfreq_probe(struct platform_device *pdev)
 		for (index = 0; index < size; index++) {
 			arm_smccc_smc(ROCKCHIP_SIP_DRAM_FREQ, *timing++, index,
 				      ROCKCHIP_SIP_CONFIG_DRAM_SET_PARAM,
-				      0, 0, 0, 0, &res);
+				      0, 0, 0, 0, &res, NULL);
 			if (res.a0) {
 				dev_err(dev, "Failed to set dram param: %ld\n",
 					res.a0);
@@ -406,7 +406,7 @@ static int rk3399_dmcfreq_probe(struct platform_device *pdev)
 
 	arm_smccc_smc(ROCKCHIP_SIP_DRAM_FREQ, 0, 0,
 		      ROCKCHIP_SIP_CONFIG_DRAM_INIT,
-		      0, 0, 0, 0, &res);
+		      0, 0, 0, 0, &res, NULL);
 
 	/*
 	 * We add a devfreq driver to our parent since it has a device tree node
