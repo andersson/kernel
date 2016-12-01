@@ -550,7 +550,7 @@ err_reset_phy:
 	return ret;
 }
 
-static void imx6_pcie_host_init(struct pcie_port *pp)
+static int imx6_pcie_host_init(struct pcie_port *pp)
 {
 	struct imx6_pcie *imx6_pcie = to_imx6_pcie(pp);
 
@@ -562,6 +562,8 @@ static void imx6_pcie_host_init(struct pcie_port *pp)
 
 	if (IS_ENABLED(CONFIG_PCI_MSI))
 		dw_pcie_msi_init(pp);
+
+	return 0;
 }
 
 static int imx6_pcie_link_up(struct pcie_port *pp)

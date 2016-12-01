@@ -260,7 +260,7 @@ static int keystone_pcie_fault(unsigned long addr, unsigned int fsr,
 	return 0;
 }
 
-static void __init ks_pcie_host_init(struct pcie_port *pp)
+static int __init ks_pcie_host_init(struct pcie_port *pp)
 {
 	struct keystone_pcie *ks_pcie = to_keystone_pcie(pp);
 	u32 val;
@@ -287,6 +287,8 @@ static void __init ks_pcie_host_init(struct pcie_port *pp)
 	 */
 	hook_fault_code(17, keystone_pcie_fault, SIGBUS, 0,
 			"Asynchronous external abort");
+
+	return 0;
 }
 
 static struct pcie_host_ops keystone_pcie_host_ops = {

@@ -134,12 +134,14 @@ static void armada8k_pcie_establish_link(struct armada8k_pcie *pcie)
 		dev_err(pp->dev, "Link not up after reconfiguration\n");
 }
 
-static void armada8k_pcie_host_init(struct pcie_port *pp)
+static int armada8k_pcie_host_init(struct pcie_port *pp)
 {
 	struct armada8k_pcie *pcie = to_armada8k_pcie(pp);
 
 	dw_pcie_setup_rc(pp);
 	armada8k_pcie_establish_link(pcie);
+
+	return 0;
 }
 
 static irqreturn_t armada8k_pcie_irq_handler(int irq, void *arg)

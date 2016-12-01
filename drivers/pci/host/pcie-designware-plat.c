@@ -35,13 +35,15 @@ static irqreturn_t dw_plat_pcie_msi_irq_handler(int irq, void *arg)
 	return dw_handle_msi_irq(pp);
 }
 
-static void dw_plat_pcie_host_init(struct pcie_port *pp)
+static int dw_plat_pcie_host_init(struct pcie_port *pp)
 {
 	dw_pcie_setup_rc(pp);
 	dw_pcie_wait_for_link(pp);
 
 	if (IS_ENABLED(CONFIG_PCI_MSI))
 		dw_pcie_msi_init(pp);
+
+	return 0;
 }
 
 static struct pcie_host_ops dw_plat_pcie_host_ops = {
