@@ -243,7 +243,7 @@ static int msm_iommu_pmon_parse_dt(struct platform_device *pdev,
 
 	return 0;
 }
-#if 0
+#if 1
 #define SCM_SVC_MP		0xc
 #define MAXIMUM_VIRT_SIZE	(300 * SZ_1M)
 #define MAKE_VERSION(major, minor, patch) \
@@ -251,18 +251,19 @@ static int msm_iommu_pmon_parse_dt(struct platform_device *pdev,
 
 static int msm_iommu_sec_ptbl_init(struct device *dev)
 {
-	int psize[2] = {0, 0};
+	size_t psize = 0;
 	unsigned int spare = 0;
 	int ret;
 	int version;
 	void *cpu_addr;
 	dma_addr_t paddr;
-	DEFINE_DMA_ATTRS(attrs);
+	unsigned long attrs;
 	static bool allocated = false;
 
 	if (allocated)
 		return 0;
 
+#if 0
 	version = qcom_scm_get_feat_version(SCM_SVC_MP);
 
 	if (version >= MAKE_VERSION(1, 1, 1)) {
@@ -273,32 +274,26 @@ static int msm_iommu_sec_ptbl_init(struct device *dev)
 			return ret;
 		}
 	}
-
-	ret = qcom_scm_iommu_secure_ptbl_size(spare, psize);
+#endif
+	ret = qcom_scm_iommu_secure_ptbl_size(spare, &psize);
 	if (ret) {
 		dev_err(dev, "failed to get iommu secure pgtable size (%d)\n",
 			ret);
 		return ret;
 	}
 
-	if (psize[1]) {
-		dev_err(dev, "failed to get iommu secure pgtable size (%d)\n",
-			ret);
-		return psize[1];
-	}
+	dev_info(dev, "iommu sec: pgtable size: %zu\n", psize);
 
-	dev_info(dev, "iommu sec: pgtable size: %d\n", psize[0]);
+	attrs = DMA_ATTR_NO_KERNEL_MAPPING;
 
-	dma_set_attr(DMA_ATTR_NO_KERNEL_MAPPING, &attrs);
-
-	cpu_addr = dma_alloc_attrs(dev, psize[0], &paddr, GFP_KERNEL, &attrs);
+	cpu_addr = dma_alloc_attrs(dev, psize, &paddr, GFP_KERNEL, attrs);
 	if (!cpu_addr) {
-		dev_err(dev, "failed to allocate %d bytes for pgtable\n",
-			psize[0]);
+		dev_err(dev, "failed to allocate %zu bytes for pgtable\n",
+			psize);
 		return -ENOMEM;
 	}
 
-	ret = qcom_scm_iommu_secure_ptbl_init(paddr, psize[0], spare);
+	ret = qcom_scm_iommu_secure_ptbl_init(paddr, psize, spare);
 	if (ret) {
 		dev_err(dev, "failed to init iommu pgtable (%d)\n", ret);
 		goto free_mem;
@@ -309,7 +304,7 @@ static int msm_iommu_sec_ptbl_init(struct device *dev)
 	return 0;
 
 free_mem:
-	dma_free_attrs(dev, psize[0], cpu_addr, paddr, &attrs);
+	dma_free_attrs(dev, psize, cpu_addr, paddr, attrs);
 	return ret;
 }
 #endif
@@ -386,7 +381,7 @@ static int msm_iommu_probe(struct platform_device *pdev)
 	dev_info(dev, "device %s (model: %d) mapped at %p, with %d ctx banks\n",
 		 drvdata->name, drvdata->model, drvdata->base, drvdata->ncb);
 
-#if 0
+#if 1
 	if (drvdata->sec_id != -1) {
 		ret = msm_iommu_sec_ptbl_init(dev);
 		if (ret)
