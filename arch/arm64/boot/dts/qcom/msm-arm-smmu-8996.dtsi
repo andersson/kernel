@@ -1,0 +1,38 @@
+/* Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "msm-arm-smmu.dtsi"
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+&venus_smmu {
+	status = "ok";
+	#global-interrupts = <1>;
+	interrupts = <GIC_SPI 286 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 335 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 336 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 337 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 338 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 339 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 340 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 341 IRQ_TYPE_LEVEL_HIGH>;
+	power-domains = <&mmcc MMAGIC_VIDEO_GDSC>;
+	clocks = <&mmcc MMSS_MMAGIC_AHB_CLK>,
+		 <&mmcc MMSS_MMAGIC_CFG_AHB_CLK>,
+		 <&mmcc SMMU_VIDEO_AHB_CLK>,
+		 <&mmcc SMMU_VIDEO_AXI_CLK>,
+		 <&mmcc MMAGIC_VIDEO_AXI_CLK>;
+	clock-names = "mmagic_ahb_clk",
+		      "mmagic_cfg_ahb_clk",
+		      "video_ahb_clk",
+		      "video_axi_clk",
+		      "mmagic_video_axi_clk";
+};
