@@ -498,3 +498,11 @@
 		regulator-max-microvolt = <3337000>;
 	};
 };
+
+&venus_rproc {
+	status = "okay";
+};
+
+&venus {
+	status = "okay";
+};

@@ -90,6 +90,13 @@
 			no-map;
 		};
 
+		venus_mem: venus@89900000 {
+			compatible = "shared-dma-pool";
+			reg = <0x0 0x89900000 0x0 0x800000>;
+			alignment = <0x1000>;
+			no-map;
+		};
+
 		mba_mem: mba@8ea00000 {
 			no-map;
 			reg = <0 0x8ea00000 0 0x100000>;
@@ -1204,6 +1211,36 @@
 
 			interrupt-controller;
 			#interrupt-cells = <2>;
+		};
+	};
+
+	venus_rproc: venus-remoteproc {
+		compatible = "qcom,venus-pil";
+		memory-region = <&venus_mem>;
+		status = "disabled";
+	};
+
+	venus-iommu-bus {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0 0 0 0xffffffff>;
+		dma-ranges = <0x5dc00000 0 0x5dc00000 0x80000000>;
+
+		venus: video-codec@1d00000 {
+			compatible = "qcom,msm8916-venus";
+			reg = <0x01d00000 0xff000>;
+			reg-names = "base";
+			interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "venus";
+			power-domains = <&gcc VENUS_GDSC>;
+			clocks = <&gcc GCC_VENUS0_VCODEC0_CLK>,
+				 <&gcc GCC_VENUS0_AHB_CLK>,
+				 <&gcc GCC_VENUS0_AXI_CLK>;
+			clock-names = "core", "iface", "bus";
+			rproc = <&venus_rproc>;
+			iommus = <&apps_iommu 5>;
+			status = "disabled";
 		};
 	};
 };
