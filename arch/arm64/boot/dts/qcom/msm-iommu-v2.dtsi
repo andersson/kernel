@@ -60,12 +60,14 @@
 			 <&gcc GCC_APSS_TCU_CLK>;
 		clock-names = "iface_clk", "core_clk";
 		qcom,cb-base-offset = <0x20000>;
+		#iommu-cells = <1>;
 		status = "disabled";
 
 		qcom,iommu-ctx@1e22000 {
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e22000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num = <2>;
 			qcom,iommu-ctx-sids = <0x2000>;
 			label = "jpeg_enc0";
 		};
@@ -74,6 +76,7 @@
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e23000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num = <3>;
 			qcom,iommu-ctx-sids = <0x400>;
 			label = "vfe";
 		};
@@ -82,14 +85,16 @@
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e24000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num = <4>;
 			qcom,iommu-ctx-sids = <0xc00>;
 			label = "mdp_0";
 		};
 
-		venus_ns: qcom,iommu-ctx@1e25000 {
+		venus_ns: venus_ns@1e25000 {
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e25000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num = <5>;
 			qcom,iommu-ctx-sids = <0x800 0x801 0x802 0x803
 						0x804 0x805 0x807>;
 			label = "venus_ns";
@@ -99,6 +104,7 @@
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e26000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num = <6>;
 			qcom,iommu-ctx-sids = <0x402>;
 			label = "cpp";
 		};
@@ -107,6 +113,7 @@
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e27000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num = <7>;
 			qcom,iommu-ctx-sids = <0x1000>;
 			label = "mDSP";
 		};
@@ -115,6 +122,7 @@
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e28000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num = <8>;
 			qcom,iommu-ctx-sids = <0x1400>;
 			label = "gss";
 		};
@@ -123,6 +131,7 @@
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e29000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num= <9>;
 			qcom,iommu-ctx-sids = <0x1800>;
 			label = "a2";
 		};
@@ -132,33 +141,37 @@
 			qcom,secure-context;
 			reg = <0x1e32000 0x1000>;
 			interrupts = <0 70 0>, <0 70 0>;
+			qcom,ctx-num = <18>;
 			qcom,iommu-ctx-sids = <0xc01>;
 			label = "mdp_1";
 		};
 
-		venus_sec_pixel: qcom,iommu-ctx@1e33000 {
+		venus_sec_pixel: venus_sec_pixel@1e33000 {
 			compatible = "qcom,msm-smmu-v2-ctx";
 			qcom,secure-context;
 			reg = <0x1e33000 0x1000>;
 			interrupts = <0 70 0>, <0 70 0>;
+			qcom,ctx-num = <19>;
 			qcom,iommu-ctx-sids = <0x885>;
 			label = "venus_sec_pixel";
 		};
 
-		venus_sec_bitstream: qcom,iommu-ctx@1e34000 {
+		venus_sec_bitstream: venus_sec_bitstream@1e34000 {
 			compatible = "qcom,msm-smmu-v2-ctx";
 			qcom,secure-context;
 			reg = <0x1e34000 0x1000>;
 			interrupts = <0 70 0>, <0 70 0>;
+			qcom,ctx-num= <20>;
 			qcom,iommu-ctx-sids = <0x880 0x881 0x882 0x883 0x884>;
 			label = "venus_sec_bitstream";
 		};
 
-		venus_sec_non_pixel: qcom,iommu-ctx@1e35000 {
+		venus_sec_non_pixel: venus_sec_non_pixel@1e35000 {
 			compatible = "qcom,msm-smmu-v2-ctx";
 			qcom,secure-context;
 			reg = <0x1e35000 0x1000>;
 			interrupts = <0 70 0>, <0 70 0>;
+			qcom,ctx-num = <21>;
 			qcom,iommu-ctx-sids = <0x887 0x8a0>;
 			label = "venus_sec_non_pixel";
 		};
@@ -168,6 +181,7 @@
 			qcom,secure-context;
 			reg = <0x1e36000 0x1000>;
 			interrupts = <0 70 0>, <0 70 0>;
+			qcom,ctx-num = <22>;
 			qcom,iommu-ctx-sids = <0x8c0 0x8c6>;
 			label = "venus_fw";
 		};
@@ -177,6 +191,7 @@
 			qcom,secure-context;
 			reg = <0x1e37000 0x1000>;
 			interrupts = <0 70 0>, <0 70 0>;
+			qcom,ctx-num = <23>;
 			qcom,iommu-ctx-sids = <0x40>;
 			label = "periph_rpm";
 		};
@@ -185,6 +200,7 @@
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e38000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num = <24>;
 			qcom,iommu-ctx-sids = <0xC0 0xC4 0xC8 0xCC 0xD0 0xD3
 						0xD4 0xD7 0xD8 0xDB 0xDC 0xDF
 						0xF0 0xF3 0xF4 0xF7 0xF8 0xFB
@@ -196,6 +212,7 @@
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e39000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num = <25>;
 			qcom,iommu-ctx-sids = <0x280 0x283 0x284 0x287 0x288
 						0x28B 0x28C 0x28F 0x290 0x293
 						0x294 0x297 0x298 0x29B 0x29C
@@ -207,6 +224,7 @@
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e3a000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num = <26>;
 			qcom,iommu-ctx-sids = <0x100>;
 			label = "periph_SDC1";
 		};
@@ -215,6 +233,7 @@
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e3b000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num = <27>;
 			qcom,iommu-ctx-sids = <0x140>;
 			label = "periph_SDC2";
 		};
@@ -223,6 +242,7 @@
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e3c000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num = <28>;
 			qcom,iommu-ctx-sids = <0x1c0>;
 			label = "periph_audio";
 		};
@@ -231,6 +251,7 @@
 			compatible = "qcom,msm-smmu-v2-ctx";
 			reg = <0x1e3d000 0x1000>;
 			interrupts = <0 70 0>;
+			qcom,ctx-num = <29>;
 			qcom,iommu-ctx-sids = <0x2c0>;
 			label = "periph_USB_HS1";
 		};
