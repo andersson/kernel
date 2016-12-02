@@ -132,11 +132,12 @@ static int venus_probe(struct platform_device *pdev)
 	if (!qcom_scm_is_available())
 		return -EPROBE_DEFER;
 
+#if 0
 	if (!qcom_scm_pas_supported(VENUS_PAS_ID)) {
 		dev_err(dev, "PAS is not available for venus\n");
 		return -ENXIO;
 	}
-
+#endif
 	ret = of_reserved_mem_device_init(dev);
 	if (ret)
 		return ret;
@@ -149,6 +150,7 @@ static int venus_probe(struct platform_device *pdev)
 		goto release_mem;
 	}
 
+	rproc->auto_boot = false;
 	rproc->fw_ops = &venus_fw_ops;
 	venus = rproc->priv;
 	venus->dev = dev;
