@@ -23,7 +23,7 @@
 
 #include "hfi.h"
 
-#define VIDC_CLKS_NUM_MAX	12
+#define VIDC_CLKS_NUM_MAX	13
 
 struct freq_tbl {
 	unsigned int load;

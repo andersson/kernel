@@ -278,7 +278,7 @@ static int venus_probe(struct platform_device *pdev)
 		goto err_hfi_destroy;
 	}
 
-	venus_clks_disable(core);
+//	venus_clks_disable(core);
 
 	pm_runtime_enable(dev);
 
@@ -290,9 +290,9 @@ static int venus_probe(struct platform_device *pdev)
 	if (ret)
 		goto err_rproc_shutdown;
 
-	ret = pm_runtime_put_sync(dev);
-	if (ret)
-		goto err_core_deinit;
+//	ret = pm_runtime_put_sync(dev);
+//	if (ret)
+//		goto err_core_deinit;
 
 	ret = v4l2_device_register(dev, &core->v4l2_dev);
 	if (ret)
@@ -440,9 +440,11 @@ static const struct venus_resources msm8996_res = {
 	.freq_tbl_size = ARRAY_SIZE(msm8996_freq_table),
 	.reg_tbl = msm8996_reg_preset,
 	.reg_tbl_size = ARRAY_SIZE(msm8996_reg_preset),
-	.clks = { "core", "core0", "core1", "iface", "bus", "rpm_mmaxi",
-		  "mmagic_ahb", "mmagic_maxi", "mmagic_video_axi", "maxi" },
-	.clks_num = 10,
+	.clks = { "rpm_mmaxi", "mmagic_ahb", "mmagic_maxi", "mmagic_video_axi",
+		  "core", "iface", "bus", "mmagic_video_noc_cfg_ahb", "maxi",
+		  "core0", "core1",
+		  "smmu_ahb", "smmu_axi" },
+	.clks_num = 13,
 	.max_load = 2563200,
 	.hfi_version = HFI_VERSION_3XX,
 	.vmem_id = VIDC_RESOURCE_NONE,

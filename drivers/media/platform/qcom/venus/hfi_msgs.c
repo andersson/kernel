@@ -198,6 +198,8 @@ static void hfi_sys_init_done(struct venus_core *core, struct venus_inst *inst,
 
 	data = (u8 *)&pkt->data[0];
 
+	goto err_no_prop;
+
 	while (num_properties && rem_bytes >= sizeof(u32)) {
 		ptype = *((u32 *)data);
 		data += sizeof(u32);
