@@ -2953,6 +2953,7 @@ static struct gdsc venus_core0_gdsc = {
 	.pd = {
 		.name = "venus_core0",
 	},
+	.parent = &venus_gdsc.pd,
 	.pwrsts = PWRSTS_OFF_ON,
 	.flags = HW_CTRL,
 };
@@ -2964,6 +2965,7 @@ static struct gdsc venus_core1_gdsc = {
 	.pd = {
 		.name = "venus_core1",
 	},
+	.parent = &venus_core0_gdsc.pd,
 	.pwrsts = PWRSTS_OFF_ON,
 	.flags = HW_CTRL,
 };
