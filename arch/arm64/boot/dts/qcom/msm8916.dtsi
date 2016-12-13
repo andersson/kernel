@@ -1225,10 +1225,6 @@
 		         <&gcc GCC_VENUS0_AXI_CLK>;
 		clock-names = "core", "iface", "bus";
 
-	};
-
-	venus-iommu-bus {
-		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0 0 0 0xffffffff>;
@@ -1245,7 +1241,6 @@
 				 <&gcc GCC_VENUS0_AHB_CLK>,
 				 <&gcc GCC_VENUS0_AXI_CLK>;
 			clock-names = "core", "iface", "bus";
-			rproc = <&venus_rproc>;
 			iommus = <&apps_iommu 5>;
 			status = "disabled";
 		};

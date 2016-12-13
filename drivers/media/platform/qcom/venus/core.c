@@ -35,25 +35,10 @@ static void venus_sys_error_handler(struct work_struct *work)
 {
 	struct venus_core *core =
 			container_of(work, struct venus_core, work.work);
-	int ret;
 
 	hfi_core_deinit(core);
 
-	mutex_lock(&core->lock);
-
 	rproc_report_crash(core->rproc, RPROC_FATAL_ERROR);
-	rproc_shutdown(core->rproc);
-
-	ret = rproc_boot(core->rproc);
-	if (ret)
-		goto exit;
-
-	enable_irq(core->irq);
-
-	core->state = CORE_INIT;
-
-exit:
-	mutex_unlock(&core->lock);
 }
 
 static void venus_event_notify(struct venus_core *core, u32 event)
@@ -210,7 +195,6 @@ static int venus_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct venus_core *core;
-	struct device_node *rproc;
 	struct resource *r;
 	int ret;
 
@@ -221,36 +205,36 @@ static int venus_probe(struct platform_device *pdev)
 	core->dev = dev;
 	platform_set_drvdata(pdev, core);
 
-	rproc = of_parse_phandle(dev->of_node, "rproc", 0);
-	if (IS_ERR(rproc))
-		return PTR_ERR(rproc);
-
-	core->rproc = rproc_get_by_phandle(rproc->phandle);
-	if (IS_ERR(core->rproc))
-		return PTR_ERR(core->rproc);
-	else if (!core->rproc)
+	core->rproc = rproc_get_by_dev(dev->parent);
+	if (!core->rproc)
 		return -EPROBE_DEFER;
 
 	r = platform_get_resource_byname(pdev, IORESOURCE_MEM, "base");
 	core->base = devm_ioremap_resource(dev, r);
-	if (IS_ERR(core->base))
-		return PTR_ERR(core->base);
+	if (IS_ERR(core->base)) {
+		ret = PTR_ERR(core->base);
+		goto err_put_rproc;
+	}
 
 	core->irq = platform_get_irq_byname(pdev, "venus");
-	if (core->irq < 0)
-		return core->irq;
+	if (core->irq < 0) {
+		ret = core->irq;
+		goto err_put_rproc;
+	}
 
 	core->res = of_device_get_match_data(dev);
-	if (!core->res)
-		return -ENODEV;
+	if (!core->res) {
+		ret = -ENODEV;
+		goto err_put_rproc;
+	}
 
 	ret = venus_clks_get(core);
 	if (ret)
-		return ret;
+		goto err_put_rproc;
 
 	ret = dma_set_mask_and_coherent(dev, core->res->dma_mask);
 	if (ret)
-		return ret;
+		goto err_put_rproc;
 
 	INIT_LIST_HEAD(&core->instances);
 	mutex_init(&core->lock);
@@ -260,25 +244,13 @@ static int venus_probe(struct platform_device *pdev)
 					IRQF_TRIGGER_HIGH | IRQF_ONESHOT,
 					"venus", core);
 	if (ret)
-		return ret;
+		goto err_put_rproc;
 
 	core->core_ops = &venus_core_ops;
 
 	ret = hfi_create(core);
 	if (ret)
-		return ret;
-
-	ret = venus_clks_enable(core);
-	if (ret)
-		goto err_hfi_destroy;
-
-	ret = rproc_boot(core->rproc);
-	if (ret) {
-		venus_clks_disable(core);
-		goto err_hfi_destroy;
-	}
-
-//	venus_clks_disable(core);
+		goto err_put_rproc;
 
 	pm_runtime_enable(dev);
 
@@ -288,11 +260,11 @@ static int venus_probe(struct platform_device *pdev)
 
 	ret = hfi_core_init(core);
 	if (ret)
-		goto err_rproc_shutdown;
+		goto err_runtime_disable;
 
-//	ret = pm_runtime_put_sync(dev);
-//	if (ret)
-//		goto err_core_deinit;
+	ret = pm_runtime_put_sync(dev);
+	if (ret)
+		goto err_core_deinit;
 
 	ret = v4l2_device_register(dev, &core->v4l2_dev);
 	if (ret)
@@ -330,13 +302,12 @@ err_dev_unregister:
 	v4l2_device_unregister(&core->v4l2_dev);
 err_core_deinit:
 	hfi_core_deinit(core);
-err_rproc_shutdown:
-	rproc_shutdown(core->rproc);
 err_runtime_disable:
 	pm_runtime_set_suspended(dev);
 	pm_runtime_disable(dev);
-err_hfi_destroy:
 	hfi_destroy(core);
+err_put_rproc:
+	rproc_put(core->rproc);
 	return ret;
 }
 
@@ -348,8 +319,6 @@ static int venus_remove(struct platform_device *pdev)
 	pm_runtime_get_sync(&pdev->dev);
 
 	ret = hfi_core_deinit(core);
-
-	rproc_shutdown(core->rproc);
 
 	pm_runtime_put_sync(&pdev->dev);
 
@@ -413,7 +382,7 @@ static const struct venus_resources msm8916_res = {
 	.reg_tbl = msm8916_reg_preset,
 	.reg_tbl_size = ARRAY_SIZE(msm8916_reg_preset),
 	.clks = { "core", "iface", "bus", },
-	.clks_num = 3,
+	.clks_num = 0,
 	.max_load = 352800, /* 720p@30 + 1080p@30 */
 	.hfi_version = HFI_VERSION_LEGACY,
 	.vmem_id = VIDC_RESOURCE_NONE,
