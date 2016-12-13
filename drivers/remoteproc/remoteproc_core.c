@@ -1202,6 +1202,36 @@ out:
 EXPORT_SYMBOL(rproc_shutdown);
 
 /**
+ * rproc_get_by_dev() - find a remote processor by device reference
+ * @dev:	device handle
+ *
+ * Returns rproc handle on success, and NULL on failure.
+ */
+struct rproc *rproc_get_by_dev(struct device *dev)
+{
+	struct rproc *rproc = NULL, *r;
+
+	mutex_lock(&rproc_list_mutex);
+	list_for_each_entry(r, &rproc_list, node) {
+		if (r->dev.parent == dev) {
+			/* prevent underlying implementation from being removed */
+			if (!try_module_get(r->dev.parent->driver->owner)) {
+				dev_err(&r->dev, "can't get owner\n");
+				break;
+			}
+
+			rproc = r;
+			get_device(&rproc->dev);
+			break;
+		}
+	}
+	mutex_unlock(&rproc_list_mutex);
+
+	return rproc;
+}
+EXPORT_SYMBOL(rproc_get_by_dev);
+
+/**
  * rproc_get_by_phandle() - find a remote processor by phandle
  * @phandle: phandle to the rproc
  *
