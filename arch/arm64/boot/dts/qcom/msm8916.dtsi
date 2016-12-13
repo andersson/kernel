@@ -1218,6 +1218,13 @@
 		compatible = "qcom,venus-pil";
 		memory-region = <&venus_mem>;
 		status = "disabled";
+
+		power-domains = <&gcc VENUS_GDSC>;
+		clocks = <&gcc GCC_VENUS0_VCODEC0_CLK>,
+		         <&gcc GCC_VENUS0_AHB_CLK>,
+		         <&gcc GCC_VENUS0_AXI_CLK>;
+		clock-names = "core", "iface", "bus";
+
 	};
 
 	venus-iommu-bus {

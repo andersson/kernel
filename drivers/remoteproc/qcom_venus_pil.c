@@ -21,6 +21,9 @@
 #include <linux/platform_device.h>
 #include <linux/qcom_scm.h>
 #include <linux/remoteproc.h>
+#include <linux/clk.h>
+#include <linux/pm_runtime.h>
+#include <linux/of_platform.h>
 
 #include "qcom_mdt_loader.h"
 #include "remoteproc_internal.h"
@@ -36,7 +39,26 @@ struct qcom_venus {
 	phys_addr_t mem_phys;
 	void *mem_va;
 	size_t mem_size;
+
+	struct clk *clks[3];
+	size_t num_clks;
+
+	struct rproc_subdev smd_subdev;
 };
+
+static int venus_codec_probe(struct rproc_subdev *subdev)
+{
+	struct qcom_venus *venus = container_of(subdev, struct qcom_venus, smd_subdev);
+
+	return of_platform_populate(venus->dev->of_node, NULL, NULL, venus->dev);
+}
+
+static void venus_codec_remove(struct rproc_subdev *subdev)
+{
+	struct qcom_venus *venus = container_of(subdev, struct qcom_venus, smd_subdev);
+
+	of_platform_depopulate(venus->dev);
+}
 
 static int venus_load(struct rproc *rproc, const struct firmware *fw)
 {
@@ -82,11 +104,17 @@ static int venus_start(struct rproc *rproc)
 	struct qcom_venus *venus = rproc->priv;
 	int ret;
 
+	ret = pm_runtime_get_sync(venus->dev);
+	if (ret < 0)
+		return ret;
+
 	ret = qcom_scm_pas_auth_and_reset(VENUS_PAS_ID);
 	if (ret)
 		dev_err(venus->dev,
 			"authentication image and release reset failed (%d)\n",
 			ret);
+
+	pm_runtime_put_sync(venus->dev);
 
 	return ret;
 }
@@ -96,9 +124,15 @@ static int venus_stop(struct rproc *rproc)
 	struct qcom_venus *venus = rproc->priv;
 	int ret;
 
+	ret = pm_runtime_get_sync(venus->dev);
+	if (ret < 0)
+		return ret;
+
 	ret = qcom_scm_pas_shutdown(VENUS_PAS_ID);
 	if (ret)
 		dev_err(venus->dev, "failed to shutdown: %d\n", ret);
+
+	pm_runtime_put_sync(venus->dev);
 
 	return ret;
 }
@@ -121,6 +155,40 @@ static const struct rproc_ops venus_ops = {
 	.stop = venus_stop,
 	.da_to_va = venus_da_to_va,
 };
+
+#ifdef CONFIG_PM
+static int venus_pil_runtime_suspend(struct device *dev)
+{
+	struct qcom_venus *venus = dev_get_drvdata(dev);
+	int i;
+
+	for (i = 0; i < venus->num_clks; i++)
+		clk_disable_unprepare(venus->clks[i]);
+
+	return 0;
+}
+
+static int venus_pil_runtime_resume(struct device *dev)
+{
+	struct qcom_venus *venus = dev_get_drvdata(dev);
+	int ret;
+	int i;
+
+	for (i = 0; i < venus->num_clks; i++) {
+		ret = clk_prepare_enable(venus->clks[i]);
+		if (ret)
+			goto unroll_clocks;
+	}
+
+	return 0;
+
+unroll_clocks:
+	for (; i >= 0; i--)
+		clk_disable_unprepare(venus->clks[i]);
+
+	return ret;
+}
+#endif
 
 static int venus_probe(struct platform_device *pdev)
 {
@@ -150,7 +218,6 @@ static int venus_probe(struct platform_device *pdev)
 		goto release_mem;
 	}
 
-	rproc->auto_boot = false;
 	rproc->fw_ops = &venus_fw_ops;
 	venus = rproc->priv;
 	venus->dev = dev;
@@ -166,13 +233,33 @@ static int venus_probe(struct platform_device *pdev)
 		goto free_rproc;
 	}
 
+	venus->num_clks = 3;
+	venus->clks[0] = devm_clk_get(&pdev->dev, "core");
+	if (IS_ERR(venus->clks[0]))
+		goto dma_free;
+
+	venus->clks[1] = devm_clk_get(&pdev->dev, "iface");
+	if (IS_ERR(venus->clks[1]))
+		goto dma_free;
+
+	venus->clks[2] = devm_clk_get(&pdev->dev, "bus");
+	if (IS_ERR(venus->clks[2]))
+		goto dma_free;
+
+	pm_runtime_enable(dev);
+
+	rproc_add_subdev(rproc, &venus->smd_subdev,
+			 venus_codec_probe, venus_codec_remove);
+
 	ret = rproc_add(rproc);
 	if (ret)
-		goto free_mem;
+		goto disable_pm_runtime;
 
 	return 0;
 
-free_mem:
+disable_pm_runtime:
+	pm_runtime_disable(dev);
+dma_free:
 	dma_free_coherent(dev, venus->mem_size, venus->mem_va, venus->mem_phys);
 free_rproc:
 	rproc_put(rproc);
@@ -192,8 +279,17 @@ static int venus_remove(struct platform_device *pdev)
 	dma_free_coherent(dev, venus->mem_size, venus->mem_va, venus->mem_phys);
 	of_reserved_mem_device_release(dev);
 
+	pm_runtime_disable(dev);
+
 	return 0;
 }
+
+static const struct dev_pm_ops venus_pil_pm_ops = {
+	SET_SYSTEM_SLEEP_PM_OPS(pm_runtime_force_suspend,
+				pm_runtime_force_resume)
+	SET_RUNTIME_PM_OPS(venus_pil_runtime_suspend,
+			   venus_pil_runtime_resume, NULL)
+};
 
 static const struct of_device_id venus_of_match[] = {
 	{ .compatible = "qcom,venus-pil" },
@@ -207,6 +303,7 @@ static struct platform_driver venus_driver = {
 	.driver = {
 		.name = "qcom-venus-pil",
 		.of_match_table = venus_of_match,
+		.pm = &venus_pil_pm_ops,
 	},
 };
 
