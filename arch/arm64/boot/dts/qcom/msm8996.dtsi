@@ -13,6 +13,7 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/qcom,gcc-msm8996.h>
 #include <dt-bindings/clock/qcom,mmcc-msm8996.h>
+#include <dt-bindings/clock/qcom,rpmcc.h>
 
 / {
 	model = "Qualcomm Technologies, Inc. MSM8996";
@@ -243,6 +244,13 @@
 		};
 	};
 
+	firmware {
+		scm: scm {
+			compatible = "qcom,scm";
+			#reset-cells = <1>;
+		};
+	};
+
 	psci {
 		compatible = "arm,psci-1.0";
 		method = "smc";
@@ -260,6 +268,76 @@
 		hwlocks = <&tcsr_mutex 3>;
 	};
 
+	rpm-glink {
+		compatible = "qcom,glink-rpm";
+
+		interrupts = <GIC_SPI 168 IRQ_TYPE_EDGE_RISING>;
+
+		qcom,rpm-msg-ram = <&rpm_msg_ram>;
+		qcom,ipc = <&apcs 0x10 0>;
+
+		rpm_requests {
+			compatible = "qcom,rpm-msm8996";
+			qcom,glink-channels = "rpm_requests";
+
+			rpmcc: qcom,rpmcc {
+				compatible = "qcom,rpmcc-msm8996";
+				#clock-cells = <1>;
+			};
+
+			pm8994-regulators {
+				compatible = "qcom,rpm-pm8994-regulators";
+
+				pm8994_s1: s1 {};
+				pm8994_s2: s2 {};
+				pm8994_s3: s3 {};
+				pm8994_s4: s4 {};
+				pm8994_s5: s5 {};
+				pm8994_s6: s6 {};
+				pm8994_s7: s7 {};
+				pm8994_s8: s8 {};
+				pm8994_s9: s9 {};
+				pm8994_s10: s10 {};
+				pm8994_s11: s11 {};
+				pm8994_s12: s12 {};
+
+				pm8994_l1: l1 {};
+				pm8994_l2: l2 {};
+				pm8994_l3: l3 {};
+				pm8994_l4: l4 {};
+				pm8994_l5: l5 {};
+				pm8994_l6: l6 {};
+				pm8994_l7: l7 {};
+				pm8994_l8: l8 {};
+				pm8994_l9: l9 {};
+				pm8994_l10: l10 {};
+				pm8994_l11: l11 {};
+				pm8994_l12: l12 {};
+				pm8994_l13: l13 {};
+				pm8994_l14: l14 {};
+				pm8994_l15: l15 {};
+				pm8994_l16: l16 {};
+				pm8994_l17: l17 {};
+				pm8994_l18: l18 {};
+				pm8994_l19: l19 {};
+				pm8994_l20: l20 {};
+				pm8994_l21: l21 {};
+				pm8994_l22: l22 {};
+				pm8994_l23: l23 {};
+				pm8994_l24: l24 {};
+				pm8994_l25: l25 {};
+				pm8994_l26: l26 {};
+				pm8994_l27: l27 {};
+				pm8994_l28: l28 {};
+				pm8994_l29: l29 {};
+				pm8994_l30: l30 {};
+				pm8994_l31: l31 {};
+				pm8994_l32: l32 {};
+			};
+
+		};
+	};
+
 	soc: soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -269,6 +347,11 @@
 		tcsr_mutex_regs: syscon@740000 {
 			compatible = "syscon";
 			reg = <0x740000 0x20000>;
+		};
+
+		rpm_msg_ram: memory@68000 {
+			compatible = "qcom,rpm-msg-ram";
+			reg = <0x68000 0x6000>;
 		};
 
 		intc: interrupt-controller@9bc0000 {
@@ -515,6 +598,90 @@
 					       <980000000>,
 					       <960000000>,
 					       <825000000>;
+		};
+
+		ufsphy1: ufsphy@627000 {
+			compatible = "qcom,ufs-phy-qmp-14nm";
+			reg = <0x627000 0xda8>;
+			reg-names = "phy_mem";
+			#phy-cells = <0>;
+
+			vdda-phy-supply = <&pm8994_l28>;
+			vdda-pll-supply = <&pm8994_l12>;
+
+			vdda-phy-max-microamp = <18380>;
+			vdda-pll-max-microamp = <9440>;
+
+			vddp-ref-clk-supply = <&pm8994_l25>;
+			vddp-ref-clk-max-microamp = <100>;
+			vddp-ref-clk-always-on;
+			clock-names = "ref_clk_src", "ref_clk";
+			clocks = <&rpmcc MSM8996_RPM_SMD_LN_BB_CLK>,
+				 <&gcc GCC_UFS_CLKREF_CLK>;
+			status = "disabled";
+
+			power-domains = <&gcc UFS_GDSC>;
+		};
+
+		ufshc@624000 {
+			compatible = "qcom,ufshc";
+			reg = <0x624000 0x2500>;
+			interrupts = <0 265 0>;
+
+			phys = <&ufsphy1>;
+			phy-names = "ufsphy";
+
+			vcc-supply = <&pm8994_l20>;
+			vccq-supply = <&pm8994_l25>;
+			vccq2-supply = <&pm8994_s4>;
+
+			vcc-max-microamp = <600000>;
+			vccq-max-microamp = <450000>;
+			vccq2-max-microamp = <450000>;
+
+			clock-names =
+				"core_clk_src",
+				"core_clk",
+				"bus_clk",
+				"bus_aggr_clk",
+				"iface_clk",
+				"core_clk_unipro_src",
+				"core_clk_unipro",
+				"core_clk_ice",
+				"ref_clk",
+				"tx_lane0_sync_clk",
+				"rx_lane0_sync_clk";
+			clocks =
+				<&gcc UFS_AXI_CLK_SRC>,
+				<&gcc GCC_UFS_AXI_CLK>,
+				<&gcc GCC_SYS_NOC_UFS_AXI_CLK>,
+				<&gcc GCC_AGGRE2_UFS_AXI_CLK>,
+				<&gcc GCC_UFS_AHB_CLK>,
+				<&gcc UFS_ICE_CORE_CLK_SRC>,
+				<&gcc GCC_UFS_UNIPRO_CORE_CLK>,
+				<&gcc GCC_UFS_ICE_CORE_CLK>,
+				<&rpmcc MSM8996_RPM_SMD_LN_BB_CLK>,
+				<&gcc GCC_UFS_TX_SYMBOL_0_CLK>,
+				<&gcc GCC_UFS_RX_SYMBOL_0_CLK>;
+			freq-table-hz =
+				<100000000 200000000>,
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<150000000 300000000>,
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<0 0>,
+				<0 0>;
+
+			lanes-per-direction = <1>;
+			status = "disabled";
+
+			ufs_variant {
+				compatible = "qcom,ufs_variant";
+			};
 		};
 	};
 
