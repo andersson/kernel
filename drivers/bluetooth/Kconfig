@@ -344,8 +344,8 @@ config BT_WILINK
 
 config BT_QCOMSMD
 	tristate "Qualcomm SMD based HCI support"
-	depends on QCOM_SMD && QCOM_WCNSS_CTRL
 	select BT_QCA
+	depends on RPMSG || RPMSG=n
 	help
 	  Qualcomm SMD based HCI driver.
 	  This driver is used to bridge HCI data onto the shared memory
