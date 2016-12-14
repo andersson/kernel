@@ -344,6 +344,11 @@
 		ranges = <0 0 0 0xffffffff>;
 		compatible = "simple-bus";
 
+		rpm_msg_ram: memory@68000 {
+			compatible = "qcom,rpm-msg-ram";
+			reg = <0x68000 0x6000>;
+		};
+
 		tcsr_mutex_regs: syscon@740000 {
 			compatible = "syscon";
 			reg = <0x740000 0x20000>;
