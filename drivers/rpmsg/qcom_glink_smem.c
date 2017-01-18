@@ -23,6 +23,7 @@
 #include <linux/idr.h>
 #include <linux/circ_buf.h>
 #include <linux/soc/qcom/smem.h>
+#include <linux/sizes.h>
 #include <linux/delay.h>
 #include <linux/regmap.h>
 #include <linux/workqueue.h>
@@ -151,7 +152,7 @@ static int qcom_glink_smem_probe(struct platform_device *pdev)
 	__le32 *descs;
 	size_t size;
 	int ret;
-	
+
 	ret = of_property_read_u32(pdev->dev.of_node, "qcom,remote-pid", &remote_pid);
 	if (ret) {
 		dev_err(&pdev->dev, "failed to parse qcom,remote-pid\n");
@@ -168,7 +169,7 @@ static int qcom_glink_smem_probe(struct platform_device *pdev)
 	if (IS_ERR(descs)) {
 		dev_err(&pdev->dev, "failed to acquire xprt descriptor\n");
 		return PTR_ERR(descs);
-	};
+	}
 
 	tx_pipe->tail = &descs[0];
 	tx_pipe->head = &descs[1];
@@ -186,7 +187,7 @@ static int qcom_glink_smem_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "failed to acquire fifo 0: %ld\n", PTR_ERR(tx_pipe->fifo));
 		return PTR_ERR(tx_pipe->fifo);
 	}
-	
+
 	rx_pipe->fifo = qcom_smem_get(remote_pid, SMEM_GLINK_NATIVE_XPRT_FIFO_1, &rx_pipe->length);
 	if (IS_ERR(rx_pipe->fifo)) {
 		dev_err(&pdev->dev, "failed to acquire fifo 1: %ld\n", PTR_ERR(rx_pipe->fifo));
@@ -208,7 +209,7 @@ static int qcom_glink_smem_probe(struct platform_device *pdev)
 					tx_pipe->length);
 	if (IS_ERR(glink))
 		return PTR_ERR(glink);
-	
+
 	platform_set_drvdata(pdev, glink);
 
 	return 0;

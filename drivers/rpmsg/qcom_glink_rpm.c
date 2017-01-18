@@ -228,7 +228,7 @@ static int glink_rpm_parse_toc(struct device *dev,
 			tx->head = msg_ram + offset + sizeof(u32);
 			tx->fifo = msg_ram + offset + 2 * sizeof(u32);
 			break;
-		};
+		}
 	}
 
 	if (!rx->fifo || !tx->fifo) {
