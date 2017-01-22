@@ -525,7 +525,7 @@
 		};
 
 		ufsphy1: ufsphy@627000 {
-			compatible = "qcom,ufs-phy-qmp-14nm";
+			compatible = "qcom,msm8996-ufs-phy-qmp-14nm";
 			reg = <0x627000 0xda8>;
 			reg-names = "phy_mem";
 			#phy-cells = <0>;
