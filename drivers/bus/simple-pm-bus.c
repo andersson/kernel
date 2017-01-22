@@ -11,6 +11,7 @@
 #include <linux/module.h>
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
+#include <linux/pm_clock.h>
 #include <linux/pm_runtime.h>
 
 
@@ -22,17 +23,26 @@ static int simple_pm_bus_probe(struct platform_device *pdev)
 
 	pm_runtime_enable(&pdev->dev);
 
-	if (np)
+	if (np) {
+		of_pm_clk_add_clks(&pdev->dev);
 		of_platform_populate(np, NULL, NULL, &pdev->dev);
+	}
 
 	return 0;
 }
+
+static const struct dev_pm_ops simple_pm_bus_pm_ops = {
+	SET_RUNTIME_PM_OPS(pm_clk_suspend,
+			   pm_clk_resume, NULL)
+};
 
 static int simple_pm_bus_remove(struct platform_device *pdev)
 {
 	dev_dbg(&pdev->dev, "%s\n", __func__);
 
 	pm_runtime_disable(&pdev->dev);
+	pm_clk_destroy(&pdev->dev);
+
 	return 0;
 }
 
@@ -48,6 +58,7 @@ static struct platform_driver simple_pm_bus_driver = {
 	.driver = {
 		.name = "simple-pm-bus",
 		.of_match_table = simple_pm_bus_of_match,
+		.pm = &simple_pm_bus_pm_ops,
 	},
 };
 
