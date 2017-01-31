@@ -30,7 +30,9 @@
 #include <linux/remoteproc.h>
 #include <linux/soc/qcom/smem.h>
 #include <linux/soc/qcom/smem_state.h>
+#include <linux/rpmsg/qcom_smd.h>
 
+#include "qcom_common.h"
 #include "qcom_mdt_loader.h"
 #include "remoteproc_internal.h"
 #include "qcom_wcnss.h"
@@ -94,6 +96,8 @@ struct qcom_wcnss {
 	phys_addr_t mem_reloc;
 	void *mem_region;
 	size_t mem_size;
+
+	struct qcom_rproc_subdev smd_subdev;
 };
 
 static const struct wcnss_data riva_data = {
@@ -143,7 +147,6 @@ void qcom_wcnss_assign_iris(struct qcom_wcnss *wcnss,
 
 	mutex_unlock(&wcnss->iris_lock);
 }
-EXPORT_SYMBOL_GPL(qcom_wcnss_assign_iris);
 
 static int wcnss_load(struct rproc *rproc, const struct firmware *fw)
 {
@@ -578,6 +581,8 @@ static int wcnss_probe(struct platform_device *pdev)
 		}
 	}
 
+	qcom_add_smd_subdev(rproc, &wcnss->smd_subdev);
+
 	ret = rproc_add(rproc);
 	if (ret)
 		goto free_rproc;
@@ -598,6 +603,8 @@ static int wcnss_remove(struct platform_device *pdev)
 
 	qcom_smem_state_put(wcnss->state);
 	rproc_del(wcnss->rproc);
+
+	qcom_remove_smd_subdev(wcnss->rproc, &wcnss->smd_subdev);
 	rproc_free(wcnss->rproc);
 
 	return 0;
@@ -609,6 +616,7 @@ static const struct of_device_id wcnss_of_match[] = {
 	{ .compatible = "qcom,pronto-v2-pil", &pronto_v2_data },
 	{ },
 };
+MODULE_DEVICE_TABLE(of, wcnss_of_match);
 
 static struct platform_driver wcnss_driver = {
 	.probe = wcnss_probe,
@@ -619,6 +627,28 @@ static struct platform_driver wcnss_driver = {
 	},
 };
 
-module_platform_driver(wcnss_driver);
+static int __init wcnss_init(void)
+{
+	int ret;
+
+	ret = platform_driver_register(&wcnss_driver);
+	if (ret)
+		return ret;
+
+	ret = platform_driver_register(&qcom_iris_driver);
+	if (ret)
+		platform_driver_unregister(&wcnss_driver);
+
+	return ret;
+}
+module_init(wcnss_init);
+
+static void __exit wcnss_exit(void)
+{
+	platform_driver_unregister(&qcom_iris_driver);
+	platform_driver_unregister(&wcnss_driver);
+}
+module_exit(wcnss_exit);
+
 MODULE_DESCRIPTION("Qualcomm Peripherial Image Loader for Wireless Subsystem");
 MODULE_LICENSE("GPL v2");
