@@ -255,6 +255,14 @@
 
 		qcom,smem-states = <&adsp_smp2p_out 0>;
 		qcom,smem-state-names = "stop";
+
+		smd-edge {
+			interrupts = <0 156 IRQ_TYPE_EDGE_RISING>;
+
+			qcom,ipc = <&apcs 8 8>;
+			qcom,smd-edge = <1>;
+		};
+
 	};
 
 	smem {
@@ -859,13 +867,6 @@
 
 	smd {
 		compatible = "qcom,smd";
-
-		adsp {
-			interrupts = <0 156 IRQ_TYPE_EDGE_RISING>;
-
-			qcom,ipc = <&apcs 8 8>;
-			qcom,smd-edge = <1>;
-		};
 
 		rpm {
 			interrupts = <0 168 1>;
