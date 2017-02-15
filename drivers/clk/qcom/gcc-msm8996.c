@@ -3074,7 +3074,7 @@ static struct gdsc aggre0_noc_gdsc = {
 	.pd = {
 		.name = "aggre0_noc",
 	},
-	.pwrsts = PWRSTS_OFF_ON,
+	.pwrsts = PWRSTS_ON,
 	.flags = VOTABLE,
 };
 
