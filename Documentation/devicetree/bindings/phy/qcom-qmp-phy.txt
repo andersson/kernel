@@ -1,0 +1,76 @@
+Qualcomm QMP PHY controller
+===========================
+
+QMP phy controller supports physical layer functionality for a number of
+controllers on Qualcomm chipsets, such as, PCIe, UFS, and USB.
+
+Required properties:
+ - compatible: compatible list, contains:
+	       "qcom,msm8996-qmp-pcie-phy" for 14nm PCIe phy on msm8996,
+	       "qcom,msm8996-qmp-usb3-phy" for 14nm USB3 phy on msm8996.
+ - reg: list of offset and length pair of the PHY register sets.
+	at index 0: offset and length of register set for PHY common
+		    serdes block.
+	from index 1 - N: offset and length of register set for each lane,
+			  for N number of phy lanes (ports).
+ - lane-offsets: array of offsets to tx, rx and pcs blocks for phy lanes.
+ - #phy-cells: must be 1
+    - Cell after phy phandle should be the port (lane) number.
+ - #clock-cells: must be 1
+    - Phy pll outputs a bunch of clocks for Tx, Rx and Pipe
+      interface (for pipe based PHYs). These clock are then gate-controlled
+      by gcc.
+ - clocks: a list of phandles and clock-specifier pairs,
+	   one for each entry in clock-names.
+ - clock-names: must be "cfg_ahb" for phy config clock,
+			"aux" for phy aux clock,
+			"ref" for 19.2 MHz ref clk,
+			"pipe<port-number>" for pipe clock specific to
+			each port/lane (Optional).
+ - resets: a list of phandles and reset controller specifier pairs,
+	   one for each entry in reset-names.
+ - reset-names: must be "phy" for reset of phy block,
+			"common" for phy common block reset,
+			"cfg" for phy's ahb cfg block reset (Optional).
+			"port<port-number>" for reset specific to
+			each port/lane (Optional).
+ - vdda-phy-supply: Phandle to a regulator supply to PHY core block.
+ - vdda-pll-supply: Phandle to 1.8V regulator supply to PHY refclk pll block.
+
+Optional properties:
+ - vddp-ref-clk-supply: Phandle to a regulator supply to any specific refclk
+			pll block.
+
+Example:
+	pcie_phy: phy@34000 {
+		compatible = "qcom,msm8996-qmp-pcie-phy";
+		reg = <0x034000 0x48f>,
+			<0x035000 0x5bf>,
+			<0x036000 0x5bf>,
+			<0x037000 0x5bf>;
+				/* tx, rx, pcs */
+		lane-offsets = <0x0 0x200 0x400>;
+		#phy-cells = <1>;
+		#clock-cells = <1>;
+
+		clocks = <&gcc GCC_PCIE_PHY_AUX_CLK>,
+			<&gcc GCC_PCIE_PHY_CFG_AHB_CLK>,
+			<&gcc GCC_PCIE_CLKREF_CLK>,
+			<&gcc GCC_PCIE_0_PIPE_CLK>,
+			<&gcc GCC_PCIE_1_PIPE_CLK>,
+			<&gcc GCC_PCIE_2_PIPE_CLK>;
+		clock-names = "aux", "cfg_ahb", "ref",
+				"pipe0", "pipe1", "pipe2";
+
+		vdda-phy-supply = <&pm8994_l28>;
+		vdda-pll-supply = <&pm8994_l12>;
+
+		resets = <&gcc GCC_PCIE_PHY_BCR>,
+			<&gcc GCC_PCIE_PHY_COM_BCR>,
+			<&gcc GCC_PCIE_PHY_COM_NOCSR_BCR>,
+			<&gcc GCC_PCIE_0_PHY_BCR>,
+			<&gcc GCC_PCIE_1_PHY_BCR>,
+			<&gcc GCC_PCIE_2_PHY_BCR>;
+		reset-names = "phy", "common", "cfg",
+				"lane0", "lane1", "lane2";
+	};
