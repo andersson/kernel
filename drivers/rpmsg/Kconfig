@@ -21,6 +21,14 @@ config RPMSG_QCOM_GLINK_RPM
 	  which serves as a channel for communication with the RPM in GLINK
 	  enabled systems.
 
+config RPMSG_QCOM_GLINK_SMD
+	tristate "Qualcomm SMD Glink driver"
+	select RPMSG
+	help
+	  Say y here to enable support for the GLINK SMD communication driver,
+	  which implements a communication channel with multiple services on
+	  GLINK enabled systems.
+
 config RPMSG_QCOM_SMD
 	tristate "Qualcomm Shared Memory Driver (SMD)"
 	depends on QCOM_SMEM
