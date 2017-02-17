@@ -32,15 +32,18 @@
 
 #include "rpmsg_internal.h"
 
-#define RPM_TOC_SIZE 256
-#define RPM_TOC_MAGIC 0x67727430 /* grt0 */
-#define RPM_TOC_MAX_ENTRIES ((RPM_TOC_SIZE - sizeof(struct rpm_toc)) / \
-			     sizeof(struct rpm_toc_entry))
+#define RPM_TOC_SIZE		256
+#define RPM_TOC_MAGIC		0x67727430 /* grt0 */
+#define RPM_TOC_MAX_ENTRIES	((RPM_TOC_SIZE - sizeof(struct rpm_toc)) / \
+				 sizeof(struct rpm_toc_entry))
 
-#define RPM_TX_FIFO_ID 0x61703272 /* ap2r */
-#define RPM_RX_FIFO_ID 0x72326170 /* r2ap */
+#define RPM_TX_FIFO_ID		0x61703272 /* ap2r */
+#define RPM_RX_FIFO_ID		0x72326170 /* r2ap */
 
-#define GLINK_NAME_SIZE 32
+#define GLINK_NAME_SIZE		32
+
+#define RPM_GLINK_CID_MIN	1
+#define RPM_GLINK_CID_MAX	65536
 
 struct rpm_toc_entry {
 	__le32 id;
@@ -98,10 +101,11 @@ struct glink_rpm {
 
 	struct mutex tx_lock;
 
-	spinlock_t channels_lock;
-	struct list_head channels;
-
 	wait_queue_head_t new_channel_event;
+
+	struct mutex idr_lock;
+	struct idr lcids;
+	struct idr rcids;
 };
 
 enum {
@@ -285,7 +289,6 @@ static int glink_rpm_tx(struct glink_rpm *glink, const void *data,
 			goto out;
 		}
 
-		/* TODO: use wait_event_interruptible() */
 		msleep(10);
 	}
 
@@ -376,6 +379,12 @@ static int glink_rpm_rx_defer(struct glink_rpm *glink, size_t extra)
 	struct glink_defer_cmd *dcmd;
 
 	extra = ALIGN(extra, 8);
+
+	if (glink_rpm_rx_avail(glink) < sizeof(struct glink_cmd) + extra) {
+		dev_dbg(glink->dev, "insufficient data in rx fifo");
+		return -ENXIO;
+	}
+
 	dcmd = kzalloc(sizeof(*dcmd) + extra, GFP_ATOMIC);
 	if (!dcmd)
 		return -ENOMEM;
@@ -386,27 +395,24 @@ static int glink_rpm_rx_defer(struct glink_rpm *glink, size_t extra)
 
 	spin_lock(&glink->rx_lock);
 	list_add_tail(&dcmd->node, &glink->rx_queue);
-	schedule_work(&glink->rx_work);
 	spin_unlock(&glink->rx_lock);
 
+	schedule_work(&glink->rx_work);
 	glink_rpm_rx_advance(glink, sizeof(dcmd->cmd) + extra);
-	glink_rpm_kick(glink);
 
 	return 0;
 }
 
 static int glink_rpm_rx_data(struct glink_rpm *glink, size_t avail)
 {
-	struct glink_channel *channel = NULL;
+	struct glink_channel *channel;
 	struct rpmsg_endpoint *ept;
-	struct glink_channel *tmp;
 	struct {
 		struct glink_cmd cmd;
 		u32 chunk_size;
 		u32 left_size;
 		u8 data[];
-	} hdr, *req;
-	unsigned long flags;
+	} __packed hdr, *req;
 	unsigned int chunk_size;
 	unsigned int left_size;
 	int req_len;
@@ -414,7 +420,7 @@ static int glink_rpm_rx_data(struct glink_rpm *glink, size_t avail)
 	int ret;
 
 	if (avail < sizeof(hdr)) {
-		dev_err(glink->dev, "not enough data in fifo\n");
+		dev_dbg(glink->dev, "not enough data in fifo\n");
 		return -EAGAIN;
 	}
 
@@ -423,11 +429,16 @@ static int glink_rpm_rx_data(struct glink_rpm *glink, size_t avail)
 	left_size = le32_to_cpu(hdr.left_size);
 
 	if (avail < sizeof(hdr) + chunk_size) {
-		dev_err(glink->dev, "payload not yet in fifo\n");
+		dev_dbg(glink->dev, "payload not yet in fifo\n");
 		return -EAGAIN;
 	}
 
 	rcid = le16_to_cpu(hdr.cmd.param1);
+	channel = idr_find(&glink->rcids, rcid);
+	if (!channel) {
+		dev_dbg(glink->dev, "data on non-existing channel\n");
+		return -EINVAL;
+	}
 
 	dev_dbg(glink->dev, "%s(rcid: %d, chunk: %d, left: %d)\n",
 		 __func__, rcid, chunk_size, left_size);
@@ -439,27 +450,15 @@ static int glink_rpm_rx_data(struct glink_rpm *glink, size_t avail)
 
 	glink_rpm_rx_peak(glink, req, req_len);
 
-	spin_lock_irqsave(&glink->channels_lock, flags);
-	list_for_each_entry(tmp, &glink->channels, node) {
-		if (tmp->rcid == rcid) {
-			channel = tmp;
-			break;
-		}
+	spin_lock(&channel->recv_lock);
+	if (channel->glink_ept) {
+		ept = &channel->glink_ept->ept;
+		ret = ept->cb(ept->rpdev, req->data, chunk_size,
+			      ept->priv, RPMSG_ADDR_ANY);
 	}
-
-	if (channel) {
-		spin_lock(&channel->recv_lock);
-		if (channel->glink_ept) {
-			ept = &channel->glink_ept->ept;
-			ret = ept->cb(ept->rpdev, req->data, hdr.chunk_size,
-				      ept->priv, RPMSG_ADDR_ANY);
-		}
-		spin_unlock(&channel->recv_lock);
-	}
-	spin_unlock_irqrestore(&glink->channels_lock, flags);
+	spin_unlock(&channel->recv_lock);
 
 	glink_rpm_rx_advance(glink, ALIGN(req_len, 8));
-	glink_rpm_kick(glink);
 
 	kfree(req);
 	return 0;
@@ -470,6 +469,7 @@ static irqreturn_t glink_rpm_intr(int irq, void *data)
 	struct glink_rpm *glink = data;
 	struct glink_cmd cmd;
 	u32 avail;
+	int ret;
 
 	for (;;) {
 		avail = glink_rpm_rx_avail(glink);
@@ -482,22 +482,31 @@ static irqreturn_t glink_rpm_intr(int irq, void *data)
 		case RPM_CMD_VERSION:
 		case RPM_CMD_VERSION_ACK:
 		case RPM_CMD_OPEN_ACK:
-			glink_rpm_rx_defer(glink, 0);
+			ret = glink_rpm_rx_defer(glink, 0);
 			break;
 		case RPM_CMD_OPEN:
-			glink_rpm_rx_defer(glink, cmd.param2);
+			ret = glink_rpm_rx_defer(glink, cmd.param2);
 			break;
 		case RPM_CMD_TX_DATA:
 		case RPM_CMD_TX_DATA_CONT:
-			glink_rpm_rx_data(glink, avail);
+			ret = glink_rpm_rx_data(glink, avail);
+			break;
+		case RPM_CMD_READ_NOTIF:
+			glink_rpm_rx_advance(glink, ALIGN(sizeof(cmd), 8));
+			glink_rpm_kick(glink);
+
+			ret = 0;
 			break;
 		default:
-			print_hex_dump(KERN_ERR, "UNKNOWN RX: ", DUMP_PREFIX_OFFSET, 16, 1, &cmd, sizeof(cmd), true);
-			goto out;
+			dev_err(glink->dev, "unhandled rx cmd: %d\n", cmd.cmd);
+			ret = -EINVAL;
+			break;
 		}
+
+		if (ret)
+			break;
 	}
 
-out:
 	return IRQ_HANDLED;
 }
 
@@ -505,19 +514,14 @@ static struct glink_channel *
 glink_find_channel(struct glink_rpm *glink, const char *name)
 {
 	struct glink_channel *channel;
-	struct glink_channel *ret = NULL;
-	unsigned long flags;
+	int lcid;
 
-	spin_lock_irqsave(&glink->channels_lock, flags);
-	list_for_each_entry(channel, &glink->channels, node) {
-		if (!strcmp(channel->name, name)) {
-			ret = channel;
+	idr_for_each_entry(&glink->lcids, channel, lcid) {
+		if (!strcmp(channel->name, name))
 			break;
-		}
 	}
-	spin_unlock_irqrestore(&glink->channels_lock, flags);
 
-	return ret;
+	return channel;
 }
 
 static void __ept_release(struct kref *kref)
@@ -604,7 +608,7 @@ static int __glink_rpm_send(struct glink_endpoint *glink_ept,
 		u32 chunk_size;
 		u32 left_size;
 		u8 data[];
-	} *req;
+	} __packed *req;
 	int req_len = ALIGN(sizeof(*req) + len, 8);
 	int ret;
 
@@ -632,7 +636,7 @@ static int glink_rpm_send(struct rpmsg_endpoint *ept, void *data, int len)
 
 	dev_dbg(glink_ept->glink->dev, "%s(%d)\n", __func__, len);
 
-	return __glink_rpm_send(glink_ept, data, len, false);
+	return __glink_rpm_send(glink_ept, data, len, true);
 }
 
 static int glink_rpm_trysend(struct rpmsg_endpoint *ept, void *data, int len)
@@ -682,9 +686,7 @@ static int glink_rpm_open(struct glink_rpm *glink, u16 rcid, char *name)
 {
 	struct rpmsg_device *rpdev;
 	struct glink_channel *ch;
-	unsigned long flags;
 	int ret;
-	static int current_lcid = 0;
 
 	dev_dbg(glink->dev, "%s(%d, %s)\n", __func__, rcid, name);
 
@@ -695,8 +697,6 @@ static int glink_rpm_open(struct glink_rpm *glink, u16 rcid, char *name)
 	/* Setup glink internal glink_channel data */
 	spin_lock_init(&ch->recv_lock);
 	ch->glink = glink;
-	ch->lcid = current_lcid++;
-	ch->rcid = rcid;
 	ch->name = kstrdup(name, GFP_KERNEL);
 	ch->state = GLINK_STATE_CLOSED;
 
@@ -710,42 +710,50 @@ static int glink_rpm_open(struct glink_rpm *glink, u16 rcid, char *name)
 	rpdev->dev.of_node = glink_rpm_match_channel(glink->dev->of_node, name);
 	rpdev->dev.parent = glink->dev;
 
-	spin_lock_irqsave(&glink->channels_lock, flags);
-	list_add(&ch->node, &glink->channels);
-	spin_unlock_irqrestore(&glink->channels_lock, flags);
+	mutex_lock(&glink->idr_lock);
+
+	ret = idr_alloc_cyclic(&glink->lcids, ch, RPM_GLINK_CID_MIN, RPM_GLINK_CID_MAX, GFP_KERNEL);
+	if (ret < 0) {
+		dev_err(glink->dev, "failed to allocate local channel id\n");
+		goto free_channel;
+	}
+	ch->lcid = ret;
+
+	ret = idr_alloc(&glink->rcids, ch, rcid, rcid + 1, GFP_KERNEL);
+	if (ret < 0) {
+		dev_err(glink->dev, "unable to insert channel into rcid list\n");
+		goto lcid_remove;
+	}
+	ch->rcid = ret;
+
+	mutex_unlock(&glink->idr_lock);
 
 	wake_up_interruptible(&glink->new_channel_event);
 
 	ret = rpmsg_register_device(rpdev);
 	if (ret)
-		goto err_cleanup;
+		goto rcid_remove;
 
 	return 0;
 
-err_cleanup:
-	spin_lock_irqsave(&glink->channels_lock, flags);
-	list_del(&ch->node);
-	spin_unlock_irqrestore(&glink->channels_lock, flags);
+rcid_remove:
+	idr_remove(&glink->rcids, ch->rcid);
 
+lcid_remove:
+	idr_remove(&glink->lcids, ch->lcid);
+
+	mutex_unlock(&glink->idr_lock);
+
+free_channel:
 	kfree(ch);
 	return ret;
 }
 
 static int glink_rpm_open_ack(struct glink_rpm *glink, u16 lcid)
 {
-	struct glink_channel *channel = NULL;
-	struct glink_channel *tmp;
-	unsigned long flags;
+	struct glink_channel *channel;
 
-	spin_lock_irqsave(&glink->channels_lock, flags);
-	list_for_each_entry(tmp, &glink->channels, node) {
-		if (tmp->lcid == lcid) {
-			channel = tmp;
-			break;
-		}
-	}
-	spin_unlock_irqrestore(&glink->channels_lock, flags);
-
+	channel = idr_find(&glink->lcids, lcid);
 	if (!channel || channel->state != GLINK_STATE_OPENING) {
 		dev_err(glink->dev, "invalid open ack packet\n");
 		return -EINVAL;
@@ -897,9 +905,11 @@ static int glink_rpm_probe(struct platform_device *pdev)
 	INIT_LIST_HEAD(&glink->rx_queue);
 	INIT_WORK(&glink->rx_work, glink_rpm_work);
 
-	spin_lock_init(&glink->channels_lock);
-	INIT_LIST_HEAD(&glink->channels);
 	init_waitqueue_head(&glink->new_channel_event);
+
+	mutex_init(&glink->idr_lock);
+	idr_init(&glink->lcids);
+	idr_init(&glink->rcids);
 
 	ret = of_parse_phandle_with_fixed_args(dev->of_node,
 					       "qcom,ipc", 2, 0,
@@ -975,6 +985,9 @@ static int glink_rpm_remove(struct platform_device *pdev)
 	ret = device_for_each_child(glink->dev, NULL, glink_rpm_remove_device);
 	if (ret)
 		dev_warn(glink->dev, "can't remove glink devices: %d\n", ret);
+
+	idr_destroy(&glink->lcids);
+	idr_destroy(&glink->rcids);
 
 	return 0;
 }
