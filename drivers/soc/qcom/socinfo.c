@@ -201,6 +201,109 @@ static struct smem_image_version *smem_image_version;
 /* max socinfo format version supported */
 #define MAX_SOCINFO_FORMAT 12
 
+/* socinfo: sysfs functions */
+
+static ssize_t
+qcom_show_raw_version(struct device *dev, struct device_attribute *attr,
+		      char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%u\n", le32_to_cpu(socinfo->raw_ver));
+}
+
+static ssize_t
+qcom_show_build_id(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%s\n", socinfo->build_id);
+}
+
+static ssize_t
+qcom_show_hw_platform(struct device *dev, struct device_attribute *attr,
+		      char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%u\n", le32_to_cpu(socinfo->hw_plat));
+}
+
+static ssize_t
+qcom_show_platform_version(struct device *dev, struct device_attribute *attr,
+			   char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%u\n",
+			 le32_to_cpu(socinfo->plat_ver));
+}
+
+static ssize_t
+qcom_show_accessory_chip(struct device *dev, struct device_attribute *attr,
+			 char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%u\n",
+			 le32_to_cpu(socinfo->accessory_chip));
+}
+
+static ssize_t
+qcom_show_platform_subtype(struct device *dev, struct device_attribute *attr,
+			   char *buf)
+{
+	int subtype = le32_to_cpu(socinfo->hw_plat_subtype);
+
+	if (subtype < 0)
+		return -EINVAL;
+
+	return scnprintf(buf, PAGE_SIZE, "%u\n", subtype);
+}
+
+static ssize_t
+qcom_show_foundry_id(struct device *dev, struct device_attribute *attr,
+		     char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%u\n",
+			 le32_to_cpu(socinfo->foundry_id));
+}
+
+static ssize_t
+qcom_show_chip_family(struct device *dev, struct device_attribute *attr,
+		      char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "0x%x\n",
+			 le32_to_cpu(socinfo->chip_family));
+}
+
+static ssize_t
+qcom_show_raw_device_family(struct device *dev, struct device_attribute *attr,
+			    char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "0x%x\n",
+			 le32_to_cpu(socinfo->raw_device_family));
+}
+
+static ssize_t
+qcom_show_raw_device_number(struct device *dev, struct device_attribute *attr,
+			    char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "0x%x\n",
+			 le32_to_cpu(socinfo->raw_device_num));
+}
+
+static ssize_t
+qcom_show_pmic_model(struct device *dev, struct device_attribute *attr,
+		     char *buf)
+{
+	int model = SOCINFO_MINOR(le32_to_cpu(socinfo->pmic_model));
+
+	if (model < 0)
+		return -EINVAL;
+
+	return scnprintf(buf, PAGE_SIZE, "%s\n", pmic_model[model]);
+}
+
+static ssize_t
+qcom_show_pmic_die_revision(struct device *dev, struct device_attribute *attr,
+			    char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%u.%u\n",
+			 SOCINFO_MAJOR(le32_to_cpu(socinfo->pmic_die_rev)),
+			 SOCINFO_MINOR(le32_to_cpu(socinfo->pmic_die_rev)));
+}
+
 static ssize_t
 qcom_show_image_version(struct device *dev, struct device_attribute *attr,
 			char *buf)
@@ -267,6 +370,21 @@ qcom_store_image_crm(struct device *dev, struct device_attribute *attr,
 		       SMEM_IMAGE_VERSION_OEM_SIZE);
 }
 
+static const struct qcom_socinfo_attr socinfo_attrs[] = {
+	QCOM_SOCINFO_ATTR(chip_family, qcom_show_chip_family, 12),
+	QCOM_SOCINFO_ATTR(raw_device_family, qcom_show_raw_device_family, 12),
+	QCOM_SOCINFO_ATTR(raw_device_number, qcom_show_raw_device_number, 12),
+	QCOM_SOCINFO_ATTR(foundry_id, qcom_show_foundry_id, 9),
+	QCOM_SOCINFO_ATTR(pmic_model, qcom_show_pmic_model, 7),
+	QCOM_SOCINFO_ATTR(pmic_die_revision, qcom_show_pmic_die_revision, 7),
+	QCOM_SOCINFO_ATTR(platform_subtype, qcom_show_platform_subtype, 6),
+	QCOM_SOCINFO_ATTR(accessory_chip, qcom_show_accessory_chip, 5),
+	QCOM_SOCINFO_ATTR(platform_version, qcom_show_platform_version, 4),
+	QCOM_SOCINFO_ATTR(hw_platform, qcom_show_hw_platform, 3),
+	QCOM_SOCINFO_ATTR(raw_version, qcom_show_raw_version, 2),
+	QCOM_SOCINFO_ATTR(build_id, qcom_show_build_id, 1),
+};
+
 QCOM_SMEM_IMG_ITEM(boot, 0444, SMEM_IMAGE_TABLE_BOOT_INDEX);
 QCOM_SMEM_IMG_ITEM(tz, 0444, SMEM_IMAGE_TABLE_TZ_INDEX);
 QCOM_SMEM_IMG_ITEM(rpm, 0444, SMEM_IMAGE_TABLE_RPM_INDEX);
@@ -330,7 +448,9 @@ static int qcom_socinfo_probe(struct platform_device *pdev)
 {
 	struct soc_device_attribute *attr;
 	struct soc_device *soc_dev;
+	struct device *dev;
 	size_t item_size;
+	int i;
 
 	socinfo = qcom_smem_get(QCOM_SMEM_HOST_ANY, SMEM_HW_SW_BUILD_ID,
 				&item_size);
@@ -366,6 +486,12 @@ static int qcom_socinfo_probe(struct platform_device *pdev)
 	}
 
 	socinfo_versions_init(&pdev->dev, soc_dev);
+
+	dev = soc_device_to_device(soc_dev);
+	for (i = 0; i < ARRAY_SIZE(socinfo_attrs); i++) {
+		if (socinfo_attrs[i].min_ver <=	le32_to_cpu(socinfo->fmt))
+			device_create_file(dev, &socinfo_attrs[i].attr);
+	}
 
 	/* Feed the soc specific unique data into entropy pool */
 	add_device_randomness(socinfo, item_size);
