@@ -278,6 +278,8 @@ struct qcom_smem {
 
 	unsigned num_regions;
 	struct smem_region regions[0];
+
+	struct platform_device *socinfo;
 };
 
 static void *
@@ -979,11 +981,18 @@ static int qcom_smem_probe(struct platform_device *pdev)
 
 	__smem = smem;
 
+	smem->socinfo = platform_device_register_data(&pdev->dev, "qcom-socinfo", -1, NULL, 0);
+	if (IS_ERR(smem->socinfo))
+		dev_err(&pdev->dev, "failed to register socinfo device\n");
+
 	return 0;
 }
 
 static int qcom_smem_remove(struct platform_device *pdev)
 {
+	if (!IS_ERR(__smem->socinfo))
+		platform_device_unregister(__smem->socinfo);
+
 	hwspin_lock_free(__smem->hwlock);
 	__smem = NULL;
 
