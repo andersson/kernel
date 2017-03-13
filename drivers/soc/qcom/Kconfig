@@ -24,6 +24,14 @@ config QCOM_PM
 	  modes. It interface with various system drivers to put the cores in
 	  low power modes.
 
+config QCOM_RFSA
+	tristate "Qualcomm Remote Filesystem Access driver"
+	help
+	  The Qualcomm remote filesystem access driver is used for allocating
+	  and exposing regions of shared memory with remote processors for the
+	  purpose of exchanging sector-data between the remote filesystem
+	  service and its clients.
+
 config QCOM_SMEM
 	tristate "Qualcomm Shared Memory Manager (SMEM)"
 	depends on ARCH_QCOM
