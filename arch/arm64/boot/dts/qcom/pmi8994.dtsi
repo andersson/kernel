@@ -8,6 +8,25 @@
 		reg = <0x2 SPMI_USID>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		pmi8994_mpps: mpps@a000 {
+			compatible = "qcom,pm8994-mpp";
+			reg = <0xa000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <0 0xa0 0 IRQ_TYPE_NONE>,
+				     <0 0xa1 0 IRQ_TYPE_NONE>,
+				     <0 0xa2 0 IRQ_TYPE_NONE>,
+				     <0 0xa3 0 IRQ_TYPE_NONE>;
+
+			pmi8994_mpp2_userled4: mpp2-userled-active {
+				pins = "mpp2";
+				function = "sink";
+
+				output-low;
+				qcom,dtest = <4>;
+			};
+		};
 	};
 
 	pmic@3 {
@@ -15,5 +34,70 @@
 		reg = <0x3 SPMI_USID>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		pmi8994_lpg_lut: lpg-lut@b000 {
+			compatible = "qcom,spmi-lpg-lut";
+			reg = <0xb000>;
+
+			qcom,lut-size = <24>;
+		};
+
+		lpg@b100 {
+			compatible = "qcom,spmi-lpg";
+			reg = <0xb100>;
+
+			qcom,tri-led = <&pmi8994_tri_led 2>;
+
+			label = "lpg:green:user1";
+		};
+
+		lpg@b200 {
+			compatible = "qcom,spmi-lpg";
+			reg = <0xb200>;
+
+			qcom,lpg-channel = <2>;
+
+			label = "lpg:green:user0";
+
+			qcom,tri-led = <&pmi8994_tri_led 1>;
+			qcom,lut = <&pmi8994_lpg_lut>;
+
+			qcom,pattern = /bits/ 16 <9 20 42 86 158 256 353 425 469 491 502 507>;
+			qcom,pattern-length-ms = <1337>;
+			qcom,pattern-ping-pong;
+
+			default-state = "on";
+		};
+
+		lpg@b300 {
+			compatible = "qcom,spmi-lpg";
+			reg = <0xb300>;
+
+			label = "lpg:green:user2";
+
+			qcom,tri-led = <&pmi8994_tri_led 0>;
+		};
+
+		lpg@b400 {
+			compatible = "qcom,spmi-lpg";
+			reg = <0xb400>;
+
+			label = "lpg:green:user3";
+
+			qcom,dtest = <4 1>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&pmi8994_mpp2_userled4>;
+
+			linux,default-trigger = "heartbeat";
+			default-state = "off";
+		};
+
+		pmi8994_tri_led: tri-led@d000 {
+			compatible = "qcom,spmi-tri-led";
+			reg = <0xd000>;
+
+			qcom,power-source = <1>;
+		};
 	};
 };
