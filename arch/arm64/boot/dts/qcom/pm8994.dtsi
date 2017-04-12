@@ -58,6 +58,20 @@
 				     <0 0xa5 0 IRQ_TYPE_NONE>,
 				     <0 0xa6 0 IRQ_TYPE_NONE>,
 				     <0 0xa7 0 IRQ_TYPE_NONE>;
+
+			pm8994_mpp2_wifi_led: mpp2-wifi-led-active {
+				pins = "mpp2";
+				function = "sink";
+
+				output-low;
+			};
+
+			pm8994_mpp4_bt_led: mpp4-wifi-led-active {
+				pins = "mpp4";
+				function = "sink";
+
+				output-low;
+			};
 		};
 	};
 

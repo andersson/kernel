@@ -107,4 +107,25 @@
 			gpios = <&pm8994_gpios 2 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pm8994_mpp2_wifi_led>, <&pm8994_mpp4_bt_led>;
+
+		wifi-led {
+			label = "pm8994:yellow:wifi-led";
+			gpios = <&pm8994_mpps 2 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+			default-state = "off";
+		};
+
+		bt-led {
+			label = "pm8994:blue:bt-led";
+			gpios = <&pm8994_mpps 4 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+			default-state = "off";
+		};
+	};
 };
