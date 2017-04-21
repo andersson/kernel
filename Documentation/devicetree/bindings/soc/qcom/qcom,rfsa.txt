@@ -1,0 +1,43 @@
+Qualcomm Remote File System Access binding
+
+This binding describes the Qualcomm RFSA, which serves the purpose of managing
+the shared memory region used for remote processors to access block device data
+using the Remote Filesystem protocol.
+
+- compatible:
+	Usage: required
+	Value type: <stringlist>
+	Definition: must be:
+		    "qcom,rfsa"
+
+- memory-region:
+	Usage: required
+	Value type: <prop-encoded-array>
+	Definition: handle to memory reservation the associated rfsa region.
+
+- qcom,client-id:
+	Usage: required
+	Value type: <u32>
+	Definition: identifier of the client to use this region for buffers.
+
+= EXAMPLE
+The following example shows the RFSA setup for APQ8016, with the RFSA region
+for the Hexagon DSP (id #1) located at 0x86700000.
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		rmtfs: rmtfs@86700000 {
+			reg = <0x0 0x86700000 0x0 0xe0000>;
+			no-map;
+		};
+	};
+
+	hexagon-rfsa {
+		compatible = "qcom,rfsa";
+		memory-region = <&rmtfs>;
+
+		qcom,client-id = <1>;
+	};
