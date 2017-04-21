@@ -397,3 +397,29 @@ void of_reserved_mem_device_release(struct device *dev)
 	rmem->ops->device_release(rmem, dev);
 }
 EXPORT_SYMBOL_GPL(of_reserved_mem_device_release);
+
+/**
+ * of_get_reserved_mem_by_idx() - acquire reserved_mem from memory-region
+ * @np:		node pointer containing the "memory-region"
+ * @idx:	index within memory-region
+ *
+ * This function allows drivers to acquire a reference to the reserved_mem
+ * struct which is referenced by their memory-region.
+ *
+ * Returns a reserved_mem reference, or NULL on error.
+ */
+struct reserved_mem *of_get_reserved_mem_by_idx(struct device_node *np, int idx)
+{
+	struct device_node *target;
+	struct reserved_mem *rmem;
+
+	target = of_parse_phandle(np, "memory-region", idx);
+	if (!target)
+		return NULL;
+
+	rmem = __find_rmem(target);
+	of_node_put(target);
+
+	return rmem;
+}
+EXPORT_SYMBOL_GPL(of_get_reserved_mem_by_idx);

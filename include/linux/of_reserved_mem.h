@@ -34,6 +34,8 @@ int of_reserved_mem_device_init_by_idx(struct device *dev,
 				       struct device_node *np, int idx);
 void of_reserved_mem_device_release(struct device *dev);
 
+struct reserved_mem *of_get_reserved_mem_by_idx(struct device_node *np, int idx);
+
 int early_init_dt_alloc_reserved_memory_arch(phys_addr_t size,
 					     phys_addr_t align,
 					     phys_addr_t start,
@@ -51,6 +53,12 @@ static inline int of_reserved_mem_device_init_by_idx(struct device *dev,
 	return -ENOSYS;
 }
 static inline void of_reserved_mem_device_release(struct device *pdev) { }
+
+static inline struct reserved_mem *of_get_reserved_mem_by_idx(struct device_node *np,
+							      int idx);
+{
+	return NULL;
+}
 
 static inline void fdt_init_reserved_mem(void) { }
 static inline void fdt_reserved_mem_save_node(unsigned long node,
