@@ -62,6 +62,7 @@ struct qrtr_hdr {
 
 #define QRTR_HDR_SIZE sizeof(struct qrtr_hdr)
 #define QRTR_NODE_BCAST ((unsigned int)-1)
+#define QRTR_PORT_BCAST ((unsigned int)-1)
 #define QRTR_PORT_CTRL ((unsigned int)-2)
 
 struct qrtr_sock {
@@ -614,6 +615,52 @@ static int qrtr_bcast_enqueue(struct qrtr_node *node, struct sk_buff *skb)
 	return 0;
 }
 
+/* Queue packet to all local peer sockets */
+static int qrtr_local_bcast_enqueue(struct qrtr_node *node, struct sk_buff *skb)
+{
+	struct qrtr_sock *ipc;
+	struct sk_buff *skbn;
+	int ret;
+	int id;
+
+	mutex_lock(&qrtr_port_lock);
+	idr_for_each_entry(&qrtr_ports, ipc, id) {
+		sock_hold(&ipc->sk);
+		mutex_unlock(&qrtr_port_lock);
+
+		/* Do not send to self or ctrl port */
+		if (&ipc->sk == skb->sk || ipc->us.sq_port == QRTR_PORT_CTRL) {
+			qrtr_port_put(ipc);
+			mutex_lock(&qrtr_port_lock);
+			continue;
+		}
+
+		skbn = skb_clone(skb, GFP_KERNEL);
+		if (!skbn) {
+			qrtr_port_put(ipc);
+			ret = -ENOMEM;
+			mutex_lock(&qrtr_port_lock);
+			break;
+		}
+
+		ret = sock_queue_rcv_skb(&ipc->sk, skbn);
+		if (ret) {
+			qrtr_port_put(ipc);
+			kfree_skb(skbn);
+			mutex_lock(&qrtr_port_lock);
+			break;
+		}
+
+		qrtr_port_put(ipc);
+		mutex_lock(&qrtr_port_lock);
+	}
+	mutex_unlock(&qrtr_port_lock);
+
+	consume_skb(skb);
+
+	return ret;
+}
+
 static int qrtr_sendmsg(struct socket *sock, struct msghdr *msg, size_t len)
 {
 	DECLARE_SOCKADDR(struct sockaddr_qrtr *, addr, msg->msg_name);
@@ -660,6 +707,9 @@ static int qrtr_sendmsg(struct socket *sock, struct msghdr *msg, size_t len)
 	node = NULL;
 	if (addr->sq_node == QRTR_NODE_BCAST) {
 		enqueue_fn = qrtr_bcast_enqueue;
+	} else if (addr->sq_node == ipc->us.sq_node &&
+		   addr->sq_port == QRTR_PORT_BCAST) {
+		enqueue_fn = qrtr_local_bcast_enqueue;
 	} else if (addr->sq_node == ipc->us.sq_node) {
 		enqueue_fn = qrtr_local_enqueue;
 	} else {
