@@ -111,6 +111,8 @@ struct qrtr_node {
 	struct list_head item;
 };
 
+static int qrtr_local_enqueue(struct qrtr_node *node, struct sk_buff *skb);
+
 /* Release node resources and free the node.
  *
  * Do not call directly, use qrtr_node_release.  To be used with
@@ -278,6 +280,37 @@ static struct sk_buff *qrtr_alloc_resume_tx(u32 src_node,
 	return skb;
 }
 
+/* Allocate and construct a BYE message to signal remote termination */
+static struct sk_buff *qrtr_alloc_local_bye(u32 src_node)
+{
+	const int pkt_len = 20;
+	struct qrtr_hdr *hdr;
+	struct sk_buff *skb;
+	__le32 *buf;
+
+	skb = alloc_skb(QRTR_HDR_SIZE + pkt_len, GFP_KERNEL);
+	if (!skb)
+		return NULL;
+
+	skb_reset_transport_header(skb);
+
+	hdr = (struct qrtr_hdr *)skb_put(skb, QRTR_HDR_SIZE);
+	hdr->version = cpu_to_le32(QRTR_PROTO_VER);
+	hdr->type = cpu_to_le32(QRTR_TYPE_BYE);
+	hdr->src_node_id = cpu_to_le32(src_node);
+	hdr->src_port_id = cpu_to_le32(QRTR_PORT_CTRL);
+	hdr->confirm_rx = cpu_to_le32(0);
+	hdr->size = cpu_to_le32(pkt_len);
+	hdr->dst_node_id = cpu_to_le32(qrtr_local_nid);
+	hdr->dst_port_id = cpu_to_le32(QRTR_PORT_CTRL);
+
+	buf = (__le32 *)skb_put(skb, pkt_len);
+	memset(buf, 0, pkt_len);
+	buf[0] = cpu_to_le32(QRTR_TYPE_BYE);
+
+	return skb;
+}
+
 static struct qrtr_sock *qrtr_port_lookup(int port);
 static void qrtr_port_put(struct qrtr_sock *ipc);
 
@@ -369,10 +402,16 @@ EXPORT_SYMBOL_GPL(qrtr_endpoint_register);
 void qrtr_endpoint_unregister(struct qrtr_endpoint *ep)
 {
 	struct qrtr_node *node = ep->node;
+	struct sk_buff *skb;
 
 	mutex_lock(&node->ep_lock);
 	node->ep = NULL;
 	mutex_unlock(&node->ep_lock);
+
+	/* Notify the local controller about the event */
+	skb = qrtr_alloc_local_bye(node->nid);
+	if (skb)
+		qrtr_local_enqueue(NULL, skb);
 
 	qrtr_node_release(node);
 	ep->node = NULL;
