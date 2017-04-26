@@ -371,7 +371,7 @@ static void reap_tx_dxes(struct wcn36xx *wcn, struct wcn36xx_dxe_ch *ch)
 			info = IEEE80211_SKB_CB(ctl->skb);
 			if (!(info->flags & IEEE80211_TX_CTL_REQ_TX_STATUS)) {
 				/* Keep frame until TX status comes */
-				ieee80211_free_txskb(wcn->hw, ctl->skb);
+				ieee80211_tx_status(wcn->hw, ctl->skb);
 			}
 			spin_lock(&ctl->skb_lock);
 			if (wcn->queues_stopped) {
