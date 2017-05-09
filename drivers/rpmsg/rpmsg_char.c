@@ -138,10 +138,10 @@ static int rpmsg_eptdev_open(struct inode *inode, struct file *filp)
 	get_device(dev);
 
 	ept = rpmsg_create_ept(rpdev, rpmsg_ept_cb, eptdev, eptdev->chinfo);
-	if (!ept) {
+	if (IS_ERR(ept)) {
 		dev_err(dev, "failed to open %s\n", eptdev->chinfo.name);
 		put_device(dev);
-		return -EINVAL;
+		return PTR_ERR(ept);
 	}
 
 	eptdev->ept = ept;

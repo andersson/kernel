@@ -224,7 +224,7 @@ static struct rpmsg_endpoint *__rpmsg_create_ept(struct virtproc_info *vrp,
 
 	ept = kzalloc(sizeof(*ept), GFP_KERNEL);
 	if (!ept)
-		return NULL;
+		return PTR_ERR(-ENOMEM);
 
 	kref_init(&ept->refcount);
 	mutex_init(&ept->cb_lock);
@@ -260,7 +260,7 @@ static struct rpmsg_endpoint *__rpmsg_create_ept(struct virtproc_info *vrp,
 free_ept:
 	mutex_unlock(&vrp->endpoints_lock);
 	kref_put(&ept->refcount, __ept_release);
-	return NULL;
+	return ERR_PTR(id);
 }
 
 static struct rpmsg_endpoint *virtio_rpmsg_create_ept(struct rpmsg_device *rpdev,

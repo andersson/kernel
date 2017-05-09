@@ -860,16 +860,16 @@ static struct rpmsg_endpoint *qcom_smd_create_ept(struct rpmsg_device *rpdev,
 			(channel = qcom_smd_find_channel(edge, name)) != NULL,
 			HZ);
 	if (!ret)
-		return NULL;
+		return ERR_PTR(-ETIMEDOUT);
 
 	if (channel->state != SMD_CHANNEL_CLOSED) {
 		dev_err(&rpdev->dev, "channel %s is busy\n", channel->name);
-		return NULL;
+		return ERR_PTR(-EBUSY);
 	}
 
 	qsept = kzalloc(sizeof(*qsept), GFP_KERNEL);
 	if (!qsept)
-		return NULL;
+		return ERR_PTR(-ENOMEM);
 
 	ept = &qsept->ept;
 
@@ -892,7 +892,7 @@ static struct rpmsg_endpoint *qcom_smd_create_ept(struct rpmsg_device *rpdev,
 free_ept:
 	channel->qsept = NULL;
 	kref_put(&ept->refcount, __ept_release);
-	return NULL;
+	return ERR_PTR(ret);
 }
 
 static void qcom_smd_destroy_ept(struct rpmsg_endpoint *ept)

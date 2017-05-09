@@ -65,7 +65,7 @@
  * dynamically assign them an available rpmsg address (drivers should have
  * a very good reason why not to always use RPMSG_ADDR_ANY here).
  *
- * Returns a pointer to the endpoint on success, or NULL on error.
+ * Returns a pointer to the endpoint on success, or ERR_PTR() on error.
  */
 struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_device *rpdev,
 					rpmsg_rx_cb_t cb, void *priv,
@@ -411,9 +411,9 @@ static int rpmsg_dev_probe(struct device *dev)
 		chinfo.dst = RPMSG_ADDR_ANY;
 
 		ept = rpmsg_create_ept(rpdev, rpdrv->callback, NULL, chinfo);
-		if (!ept) {
+		if (IS_ERR(ept)) {
 			dev_err(dev, "failed to create endpoint\n");
-			err = -ENOMEM;
+			err = PTR_ERR(ept);
 			goto out;
 		}
 
