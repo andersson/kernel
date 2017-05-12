@@ -22,6 +22,7 @@
 #include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/reboot.h>
+#include <linux/reboot-mode.h>
 #include <linux/regmap.h>
 
 #define PON_REV2			0x01
@@ -42,6 +43,7 @@
 #define PON_DBC_CTL			0x71
 #define  PON_DBC_DELAY_MASK		0x7
 
+#define PON_SOFT_RB_SPARE		0x8f
 
 struct pm8941_pwrkey {
 	struct device *dev;
@@ -52,7 +54,25 @@ struct pm8941_pwrkey {
 
 	unsigned int revision;
 	struct notifier_block reboot_notifier;
+
+	struct reboot_mode_driver reboot_mode;
 };
+
+static int pm8941_reboot_mode_write(struct reboot_mode_driver *reboot,
+				    unsigned int magic)
+{
+	struct pm8941_pwrkey *pwrkey = container_of(reboot, struct pm8941_pwrkey,
+						    reboot_mode);
+	int ret;
+
+	ret = regmap_update_bits(pwrkey->regmap,
+				 pwrkey->baseaddr + PON_SOFT_RB_SPARE,
+				 0xfc, magic << 2);
+	if (ret < 0)
+		dev_err(pwrkey->dev, "update reboot mode bits failed\n");
+
+	return ret;
+}
 
 static int pm8941_reboot_notify(struct notifier_block *nb,
 				unsigned long code, void *unused)
@@ -253,6 +273,14 @@ static int pm8941_pwrkey_probe(struct platform_device *pdev)
 	if (error) {
 		dev_err(&pdev->dev, "failed to register reboot notifier: %d\n",
 			error);
+		return error;
+	}
+
+	pwrkey->reboot_mode.dev = &pdev->dev;
+	pwrkey->reboot_mode.write = pm8941_reboot_mode_write;
+	error = devm_reboot_mode_register(&pdev->dev, &pwrkey->reboot_mode);
+	if (error) {
+		dev_err(&pdev->dev, "can't register reboot mode\n");
 		return error;
 	}
 

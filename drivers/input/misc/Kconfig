@@ -132,6 +132,7 @@ config INPUT_PCSPKR
 config INPUT_PM8941_PWRKEY
 	tristate "Qualcomm PM8941 power key support"
 	depends on MFD_SPMI_PMIC
+	select REBOOT_MODE
 	help
 	  Say Y here if you want support for the power key usually found
 	  on boards using a Qualcomm PM8941 compatible PMIC.
