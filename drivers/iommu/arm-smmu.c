@@ -79,6 +79,7 @@ struct arm_smmu_s2cr {
 	enum arm_smmu_s2cr_type		type;
 	enum arm_smmu_s2cr_privcfg	privcfg;
 	u8				cbndx;
+	bool				pinned;
 };
 
 #define s2cr_init_val (struct arm_smmu_s2cr){				\
@@ -220,9 +221,19 @@ static int arm_smmu_register_legacy_master(struct device *dev,
 	return err;
 }
 
-static int __arm_smmu_alloc_bitmap(unsigned long *map, int start, int end)
+static int __arm_smmu_alloc_cb(struct arm_smmu_device *smmu, int start,
+			       struct device *dev)
 {
+	struct iommu_fwspec *fwspec = dev_iommu_fwspec_get(dev);
+	unsigned long *map = smmu->context_map;
+	int end = smmu->num_context_banks;
 	int idx;
+	int i;
+
+	for_each_cfg_sme(fwspec, i, idx) {
+		if (smmu->s2crs[idx].pinned)
+			return smmu->s2crs[idx].cbndx;
+	}
 
 	do {
 		idx = find_next_zero_bit(map, end, start);
@@ -642,7 +653,8 @@ static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
 }
 
 static int arm_smmu_init_domain_context(struct iommu_domain *domain,
-					struct arm_smmu_device *smmu)
+					struct arm_smmu_device *smmu,
+					struct device *dev)
 {
 	int irq, start, ret = 0;
 	unsigned long ias, oas;
@@ -756,8 +768,7 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 		ret = -EINVAL;
 		goto out_unlock;
 	}
-	ret = __arm_smmu_alloc_bitmap(smmu->context_map, start,
-				      smmu->num_context_banks);
+	ret = __arm_smmu_alloc_cb(smmu, start, dev);
 	if (ret < 0)
 		goto out_unlock;
 
@@ -952,7 +963,7 @@ static void arm_smmu_test_smr_masks(struct arm_smmu_device *smmu)
 		return;
 
 	for (idx = 0; idx < smmu->num_mapping_groups; idx++) {
-		smr = readl_relaxed(gr0_base + ARM_SMMU_GR0_SMR(idx));
+		smr = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_SMR(idx));
 		if (!(smr & SMR_VALID))
 			break;
 	}
@@ -1022,12 +1033,19 @@ static int arm_smmu_find_sme(struct arm_smmu_device *smmu, u16 id, u16 mask)
 
 static bool arm_smmu_free_sme(struct arm_smmu_device *smmu, int idx)
 {
+	bool pinned = smmu->s2crs[idx].pinned;
+	u8 cbndx = smmu->s2crs[idx].cbndx;;
+
 	if (--smmu->s2crs[idx].count)
 		return false;
 
 	smmu->s2crs[idx] = s2cr_init_val;
-	if (smmu->smrs)
+	if (pinned) {
+		smmu->s2crs[idx].pinned = true;
+		smmu->s2crs[idx].cbndx = cbndx;
+	} else if (smmu->smrs) {
 		smmu->smrs[idx].valid = false;
+	}
 
 	return true;
 }
@@ -1161,7 +1179,7 @@ static int arm_smmu_attach_dev(struct iommu_domain *domain, struct device *dev)
 		return ret;
 
 	/* Ensure that the domain is finalised */
-	ret = arm_smmu_init_domain_context(domain, smmu);
+	ret = arm_smmu_init_domain_context(domain, smmu, dev);
 	if (ret < 0)
 		goto rpm_put;
 
@@ -1679,6 +1697,48 @@ static void arm_smmu_device_reset(struct arm_smmu_device *smmu)
 	arm_smmu_gr0_write(smmu, ARM_SMMU_GR0_sCR0, reg);
 }
 
+static int arm_smmu_read_smr_state(struct arm_smmu_device *smmu)
+{
+	u32 smr, s2cr;
+	u32 mask;
+	u32 type;
+	u32 cbndx;
+	u32 privcfg;
+	u32 id;
+	int i;
+
+	for (i = 0; i < smmu->num_mapping_groups; i++) {
+		smr = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_SMR(i));
+		mask = FIELD_GET(SMR_MASK, smr);
+		id = FIELD_GET(SMR_ID, smr);
+
+		s2cr = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_S2CR(i));
+		type = FIELD_GET(S2CR_TYPE, s2cr);
+		cbndx = FIELD_GET(S2CR_CBNDX, s2cr);
+		privcfg = FIELD_GET(S2CR_PRIVCFG, s2cr);
+
+		smmu->smrs[i].mask = mask;
+		smmu->smrs[i].id = id;
+		smmu->smrs[i].valid = !!(smr & SMR_VALID);
+
+		smmu->s2crs[i].group = NULL;
+		smmu->s2crs[i].count = 0;
+		smmu->s2crs[i].type = type;
+		smmu->s2crs[i].privcfg = privcfg;
+		smmu->s2crs[i].cbndx = cbndx;
+
+		if (!(smr & SMR_VALID))
+			continue;
+
+		smmu->s2crs[i].pinned = true;
+		bitmap_set(smmu->context_map, cbndx, 1);
+
+		dev_err(smmu->dev, "Handoff smr: %x s2cr: %x cb: %d\n", smr, s2cr, cbndx);
+	}
+
+	return 0;
+}
+
 static int arm_smmu_id_size_to_bits(int size)
 {
 	switch (size) {
@@ -1891,6 +1951,8 @@ static int arm_smmu_device_cfg_probe(struct arm_smmu_device *smmu)
 	if (smmu->features & ARM_SMMU_FEAT_TRANS_S2)
 		dev_notice(smmu->dev, "\tStage-2: %lu-bit IPA -> %lu-bit PA\n",
 			   smmu->ipa_size, smmu->pa_size);
+
+	arm_smmu_read_smr_state(smmu);
 
 	if (smmu->impl && smmu->impl->cfg_probe)
 		return smmu->impl->cfg_probe(smmu);
