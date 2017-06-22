@@ -40,6 +40,19 @@ struct qcom_scm {
 	struct reset_controller_dev reset;
 };
 
+struct qcom_scm_current_perm_info {
+	__le32 vmid;
+	__le32 perm;
+	__le64 ctx;
+	__le32 ctx_size;
+	__le32 padding;
+} __packed;
+
+struct qcom_scm_mem_map_info {
+	__le64 mem_addr;
+	__le64 mem_size;
+} __packed;
+
 static struct qcom_scm *__scm;
 
 static int qcom_scm_clk_enable(void)
@@ -291,6 +304,87 @@ int qcom_scm_pas_shutdown(u32 peripheral)
 	return ret;
 }
 EXPORT_SYMBOL(qcom_scm_pas_shutdown);
+
+/**
+ * qcom_scm_assign_mem() - Make a secure call to reassign memory ownership
+ *
+ * @mem_addr: mem region whose ownership need to be reassigned
+ * @mem_sz:   size of the region.
+ * @srcvm:    vmid for current set of owners, each set bit in
+ *            flag indicate a unique owner
+ * @newvm:    array having new owners and corrsponding permission
+ *            flags
+ * @dest_cnt: number of owners in next set.
+ * Return next set of owners on success.
+ */
+int qcom_scm_assign_mem(phys_addr_t mem_addr, size_t mem_sz, int srcvm,
+			struct qcom_scm_vmperm *newvm, int dest_cnt)
+{
+	struct qcom_scm_current_perm_info *destvm;
+	struct qcom_scm_mem_map_info *mem;
+	phys_addr_t memory_phys;
+	phys_addr_t dest_phys;
+	phys_addr_t ptr_phys;
+	phys_addr_t src_phys;
+	size_t memory_sz;
+	size_t dest_sz;
+	size_t ptr_sz;
+	size_t src_sz;
+	int next_vm;
+	__le32 *src;
+	void *ptr;
+	int ret;
+	int len;
+	int i;
+
+	src_sz = hweight_long(srcvm) * sizeof(*src);
+	memory_sz = sizeof(*mem);
+	dest_sz = dest_cnt*sizeof(*destvm);
+	ptr_sz = ALIGN(src_sz, SZ_64) + ALIGN(memory_sz, SZ_64) +
+		 ALIGN(dest_sz, SZ_64);
+
+	ptr = dma_alloc_attrs(__scm->dev, ptr_sz, &ptr_phys, GFP_KERNEL, 0);
+	if (!ptr)
+		return -ENOMEM;
+
+	/* Fill source vmid detail */
+	src = ptr;
+	src_phys = ptr_phys;
+	len = hweight_long(srcvm);
+	for (i = 0; i < len; i++) {
+		src[i] = cpu_to_le32(ffs(srcvm) - 1);
+		srcvm ^= 1 << (ffs(srcvm) - 1);
+	}
+
+	/* Fill details of mem buff to map */
+	mem = ptr + ALIGN(src_sz, SZ_64);
+	memory_phys = ptr_phys + ALIGN(src_sz, SZ_64);
+	mem[0].mem_addr = cpu_to_le64(mem_addr);
+	mem[0].mem_size = cpu_to_le64(mem_sz);
+
+	next_vm = 0;
+	/* Fill details of next vmid detail */
+	destvm = ptr + ALIGN(memory_sz, SZ_64) + ALIGN(src_sz, SZ_64);
+	dest_phys = ptr_phys + ALIGN(memory_sz, SZ_64) + ALIGN(src_sz, SZ_64);
+	for (i = 0; i < dest_cnt; i++) {
+		destvm[i].vmid = cpu_to_le32(newvm[i].vmid);
+		destvm[i].perm = cpu_to_le32(newvm[i].perm);
+		destvm[i].ctx = 0;
+		destvm[i].ctx_size = 0;
+		next_vm |= BIT(newvm[i].vmid);
+	}
+
+	ret = __qcom_scm_assign_mem(__scm->dev, memory_phys, memory_sz,
+				    src_phys, src_sz, dest_phys, dest_sz);
+	dma_free_attrs(__scm->dev, ptr_sz, ptr, src_phys, 0);
+	if (ret) {
+		dev_err(__scm->dev, "assign memory call failed %d\n", ret);
+		return -EINVAL;
+	} else {
+		return next_vm;
+	}
+}
+EXPORT_SYMBOL(qcom_scm_assign_mem);
 
 static int qcom_scm_pas_reset_assert(struct reset_controller_dev *rcdev,
 				     unsigned long idx)
