@@ -19,11 +19,13 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/remoteproc.h>
+#include <linux/rpmsg/qcom_glink.h>
 #include <linux/rpmsg/qcom_smd.h>
 
 #include "remoteproc_internal.h"
 #include "qcom_common.h"
 
+#define to_glink_subdev(d) container_of(d, struct qcom_rproc_glink, subdev)
 #define to_smd_subdev(d) container_of(d, struct qcom_rproc_subdev, subdev)
 
 /**
@@ -91,6 +93,53 @@ void qcom_remove_smd_subdev(struct rproc *rproc, struct qcom_rproc_subdev *smd)
 	of_node_put(smd->node);
 }
 EXPORT_SYMBOL_GPL(qcom_remove_smd_subdev);
+
+static int glink_subdev_probe(struct rproc_subdev *subdev)
+{
+	struct qcom_rproc_glink *glink = to_glink_subdev(subdev);
+
+	glink->edge = qcom_glink_smem_register(glink->dev, glink->node);
+
+	return IS_ERR(glink->edge) ? PTR_ERR(glink->edge) : 0;
+}
+
+static void glink_subdev_remove(struct rproc_subdev *subdev)
+{
+	struct qcom_rproc_glink *glink = to_glink_subdev(subdev);
+
+	qcom_glink_smem_unregister(glink->edge);
+	glink->edge = NULL;
+}
+
+/**
+ * qcom_add_glink_subdev() - try to add a GLINK subdevice to rproc
+ * @rproc:	rproc handle to parent the subdevice
+ * @glink:	reference to a GLINK subdev context
+ */
+void qcom_add_glink_subdev(struct rproc *rproc, struct qcom_rproc_glink *glink)
+{
+	struct device *dev = &rproc->dev;
+
+	glink->node = of_get_child_by_name(dev->parent->of_node, "glink-edge");
+	if (!glink->node)
+		return;
+
+	glink->dev = dev;
+	rproc_add_subdev(rproc, &glink->subdev, glink_subdev_probe, glink_subdev_remove);
+}
+EXPORT_SYMBOL_GPL(qcom_add_glink_subdev);
+
+/**
+ * qcom_remove_glink_subdev() - remove a GLINK subdevice from rproc
+ * @rproc:	rproc handle
+ * @glink:	reference to a GLINK subdev context
+ */
+void qcom_remove_glink_subdev(struct rproc *rproc, struct qcom_rproc_glink *glink)
+{
+	rproc_remove_subdev(rproc, &glink->subdev);
+	of_node_put(glink->node);
+}
+EXPORT_SYMBOL_GPL(qcom_remove_glink_subdev);
 
 MODULE_DESCRIPTION("Qualcomm Remoteproc helper driver");
 MODULE_LICENSE("GPL v2");
