@@ -2,6 +2,7 @@
 
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/qcom,gcc-msm8974.h>
+#include <dt-bindings/clock/qcom,mmcc-msm8974.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
 #include <dt-bindings/reset/qcom,gcc-msm8974.h>
 #include <dt-bindings/gpio/gpio.h>
@@ -1018,6 +1019,20 @@
 					remote-endpoint = <&kpss_in3>;
 				};
 			};
+		};
+
+		ocmem@fdd00000 {
+			compatible = "qcom,ocmem-msm8974";
+			// "ocmem_ctrl_physical" should be the registers, "ocmem_physical"
+			// is (I think) letting CPU read ocmem directly..
+			reg-names = "ocmem_ctrl_physical",
+				    "ocmem_physical";
+			reg = <0xfdd00000 0x2000>,
+			      <0xfec00000 0x180000>;
+			clock-names = "core_clk",
+				      "iface_clk";
+			clocks = <&rpmcc RPM_SMD_OCMEMGX_CLK>,
+				 <&mmcc OCMEMCX_OCMEMNOC_CLK>;
 		};
 	};
 
