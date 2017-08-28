@@ -154,6 +154,10 @@ struct q6v5 {
 
 	struct qcom_rproc_subdev smd_subdev;
 	struct qcom_rproc_ssr ssr_subdev;
+	struct qcom_sysmon *sysmon;
+	int mpss_perm;
+	int mba_perm;
+	int version;
 };
 
 static int q6v5_regulator_init(struct device *dev, struct reg_info *regs,
@@ -1041,6 +1045,7 @@ static int q6v5_probe(struct platform_device *pdev)
 
 	qcom_add_smd_subdev(rproc, &qproc->smd_subdev);
 	qcom_add_ssr_subdev(rproc, &qproc->ssr_subdev, "mpss");
+	qproc->sysmon = qcom_add_sysmon_subdev(rproc, "modem", 0x12);
 
 	ret = rproc_add(rproc);
 	if (ret)
@@ -1060,6 +1065,7 @@ static int q6v5_remove(struct platform_device *pdev)
 
 	rproc_del(qproc->rproc);
 
+	qcom_remove_sysmon_subdev(qproc->sysmon);
 	qcom_remove_smd_subdev(qproc->rproc, &qproc->smd_subdev);
 	qcom_remove_ssr_subdev(qproc->rproc, &qproc->ssr_subdev);
 	rproc_free(qproc->rproc);
