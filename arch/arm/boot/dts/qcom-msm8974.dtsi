@@ -1299,7 +1299,6 @@
 				 <&mmcc OCMEMCX_OCMEMNOC_CLK>;
 			clock-names = "core", "iface";
 		};
-
 	};
 
 	smd {
