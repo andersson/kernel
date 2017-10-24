@@ -314,12 +314,12 @@ static int ocmem_dev_probe(struct platform_device *pdev)
 	if (ret)
 		goto fail;
 
-	if (qcom_scm_restore_sec_config_available()) {
+//	if (qcom_scm_restore_sec_config_available()) {
 		dev_dbg(dev, "configuring scm\n");
-		ret = qcom_scm_restore_sec_config(QCOM_SCM_OCMEM_DEV_ID);
+		ret = qcom_scm_restore_sec_cfg(5, 0);
 		if (ret)
 			goto fail;
-	}
+//	}
 
 	reg = ocmem_read(ocmem, REG_OCMEM_HW_PROFILE);
 	ocmem->num_ports = FIELD(reg, OCMEM_HW_PROFILE_NUM_PORTS);

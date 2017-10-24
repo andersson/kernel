@@ -403,6 +403,14 @@
 			};
 		};
 
+		vsync_pin_a: vsync-pin {
+			pins = "gpio12";
+			function = "mdp_vsync";
+
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+
 		blsp2_uart1_pin_a: blsp2-uart1-pin-active {
 			tx {
 				pins = "gpio41";
@@ -656,6 +664,8 @@
 	};
 
 	mdss@fd900000 {
+		status = "ok";
+
 		dsi@fd922800 {
 			ports {
 				port@1 {
@@ -673,7 +683,7 @@
 				power-supply = <&vreg_vsp>;
 				backlight = <&lp8566_wled>;
 
-				port {
+				ports {
 					panel_in: endpoint {
 						remote-endpoint = <&dsi0_out>;
 					};

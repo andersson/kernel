@@ -1122,7 +1122,7 @@ static void sdhci_msm_handle_pwr_irq(struct sdhci_host *host, int irq)
 	/* Handle BUS ON/OFF*/
 	if (irq_status & CORE_PWRCTL_BUS_ON) {
 		pwr_state = REQ_BUS_ON;
-		io_level = REQ_IO_HIGH;
+		io_level = REQ_IO_LOW;
 		irq_ack |= CORE_PWRCTL_BUS_SUCCESS;
 	}
 	if (irq_status & CORE_PWRCTL_BUS_OFF) {

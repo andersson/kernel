@@ -1083,13 +1083,16 @@
 				clocks = <&mmcc MDSS_AHB_CLK>,
 					 <&mmcc MDSS_AXI_CLK>,
 					 <&mmcc MDSS_MDP_CLK>,
-					 <&mmcc MDSS_VSYNC_CLK>;
+					 <&mmcc MDSS_VSYNC_CLK>,
+					 <&mmcc MDSS_MDP_LUT_CLK>;
+
 				clock-names = "iface",
 					      "bus",
 					      "core",
-					      "vsync";
+					      "vsync",
+					      "lut_clk";
 
-				iommus = <&mdp_iommu 1>;
+		//		iommus = <&mdp_iommu 1>;
 
 				ports {
 					#address-cells = <1>;
@@ -1117,21 +1120,25 @@
 				assigned-clock-parents = <&dsi_phy0 0>,
 							 <&dsi_phy0 1>;
 
-				clocks = <&mmcc MDSS_MDP_CLK>,
-					 <&mmcc MDSS_AHB_CLK>,
-					 <&mmcc MDSS_AXI_CLK>,
-					 <&mmcc MDSS_BYTE0_CLK>,
-					 <&mmcc MDSS_PCLK0_CLK>,
-					 <&mmcc MDSS_ESC0_CLK>,
-					 <&mmcc MMSS_MISC_AHB_CLK>,
-					 <&mmcc MMSS_S0_AXI_CLK>,
-					 <&mmcc MMSS_MMSSNOC_AXI_CLK>;
+				clocks = <&mmcc MDSS_MDP_CLK>, /* mdp_core_clk */
+					 <&mmcc MDSS_AHB_CLK>, /* iface_clk */
+					 <&mmcc MDSS_AXI_CLK>, /* bus_clk */
+					 <&mmcc MDSS_BYTE0_CLK>, /* byte_clk */
+					 <&mmcc MDSS_PCLK0_CLK>, /* pixel_clk */
+					 <&mmcc MDSS_ESC0_CLK>, /* core_clk */
+					 <&mmcc BYTE0_CLK_SRC>, /* byte_clk_src */
+					 <&mmcc PCLK0_CLK_SRC>, /* pixel_clk_src */
+					 <&mmcc MMSS_MISC_AHB_CLK>, /* core_mmss_clk */
+					 <&mmcc MMSS_S0_AXI_CLK>, /* s0_axi */
+					 <&mmcc MMSS_MMSSNOC_AXI_CLK>; /* mmssnoc */
 				clock-names = "mdp_core_clk",
 					      "iface_clk",
 					      "bus_clk",
 					      "byte_clk",
 					      "pixel_clk",
 					      "core_clk",
+					      "byte_clk_src",
+					      "pixel_clk_src",
 					      "core_mmss_clk",
 					      "s0_axi",
 					      "mmssnoc";
@@ -1174,6 +1181,8 @@
 					    "dsi_phy_regulator";
 
 				#clock-cells = <1>;
+
+				#phy-cells = <0>;
 
 				clocks = <&mmcc MDSS_AHB_CLK>;
 				clock-names = "iface_clk";
