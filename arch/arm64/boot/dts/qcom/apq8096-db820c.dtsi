@@ -23,6 +23,7 @@
 	aliases {
 		serial0 = &blsp2_uart1;
 		serial1 = &blsp2_uart2;
+		serial2 = &blsp1_uart1;
 		i2c0	= &blsp1_i2c2;
 		i2c1	= &blsp2_i2c1;
 		i2c2	= &blsp2_i2c0;
@@ -35,6 +36,25 @@
 	};
 
 	soc {
+		serial@7570000 {
+			label = "BT-UART";
+			status = "okay";
+			pinctrl-names = "default", "sleep";
+			pinctrl-0 = <&blsp1_uart1_default>, <&bt_en_pin_a>, <&divclk4_pin_a>;
+			pinctrl-1 = <&blsp1_uart1_sleep>;
+
+#if 0
+			bluetooth {
+				compatible = "qcom,qca6174-bt";
+
+				bt_disable_n-gpios = <&pm8994_gpios 19 GPIO_ACTIVE_HIGH>;
+
+				pinctrl-names = "default";
+				pinctrl-0 = <&bt_en_pin_a>, <&divclk4_pin_a>;
+			};
+			#endif
+		};
+
 		serial@75b0000 {
 			label = "LS-UART1";
 			status = "okay";

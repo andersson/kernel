@@ -524,6 +524,7 @@ static int pmic_gpio_config_set(struct pinctrl_dev *pctldev, unsigned int pin,
 			pad->dtest_buffer = arg;
 			break;
 		default:
+			printk(KERN_ERR "invalid param: %d\n", param);
 			return -EINVAL;
 		}
 	}

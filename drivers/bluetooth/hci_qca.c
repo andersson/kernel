@@ -30,6 +30,10 @@
 
 #include <linux/kernel.h>
 #include <linux/debugfs.h>
+#include <linux/gpio/consumer.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/serdev.h>
 
 #include <net/bluetooth/bluetooth.h>
 #include <net/bluetooth/hci_core.h>
@@ -109,6 +113,11 @@ struct qca_data {
 	u64 rx_votes_off;
 	u64 votes_on;
 	u64 votes_off;
+};
+
+struct qca_serdev {
+	struct hci_uart serdev_hu;
+	struct gpio_desc *bt_en;
 };
 
 static void __serial_clock_on(struct tty_struct *tty)
@@ -386,6 +395,7 @@ static void hci_ibs_wake_retrans_timeout(struct timer_list *t)
 /* Initialize protocol */
 static int qca_open(struct hci_uart *hu)
 {
+	struct qca_serdev *qcadev = NULL;
 	struct qca_data *qca;
 
 	BT_DBG("hu %p qca_open", hu);
@@ -443,6 +453,13 @@ static int qca_open(struct hci_uart *hu)
 
 	timer_setup(&qca->tx_idle_timer, hci_ibs_tx_idle_timeout, 0);
 	qca->tx_idle_delay = IBS_TX_IDLE_TIMEOUT_MS;
+
+	if (hu->serdev) {
+		serdev_device_open(hu->serdev);
+
+		qcadev = serdev_device_get_drvdata(hu->serdev);
+		gpiod_set_value(qcadev->bt_en, 1);
+	}
 
 	BT_DBG("HCI_UART_QCA open, tx_idle_delay=%u, wake_retrans=%u",
 	       qca->tx_idle_delay, qca->wake_retrans);
@@ -512,6 +529,7 @@ static int qca_flush(struct hci_uart *hu)
 /* Close protocol */
 static int qca_close(struct hci_uart *hu)
 {
+	struct qca_serdev *qcadev;
 	struct qca_data *qca = hu->priv;
 
 	BT_DBG("hu %p qca close", hu);
@@ -524,6 +542,13 @@ static int qca_close(struct hci_uart *hu)
 	del_timer(&qca->wake_retrans_timer);
 	destroy_workqueue(qca->workqueue);
 	qca->hu = NULL;
+
+	if (hu->serdev) {
+		serdev_device_close(hu->serdev);
+
+		qcadev = serdev_device_get_drvdata(hu->serdev);
+		gpiod_set_value(qcadev->bt_en, 0);
+	}
 
 	kfree_skb(qca->rx_skb);
 
@@ -885,6 +910,14 @@ static int qca_set_baudrate(struct hci_dev *hdev, uint8_t baudrate)
 	return 0;
 }
 
+static inline void host_set_baudrate(struct hci_uart *hu, unsigned int speed)
+{
+	if (hu->serdev)
+		serdev_device_set_baudrate(hu->serdev, speed);
+	else
+		hci_uart_set_baudrate(hu, speed);
+}
+
 static int qca_setup(struct hci_uart *hu)
 {
 	struct hci_dev *hdev = hu->hdev;
@@ -905,7 +938,7 @@ static int qca_setup(struct hci_uart *hu)
 		speed = hu->proto->init_speed;
 
 	if (speed)
-		hci_uart_set_baudrate(hu, speed);
+		host_set_baudrate(hu, speed);
 
 	/* Setup user speed if needed */
 	speed = 0;
@@ -924,7 +957,7 @@ static int qca_setup(struct hci_uart *hu)
 			       hdev->name, ret);
 			return ret;
 		}
-		hci_uart_set_baudrate(hu, speed);
+		host_set_baudrate(hu, speed);
 	}
 
 	/* Setup patch / NVM configurations */
@@ -955,12 +988,60 @@ static struct hci_uart_proto qca_proto = {
 	.dequeue	= qca_dequeue,
 };
 
+static int qca_serdev_probe(struct serdev_device *serdev)
+{
+	struct qca_serdev *qcadev;
+
+	qcadev = devm_kzalloc(&serdev->dev, sizeof(*qcadev), GFP_KERNEL);
+	if (!qcadev)
+		return -ENOMEM;
+
+	qcadev->serdev_hu.serdev = serdev;
+	serdev_device_set_drvdata(serdev, qcadev);
+
+	qcadev->bt_en = devm_gpiod_get(&serdev->dev, "bt_disable_n", GPIOD_OUT_LOW);
+	if (IS_ERR(qcadev->bt_en)) {
+		dev_err(&serdev->dev, "failed to acquire bt_disable_n gpio\n");
+		return PTR_ERR(qcadev->bt_en);
+	}
+
+	gpiod_set_value(qcadev->bt_en, 0);
+
+	return hci_uart_register_device(&qcadev->serdev_hu, &qca_proto);
+}
+
+static void qca_serdev_remove(struct serdev_device *serdev)
+{
+	struct qca_serdev *qcadev = serdev_device_get_drvdata(serdev);
+
+	hci_uart_unregister_device(&qcadev->serdev_hu);
+}
+
+static const struct of_device_id qca_bluetooth_of_match[] = {
+	{ .compatible = "qcom,qca6174-bt" },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, qca_bluetooth_of_match);
+
+static struct serdev_device_driver qca_serdev_driver = {
+	.probe = qca_serdev_probe,
+	.remove = qca_serdev_remove,
+	.driver = {
+		.name = "hci_uart_qca",
+		.of_match_table = qca_bluetooth_of_match,
+	},
+};
+
 int __init qca_init(void)
 {
+	serdev_device_driver_register(&qca_serdev_driver);
+
 	return hci_uart_register_proto(&qca_proto);
 }
 
 int __exit qca_deinit(void)
 {
+	serdev_device_driver_unregister(&qca_serdev_driver);
+
 	return hci_uart_unregister_proto(&qca_proto);
 }

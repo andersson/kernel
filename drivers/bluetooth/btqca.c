@@ -109,17 +109,14 @@ static int rome_reset(struct hci_dev *hdev)
 }
 
 static void rome_tlv_check_data(struct rome_config *config,
-				const struct firmware *fw)
+				void *data)
 {
-	const u8 *data;
 	u32 type_len;
 	u16 tag_id, tag_len;
 	int idx, length;
-	struct tlv_type_hdr *tlv;
+	struct tlv_type_hdr *tlv = data;
 	struct tlv_type_patch *tlv_patch;
 	struct tlv_type_nvm *tlv_nvm;
-
-	tlv = (struct tlv_type_hdr *)fw->data;
 
 	type_len = le32_to_cpu(tlv->type_len);
 	length = (type_len >> 8) & 0x00ffffff;
@@ -246,22 +243,18 @@ out:
 }
 
 static int rome_tlv_download_request(struct hci_dev *hdev,
-				     const struct firmware *fw)
+				     void *data, size_t fw_size)
 {
-	const u8 *buffer, *data;
+	const u8 *buffer;
 	int total_segment, remain_size;
 	int ret, i;
 
-	if (!fw || !fw->data)
-		return -EINVAL;
-
-	total_segment = fw->size / MAX_SIZE_PER_TLV_SEGMENT;
-	remain_size = fw->size % MAX_SIZE_PER_TLV_SEGMENT;
+	total_segment = fw_size / MAX_SIZE_PER_TLV_SEGMENT;
+	remain_size = fw_size % MAX_SIZE_PER_TLV_SEGMENT;
 
 	BT_DBG("%s: Total segment num %d remain size %d total size %zu",
-	       hdev->name, total_segment, remain_size, fw->size);
+	       hdev->name, total_segment, remain_size, fw_size);
 
-	data = fw->data;
 	for (i = 0; i < total_segment; i++) {
 		buffer = data + i * MAX_SIZE_PER_TLV_SEGMENT;
 		ret = rome_tlv_send_segment(hdev, i, MAX_SIZE_PER_TLV_SEGMENT,
@@ -285,9 +278,13 @@ static int rome_download_firmware(struct hci_dev *hdev,
 				  struct rome_config *config)
 {
 	const struct firmware *fw;
+	void *data;
 	int ret;
 
 	BT_INFO("%s: ROME Downloading %s", hdev->name, config->fwname);
+
+	if (config->type == TLV_TYPE_PATCH)
+		return 0;
 
 	ret = request_firmware(&fw, config->fwname, &hdev->dev);
 	if (ret) {
@@ -296,14 +293,25 @@ static int rome_download_firmware(struct hci_dev *hdev,
 		return ret;
 	}
 
-	rome_tlv_check_data(config, fw);
+	printk(KERN_ERR "                                                            %s() got %d when requesting %s\n", __func__, ret, config->fwname);
 
-	ret = rome_tlv_download_request(hdev, fw);
+	data = kmemdup(fw->data, fw->size, GFP_KERNEL);
+	if (!data) {
+		ret = -ENOMEM;
+		goto release_fw;
+	}
+
+	rome_tlv_check_data(config, data);
+
+	ret = rome_tlv_download_request(hdev, data, fw->size);
 	if (ret) {
 		BT_ERR("%s: Failed to download file: %s (%d)", hdev->name,
 		       config->fwname, ret);
 	}
 
+	kfree(data);
+
+release_fw:
 	release_firmware(fw);
 
 	return ret;

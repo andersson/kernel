@@ -36,4 +36,18 @@
 			drive-strength = <2>;	/* 2 MA */
 		};
 	};
+
+	blsp1_uart1_default: blsp1_uart1_default {
+		function = "blsp_uart2";
+		pins = "gpio41", "gpio42", "gpio43", "gpio44";
+		drive-strength = <16>;
+		bias-disable;
+	};
+
+	blsp1_uart1_sleep: blsp1_uart1_sleep {
+		function = "gpio";
+		pins = "gpio41", "gpio42", "gpio43", "gpio44";
+		drive-strength = <2>;
+		bias-disable;
+	};
 };

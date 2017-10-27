@@ -25,6 +25,32 @@
 		};
 	};
 
+	wlan_en_pin_a: wlan-en-active {
+		pins = "gpio8";
+		function = "normal";
+
+		output-low;
+		power-source = <PM8994_GPIO_S4>;
+		qcom,drive-strength = <PMIC_GPIO_STRENGTH_LOW>;
+	};
+
+	divclk4_pin_a: divclk4 {
+		pins = "gpio18";
+		function = "func2";
+
+		bias-disable;	
+		power-source = <PM8994_GPIO_S4>;
+	};
+
+	bt_en_pin_a: bt-en-active {
+		pins = "gpio19";
+		function = "normal";
+
+		output-low;
+		power-source = <PM8994_GPIO_S4>;
+		qcom,drive-strength = <PMIC_GPIO_STRENGTH_LOW>;
+	};
+
 	usb3_vbus_det_gpio: pm8996_gpio22 {
 		pinconf {
 			pins = "gpio22";
