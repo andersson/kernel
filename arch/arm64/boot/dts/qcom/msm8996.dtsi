@@ -920,6 +920,11 @@
 		agnoc@0 {
 			power-domains = <&gcc AGGRE0_NOC_GDSC>;
 			compatible = "simple-pm-bus";
+			clocks = <&gcc GCC_AGGRE0_SNOC_AXI_CLK>,
+				<&gcc GCC_AGGRE0_CNOC_AHB_CLK>,
+				<&gcc GCC_SMMU_AGGRE0_AXI_CLK>;
+
+			clock-names = "axi", "ahb", "smmu_axi";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
