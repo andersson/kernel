@@ -106,13 +106,13 @@ struct qmi_response_type_v01 {
 extern struct qmi_elem_info qmi_response_type_v01_ei[];
 
 /**
- * struct qrtr_service - context to track lookup-results
+ * struct qmi_service - context to track lookup-results
  * @node:	node of the service
  * @port:	port of the service
  * @cookie:	handle for client's use
  * @list_node:	list_head for house keeping
  */
-struct qrtr_service {
+struct qmi_service {
 	unsigned int service;
 	unsigned int version;
 	unsigned int instance;
@@ -124,48 +124,25 @@ struct qrtr_service {
 	struct list_head list_node;
 };
 
-struct qrtr_handle;
+struct qmi_handle;
 
 /**
- * struct qrtr_handle_ops - callbacks from qrtr_handle
+ * struct qmi_ops - callbacks from qmi_handle
  * @new_server:		invoked as a new_server message arrives
  * @del_server:		invoked as a del_server message arrives
  * @net_reset:		invoked as the name server is restarted
  * @msg_handler:	invoked as a non-control message arrives
  */
-struct qrtr_handle_ops {
-	int (*new_server)(struct qrtr_handle *, struct qrtr_service *);
-	void (*del_server)(struct qrtr_handle *, struct qrtr_service *);
-	void (*net_reset)(struct qrtr_handle *);
-	void (*msg_handler)(struct qrtr_handle *, struct sockaddr_qrtr *,
+struct qmi_ops {
+	int (*new_server)(struct qmi_handle *, struct qmi_service *);
+	void (*del_server)(struct qmi_handle *, struct qmi_service *);
+	void (*net_reset)(struct qmi_handle *);
+	void (*msg_handler)(struct qmi_handle *, struct sockaddr_qrtr *,
 			    const void *, size_t);
+	void (*bye)(struct qmi_handle *, unsigned int);
+	void (*del_client)(struct qmi_handle *, unsigned int, unsigned int);
 };
 
-/**
- * struct qrtr_handle - qrtr client context
- * @sock:	socket handle
- * @sq:		sockaddr of @sock
- * @work:	work for handling incoming messages
- * @wq:		workqueue to post @work on
- * @recv_buf:	scratch buffer for handling incoming messages
- * @recv_buf_size:	size of @recv_buf
- * @services:	list of services advertised to the client
- * @ops:	reference to callbacks
- */
-struct qrtr_handle {
-	struct socket *sock;
-	struct sockaddr_qrtr sq;
-
-	struct work_struct work;
-	struct workqueue_struct *wq;
-
-	void *recv_buf;
-	size_t recv_buf_size;
-
-	struct list_head services;
-
-	struct qrtr_handle_ops ops;
-};
 
 /**
  * struct qmi_txn - transaction context
@@ -214,8 +191,32 @@ struct qmi_msg_handler {
  * @txn_lock:	lock for modifications of @txns
  * @handlers:	list of handlers for incoming messages
  */
+/**
+ * struct qrtr_handle - qrtr client context
+ * @sock:	socket handle
+ * @sq:		sockaddr of @sock
+ * @work:	work for handling incoming messages
+ * @wq:		workqueue to post @work on
+ * @recv_buf:	scratch buffer for handling incoming messages
+ * @recv_buf_size:	size of @recv_buf
+ * @lookup_results:	list of services advertised to the client
+ * @ops:	reference to callbacks
+ */
 struct qmi_handle {
-	struct qrtr_handle qrtr;
+	struct socket *sock;
+	struct sockaddr_qrtr sq;
+
+	struct work_struct work;
+	struct workqueue_struct *wq;
+
+	void *recv_buf;
+	size_t recv_buf_size;
+
+	struct list_head lookups;
+	struct list_head lookup_results;
+	struct list_head services;
+
+	struct qmi_ops ops;
 
 	struct idr txns;
 	struct mutex txn_lock;
@@ -223,20 +224,24 @@ struct qmi_handle {
 	struct qmi_msg_handler *handlers;
 };
 
-int qrtr_client_init(struct qrtr_handle *qrtr, size_t recv_buf_size,
-		     struct qrtr_handle_ops *ops);
-void qrtr_client_release(struct qrtr_handle *qrtr);
-int qrtr_client_new_lookup(struct qrtr_handle *qrtr,
-			   unsigned int service, unsigned int instance);
+int qmi_add_lookup(struct qmi_handle *qmi, unsigned int service,
+		   unsigned int version, unsigned int instance);
+int qmi_add_server(struct qmi_handle *qmi, unsigned int service,
+		   unsigned int version, unsigned int instance);
 
-int qmi_client_init(struct qmi_handle *qmi, size_t max_msg_len,
-		    struct qmi_msg_handler *handlers);
-void qmi_client_release(struct qmi_handle *qmi);
+int qmi_handle_init(struct qmi_handle *qmi, size_t max_msg_len,
+		    struct qmi_ops *ops, struct qmi_msg_handler *handlers);
+void qmi_handle_release(struct qmi_handle *qmi);
 
-ssize_t qmi_send_message(struct qmi_handle *qmi,
-			 struct sockaddr_qrtr *sq, struct qmi_txn *txn,
-			 int type, int msg_id, size_t len,
+ssize_t qmi_send_request(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
+			 struct qmi_txn *txn, int msg_id, size_t len,
 			 struct qmi_elem_info *ei, const void *c_struct);
+ssize_t qmi_send_response(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
+			  struct qmi_txn *txn, int msg_id, size_t len,
+			  struct qmi_elem_info *ei, const void *c_struct);
+ssize_t qmi_send_indication(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
+			    int msg_id, size_t len, struct qmi_elem_info *ei,
+			    const void *c_struct);
 
 void *qmi_encode_message(int type, unsigned int msg_id, size_t *len,
 			 unsigned int txn_id, struct qmi_elem_info *ei,

@@ -26,21 +26,24 @@
 #include <linux/workqueue.h>
 #include <linux/soc/qcom/qmi.h>
 
+static struct socket *qmi_sock_create(struct qmi_handle *qmi,
+				      struct sockaddr_qrtr *sq);
+
 /**
- * qrtr_client_new_server() - handler of NEW_SERVER control message
- * @qrtr:	qrtr handle
+ * qmi_recv_new_server() - handler of NEW_SERVER control message
+ * @qmi:	qmi handle
  * @node:	node of the new server
  * @port:	port of the new server
  *
  * Calls the new_server callback to inform the client about a newly registered
  * server matching the currently registered service lookup.
  */
-static void qrtr_client_new_server(struct qrtr_handle *qrtr,
+static void qmi_recv_new_server(struct qmi_handle *qmi,
 				   unsigned int service, unsigned int instance,
 				   unsigned int node, unsigned int port)
 {
-	struct qrtr_handle_ops *ops = &qrtr->ops;
-	struct qrtr_service *svc;
+	struct qmi_ops *ops = &qmi->ops;
+	struct qmi_service *svc;
 	int ret;
 
 	if (!ops->new_server)
@@ -60,44 +63,81 @@ static void qrtr_client_new_server(struct qrtr_handle *qrtr,
 	svc->node = node;
 	svc->port = port;
 
-	ret = ops->new_server(qrtr, svc);
+	ret = ops->new_server(qmi, svc);
 	if (ret < 0)
 		kfree(svc);
 	else
-		list_add(&svc->list_node, &qrtr->services);
+		list_add(&svc->list_node, &qmi->lookup_results);
 }
 
 /**
- * qrtr_client_del_server() - handler of DEL_SERVER control message
- * @qrtr:	qrtr handle
+ * qmi_recv_del_server() - handler of DEL_SERVER control message
+ * @qmi:	qmi handle
  * @node:	node of the dying server, a value of -1 matches all nodes
  * @port:	port of the dying server, a value of -1 matches all ports
  *
  * Calls the del_server callback for each previously seen server, allowing the
  * client to react to the disappearing server.
  */
-static void qrtr_client_del_server(struct qrtr_handle *qrtr,
+static void qmi_recv_del_server(struct qmi_handle *qmi,
 				   unsigned int node, unsigned int port)
 {
-	struct qrtr_handle_ops *ops = &qrtr->ops;
-	struct qrtr_service *svc;
-	struct qrtr_service *tmp;
+	struct qmi_ops *ops = &qmi->ops;
+	struct qmi_service *svc;
+	struct qmi_service *tmp;
 
-	list_for_each_entry_safe(svc, tmp, &qrtr->services, list_node) {
+	list_for_each_entry_safe(svc, tmp, &qmi->lookup_results, list_node) {
 		if (node != -1 && svc->node != node)
 			continue;
 		if (port != -1 && svc->port != port)
 			continue;
 
 		if (ops->del_server)
-			ops->del_server(qrtr, svc);
+			ops->del_server(qmi, svc);
 
 		list_del(&svc->list_node);
 		kfree(svc);
 	}
 }
 
-static void qrtr_client_ctrl_pkt(struct qrtr_handle *qrtr,
+/**
+ * qmi_recv_bye() - handler of BYE control message
+ * @qmi:	qmi handle
+ * @node:	id of the dying node
+ *
+ * Signals the client that all previously registered services on this node are
+ * now gone and then calls the bye callback to allow the client client further
+ * cleaning up resources associated with this remote.
+ */
+static void qmi_recv_bye(struct qmi_handle *qmi,
+			    unsigned int node)
+{
+	struct qmi_ops *ops = &qmi->ops;
+
+	qmi_recv_del_server(qmi, node, -1);
+
+	if (ops->bye)
+		ops->bye(qmi, node);
+}
+
+/**
+ * qmi_recv_del_client() - handler of DEL_CLIENT control message
+ * @qmi:	qmi handle
+ * @node:	node of the dying client
+ * @port:	port of the dying client
+ *
+ * Signals the client about a dying client, by calling the del_client callback.
+ */
+static void qmi_recv_del_client(struct qmi_handle *qmi,
+				   unsigned int node, unsigned int port)
+{
+	struct qmi_ops *ops = &qmi->ops;
+
+	if (ops->del_client)
+		ops->del_client(qmi, node, port);
+}
+
+static void qmi_recv_ctrl_pkt(struct qmi_handle *qmi,
 				 const void *buf, size_t len)
 {
 	const struct qrtr_ctrl_pkt *pkt = buf;
@@ -108,177 +148,30 @@ static void qrtr_client_ctrl_pkt(struct qrtr_handle *qrtr,
 	}
 
 	switch (le32_to_cpu(pkt->cmd)) {
+	case QRTR_TYPE_BYE:
+		qmi_recv_bye(qmi, le32_to_cpu(pkt->client.node));
+		break;
 	case QRTR_TYPE_NEW_SERVER:
-		qrtr_client_new_server(qrtr,
-				       le32_to_cpu(pkt->server.service),
-				       le32_to_cpu(pkt->server.instance),
-				       le32_to_cpu(pkt->server.node),
-				       le32_to_cpu(pkt->server.port));
+		qmi_recv_new_server(qmi,
+				    le32_to_cpu(pkt->server.service),
+				    le32_to_cpu(pkt->server.instance),
+				    le32_to_cpu(pkt->server.node),
+				    le32_to_cpu(pkt->server.port));
 		break;
 	case QRTR_TYPE_DEL_SERVER:
-		qrtr_client_del_server(qrtr,
-				       le32_to_cpu(pkt->server.node),
-				       le32_to_cpu(pkt->server.port));
+		qmi_recv_del_server(qmi,
+				    le32_to_cpu(pkt->server.node),
+				    le32_to_cpu(pkt->server.port));
+		break;
+	case QRTR_TYPE_DEL_CLIENT:
+		qmi_recv_del_client(qmi,
+				    le32_to_cpu(pkt->client.node),
+				    le32_to_cpu(pkt->client.port));
 		break;
 	}
 }
 
-static void qrtr_client_data_ready_work(struct work_struct *work)
-{
-	struct qrtr_handle *qrtr = container_of(work, struct qrtr_handle, work);
-	struct qrtr_handle_ops *ops = &qrtr->ops;
-	struct sockaddr_qrtr sq;
-	struct msghdr msg = { .msg_name = &sq, .msg_namelen = sizeof(sq) };
-	struct kvec iv;
-	ssize_t msglen;
-
-	for (;;) {
-		iv.iov_base = qrtr->recv_buf;
-		iv.iov_len = qrtr->recv_buf_size;
-
-		msglen = kernel_recvmsg(qrtr->sock, &msg, &iv, 1, iv.iov_len,
-					MSG_DONTWAIT);
-		if (msglen == -EAGAIN)
-			break;
-
-		if (msglen == -ENETRESET) {
-			if (ops->net_reset)
-				ops->net_reset(qrtr);
-			break;
-		}
-
-		if (msglen < 0) {
-			pr_err("qrtr_handle recvmsg failed: %zd\n", msglen);
-			break;
-		}
-
-		if (sq.sq_node == qrtr->sq.sq_node &&
-		    sq.sq_port == QRTR_PORT_CTRL) {
-			qrtr_client_ctrl_pkt(qrtr, qrtr->recv_buf, msglen);
-		} else {
-			if (!ops->msg_handler)
-				continue;
-
-			ops->msg_handler(qrtr, &sq, qrtr->recv_buf, msglen);
-		}
-	}
-}
-
-static void qrtr_client_schedule_worker(struct sock *sk)
-{
-	struct qrtr_handle *qrtr = sk->sk_user_data;
-
-	/*
-	 * This will be NULL if we receive data while being in
-	 * qrtr_client_release()
-	 */
-	if (!qrtr)
-		return;
-
-	queue_work(qrtr->wq, &qrtr->work);
-}
-
-/**
- * qrtr_client_init() - initialize a qrtr_handle
- * @qrtr:		reference to qrtr handle
- * @recv_buf_size:	maximum size of received messages
- * @ops:		qrtr_handle_ops struct with callbacks
- *
- * Returns 0 on success, negative errno on failure.
- *
- * This function initializes @qrtr to allow sending, receiving and handling
- * QRTR control messages and data packets.
- */
-int qrtr_client_init(struct qrtr_handle *qrtr, size_t recv_buf_size,
-		     struct qrtr_handle_ops *ops)
-{
-	struct sockaddr_qrtr sq;
-	struct socket *sock;
-	int ret;
-	int sl = sizeof(sq);
-
-	if (recv_buf_size < sizeof(struct qrtr_ctrl_pkt))
-		recv_buf_size = sizeof(struct qrtr_ctrl_pkt);
-
-	INIT_LIST_HEAD(&qrtr->services);
-	INIT_WORK(&qrtr->work, qrtr_client_data_ready_work);
-
-	qrtr->wq = alloc_workqueue("qrtr_handle", WQ_UNBOUND, 1);
-	if (!qrtr->wq)
-		return -ENOMEM;
-
-	qrtr->ops = *ops;
-	qrtr->recv_buf_size = recv_buf_size;
-	qrtr->recv_buf = kzalloc(recv_buf_size, GFP_KERNEL);
-	if (!qrtr->recv_buf)
-		return -ENOMEM;
-
-	ret = sock_create_kern(&init_net, AF_QIPCRTR, SOCK_DGRAM,
-			       PF_QIPCRTR, &sock);
-	if (ret < 0)
-		goto err_free_recv_buf;
-
-	ret = kernel_getsockname(sock, (struct sockaddr *)&sq, &sl);
-	if (ret < 0)
-		goto err_release_sock;
-
-	qrtr->sock = sock;
-	qrtr->sq = sq;
-
-	sock->sk->sk_user_data = qrtr;
-	sock->sk->sk_data_ready = qrtr_client_schedule_worker;
-	sock->sk->sk_error_report = qrtr_client_schedule_worker;
-
-	return 0;
-err_release_sock:
-	sock_release(sock);
-
-err_free_recv_buf:
-	kfree(qrtr->recv_buf);
-
-	return ret;
-}
-EXPORT_SYMBOL(qrtr_client_init);
-
-/**
- * qrtr_client_release() - tear down a qrtr_handle
- * @qrtr:	qrtr handle
- *
- * This will tear down the qrtr handle, stop handling of any incoming messages
- * and release the underlying socket.
- */
-void qrtr_client_release(struct qrtr_handle *qrtr)
-{
-	struct socket *sock = qrtr->sock;
-
-	sock->sk->sk_user_data = NULL;
-	cancel_work_sync(&qrtr->work);
-
-	kfree(qrtr->recv_buf);
-
-	qrtr_client_del_server(qrtr, -1, -1);
-
-	sock_release(sock);
-	qrtr->sock = NULL;
-
-	destroy_workqueue(qrtr->wq);
-}
-EXPORT_SYMBOL(qrtr_client_release);
-
-/**
- * qrtr_client_new_lookup() - register a new lookup with the name service
- * @qrtr:	qrtr handle
- * @service:	service id of the request
- * @instance:	instance id of the request
- *
- * Returns 0 on success, negative errno on failure.
- *
- * Registering a lookup query with the name server will cause the name server
- * to send NEW_SERVER and DEL_SERVER control messages to this socket as
- * matching services are registered.
- */
-int qrtr_client_new_lookup(struct qrtr_handle *qrtr,
-			   unsigned int service, unsigned int instance)
+static void qmi_send_new_lookup(struct qmi_handle *qmi, struct qmi_service *svc)
 {
 	struct qrtr_ctrl_pkt pkt;
 	struct sockaddr_qrtr sq;
@@ -288,23 +181,112 @@ int qrtr_client_new_lookup(struct qrtr_handle *qrtr,
 
 	memset(&pkt, 0, sizeof(pkt));
 	pkt.cmd = cpu_to_le32(QRTR_TYPE_NEW_LOOKUP);
-	pkt.server.service = cpu_to_le32(service);
-	pkt.server.instance = cpu_to_le32(instance);
+	pkt.server.service = cpu_to_le32(svc->service);
+	pkt.server.instance = cpu_to_le32(svc->version | svc->instance << 8);
 
-	sq.sq_family = qrtr->sq.sq_family;
-	sq.sq_node = qrtr->sq.sq_node;
+	sq.sq_family = qmi->sq.sq_family;
+	sq.sq_node = qmi->sq.sq_node;
 	sq.sq_port = QRTR_PORT_CTRL;
 
 	msg.msg_name = &sq;
 	msg.msg_namelen = sizeof(sq);
 
-	ret = kernel_sendmsg(qrtr->sock, &msg, &iv, 1, sizeof(pkt));
+	ret = kernel_sendmsg(qmi->sock, &msg, &iv, 1, sizeof(pkt));
 	if (ret < 0)
 		pr_err("failed to send lookup registration: %d\n", ret);
-
-	return ret < 0 ? ret : 0;
 }
-EXPORT_SYMBOL(qrtr_client_new_lookup);
+
+/**
+ * qmi_add_lookup() - register a new lookup with the name service
+ * @qmi:	qmi handle
+ * @service:	service id of the request
+ * @instance:	instance id of the request
+ *
+ * Returns 0 on success, negative errno on failure.
+ *
+ * Registering a lookup query with the name server will cause the name server
+ * to send NEW_SERVER and DEL_SERVER control messages to this socket as
+ * matching services are registered.
+ */
+int qmi_add_lookup(struct qmi_handle *qmi, unsigned int service,
+		   unsigned int version, unsigned int instance)
+{
+	struct qmi_service *svc;
+
+	svc = kzalloc(sizeof(*svc), GFP_KERNEL);
+	if (!svc)
+		return -ENOMEM;
+
+	svc->service = service;
+	svc->version = version;
+	svc->instance = instance;
+
+	list_add(&svc->list_node, &qmi->lookups);
+
+	qmi_send_new_lookup(qmi, svc);
+
+	return 0;
+}
+EXPORT_SYMBOL(qmi_add_lookup);
+
+static void qmi_send_new_server(struct qmi_handle *qmi, struct qmi_service *svc)
+{
+	struct qrtr_ctrl_pkt pkt;
+	struct sockaddr_qrtr sq;
+	struct msghdr msg = {0};
+	struct kvec iv = { &pkt, sizeof(pkt) };
+	int ret;
+
+	memset(&pkt, 0, sizeof(pkt));
+	pkt.cmd = cpu_to_le32(QRTR_TYPE_NEW_SERVER);
+	pkt.server.service = cpu_to_le32(svc->service);
+	pkt.server.instance = cpu_to_le32(svc->version | svc->instance << 8);
+	pkt.server.node = qmi->sq.sq_node;
+	pkt.server.port = qmi->sq.sq_port;
+
+	sq.sq_family = qmi->sq.sq_family;
+	sq.sq_node = qmi->sq.sq_node;
+	sq.sq_port = QRTR_PORT_CTRL;
+
+	msg.msg_name = &sq;
+	msg.msg_namelen = sizeof(sq);
+
+	ret = kernel_sendmsg(qmi->sock, &msg, &iv, 1, sizeof(pkt));
+	if (ret < 0)
+		pr_err("failed to send lookup registration: %d\n", ret);
+}
+
+/**
+ * qmi_add_server() - register a service with the name service
+ * @qmi:	qmi handle
+ * @service:	type of the service
+ * @instance:	instance of the service
+ *
+ * Returns 0 on success, negative errno on failure.
+ *
+ * Register a new service with the name service. This allows clients to find
+ * and start sending messages to the client associated with @qmi.
+ */
+int qmi_add_server(struct qmi_handle *qmi, unsigned int service,
+		   unsigned int version, unsigned int instance)
+{
+	struct qmi_service *svc;
+
+	svc = kzalloc(sizeof(*svc), GFP_KERNEL);
+	if (!svc)
+		return -ENOMEM;
+
+	svc->service = service;
+	svc->version = version;
+	svc->instance = instance;
+
+	list_add(&svc->list_node, &qmi->services);
+
+	qmi_send_new_server(qmi, svc);
+
+	return 0;
+}
+EXPORT_SYMBOL(qmi_add_server);
 
 /**
  * qmi_txn_init() - allocate transaction id within the given QMI handle
@@ -389,21 +371,94 @@ void qmi_txn_cancel(struct qmi_txn *txn)
 }
 EXPORT_SYMBOL(qmi_txn_cancel);
 
-static void qmi_client_handle_data(struct qrtr_handle *qrtr,
-				   struct sockaddr_qrtr *sq,
-				   const void *buf, size_t len)
+/**
+ * qmi_invoke_handler() - find and invoke a handler for a message
+ * @qmi:	qmi handle
+ * @sq:		sockaddr of the sender
+ * @txn:	transaction object for the message
+ * @buf:	buffer containing the message
+ * @len:	length of @buf
+ *
+ * Find handler and invoke handler for the incoming message.
+ */
+static void qmi_invoke_handler(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
+			       struct qmi_txn *txn, const void *buf, size_t len)
 {
-	const struct qmi_header *hdr = buf;
-	struct qmi_handle *qmi = container_of(qrtr, struct qmi_handle, qrtr);
 	struct qmi_msg_handler *handler;
-	struct qmi_txn *txn = NULL;
+	const struct qmi_header *hdr = buf;
 	void *dest;
+	int ret;
+
+	if (!qmi->handlers)
+		return;
+
+	for (handler = qmi->handlers; handler->fn; handler++) {
+		if (handler->type == hdr->type &&
+		    handler->msg_id == hdr->msg_id)
+			break;
+	}
+
+	if (!handler->fn)
+		return;
+
+	dest = kzalloc(handler->decoded_size, GFP_KERNEL);
+	if (!dest)
+		return;
+
+	ret = qmi_decode_message(buf, len, handler->ei, dest);
+	if (ret < 0)
+		pr_err("failed to decode incoming message\n");
+	else
+		handler->fn(qmi, sq, txn, dest);
+
+	kfree(dest);
+}
+
+static void qmi_handle_net_reset(struct qmi_handle *qmi)
+{
+	struct sockaddr_qrtr sq;
+	struct qmi_service *svc;
+	struct socket *sock;
+
+	sock = qmi_sock_create(qmi, &sq);
+	if (IS_ERR(sock))
+		return;
+
+	sock_release(qmi->sock);
+	qmi->sock = NULL;
+
+	qmi_recv_del_server(qmi, -1, -1);
+
+	if (qmi->ops.net_reset)
+		qmi->ops.net_reset(qmi);
+
+	qmi->sock = sock;
+	qmi->sq = sq;
+
+	/* XXX: bind(), connect()? */
+
+	list_for_each_entry(svc, &qmi->lookups, list_node)
+		qmi_send_new_lookup(qmi, svc);
+
+	list_for_each_entry(svc, &qmi->services, list_node)
+		qmi_send_new_server(qmi, svc);
+}
+
+static void qmi_handle_message(struct qmi_handle *qmi,
+			       struct sockaddr_qrtr *sq,
+			       const void *buf, size_t len)
+{
+	const struct qmi_header *hdr;
+	struct qmi_txn tmp_txn;
+	struct qmi_txn *txn = NULL;
 	int ret;
 
 	if (len < sizeof(*hdr)) {
 		pr_err("ignoring short QMI packet\n");
 		return;
 	}
+
+	hdr = buf;
 
 	mutex_lock(&qmi->txn_lock);
 
@@ -418,35 +473,102 @@ static void qmi_client_handle_data(struct qrtr_handle *qrtr,
 
 		txn->result = ret;
 		complete(&txn->completion);
-	} else if (qmi->handlers) {
-		for (handler = qmi->handlers; handler->fn; handler++) {
-			if (handler->type == hdr->type &&
-			    handler->msg_id == hdr->msg_id)
-				break;
-		}
+	} else if (txn) {
+		qmi_invoke_handler(qmi, sq, txn, buf, len);
+	} else {
+		/* Create a txn based on the txn_id of the incoming message */
+		txn = &tmp_txn;
+		memset(txn, 0, sizeof(*txn));
+		txn->id = hdr->txn_id;
 
-		if (!handler->fn)
-			goto out;
-
-		dest = kzalloc(handler->decoded_size, GFP_KERNEL);
-		if (!dest)
-			goto out;
-
-		ret = qmi_decode_message(buf, len, handler->ei, dest);
-		if (ret < 0)
-			pr_err("failed to decode incoming message\n");
-		else
-			handler->fn(qmi, sq, txn, dest);
-
-		kfree(dest);
+		qmi_invoke_handler(qmi, sq, txn, buf, len);
 	}
 
-out:
 	mutex_unlock(&qmi->txn_lock);
 }
 
+static void qmi_data_ready_work(struct work_struct *work)
+{
+	struct qmi_handle *qmi = container_of(work, struct qmi_handle, work);
+	struct qmi_ops *ops = &qmi->ops;
+	struct sockaddr_qrtr sq;
+	struct msghdr msg = { .msg_name = &sq, .msg_namelen = sizeof(sq) };
+	struct kvec iv;
+	ssize_t msglen;
+
+	for (;;) {
+		iv.iov_base = qmi->recv_buf;
+		iv.iov_len = qmi->recv_buf_size;
+
+		msglen = kernel_recvmsg(qmi->sock, &msg, &iv, 1, iv.iov_len,
+					MSG_DONTWAIT);
+		if (msglen == -EAGAIN)
+			break;
+
+		if (msglen == -ENETRESET) {
+			qmi_handle_net_reset(qmi);
+
+			/* The old qmi->sock is gone, our work is done */
+			break;
+		}
+
+		if (msglen < 0) {
+			pr_err("qmi recvmsg failed: %zd\n", msglen);
+			break;
+		}
+
+		if (sq.sq_node == qmi->sq.sq_node &&
+		    sq.sq_port == QRTR_PORT_CTRL) {
+			qmi_recv_ctrl_pkt(qmi, qmi->recv_buf, msglen);
+		} else if (ops->msg_handler) {
+			ops->msg_handler(qmi, &sq, qmi->recv_buf, msglen);
+		} else {
+			qmi_handle_message(qmi, &sq, qmi->recv_buf, msglen);
+		}
+	}
+}
+
+static void qmi_data_ready(struct sock *sk)
+{
+	struct qmi_handle *qmi = sk->sk_user_data;
+
+	/*
+	 * This will be NULL if we receive data while being in
+	 * qmi_handle_release()
+	 */
+	if (!qmi)
+		return;
+
+	queue_work(qmi->wq, &qmi->work);
+}
+
+static struct socket *qmi_sock_create(struct qmi_handle *qmi,
+				      struct sockaddr_qrtr *sq)
+{
+	struct socket *sock;
+	int sl = sizeof(*sq);
+	int ret;
+
+	ret = sock_create_kern(&init_net, AF_QIPCRTR, SOCK_DGRAM,
+			       PF_QIPCRTR, &sock);
+	if (ret < 0)
+		return ERR_PTR(ret);
+
+	ret = kernel_getsockname(sock, (struct sockaddr *)sq, &sl);
+	if (ret < 0) {
+		sock_release(sock);
+		return ERR_PTR(ret);
+	}
+
+	sock->sk->sk_user_data = qmi;
+	sock->sk->sk_data_ready = qmi_data_ready;
+	sock->sk->sk_error_report = qmi_data_ready;
+
+	return sock;
+}
+
 /**
- * qmi_client_init() - initialize a QMI client handle
+ * qmi_handle_init() - initialize a QMI client handle
  * @qmi:	QMI handle to initialize
  * @max_msg_len: maximum size of incoming message
  * @handlers:	NULL-terminated list of QMI message handlers
@@ -456,43 +578,94 @@ out:
  * This initializes the QMI client handle to allow sending and receiving QMI
  * messages. As messages are received the appropriate handler will be invoked.
  */
-int qmi_client_init(struct qmi_handle *qmi, size_t max_msg_len,
-		    struct qmi_msg_handler *handlers)
+int qmi_handle_init(struct qmi_handle *qmi, size_t recv_buf_size,
+		    struct qmi_ops *ops, struct qmi_msg_handler *handlers)
 {
-	struct qrtr_handle_ops ops = { 0 };
 	int ret;
 
 	mutex_init(&qmi->txn_lock);
 	idr_init(&qmi->txns);
-
-	ops.msg_handler = qmi_client_handle_data;
-
-	max_msg_len += sizeof(struct qmi_header);
-
-	ret = qrtr_client_init(&qmi->qrtr, max_msg_len, &ops);
-	if (ret < 0)
-		return ret;
+	INIT_LIST_HEAD(&qmi->lookups);
+	INIT_LIST_HEAD(&qmi->lookup_results);
+	INIT_LIST_HEAD(&qmi->services);
+	INIT_WORK(&qmi->work, qmi_data_ready_work);
 
 	qmi->handlers = handlers;
+	if (ops)
+		qmi->ops = *ops;
+
+	if (recv_buf_size < sizeof(struct qrtr_ctrl_pkt))
+		recv_buf_size = sizeof(struct qrtr_ctrl_pkt);
+	else
+		recv_buf_size += sizeof(struct qmi_header);
+
+	qmi->recv_buf_size = recv_buf_size;
+	qmi->recv_buf = kzalloc(recv_buf_size, GFP_KERNEL);
+	if (!qmi->recv_buf)
+		return -ENOMEM;
+
+	qmi->wq = alloc_workqueue("qmi_msg_handler", WQ_UNBOUND, 1);
+	if (!qmi->wq) {
+		ret = -ENOMEM;
+		goto err_free_recv_buf;
+	}
+
+	qmi->sock = qmi_sock_create(qmi, &qmi->sq);
+	if (IS_ERR(qmi->sock)) {
+		pr_err("failed to create QMI socket\n");
+		ret = PTR_ERR(qmi->sock);
+		goto err_destroy_wq;
+	}
 
 	return 0;
+
+err_destroy_wq:
+	destroy_workqueue(qmi->wq);
+err_free_recv_buf:
+	kfree(qmi->recv_buf);
+
+	return ret;
 }
-EXPORT_SYMBOL(qmi_client_init);
+EXPORT_SYMBOL(qmi_handle_init);
 
 /**
- * qrtr_client_release() - release the QMI client handle
+ * qmi_handle_release() - release the QMI client handle
  * @qmi:	QMI client handle
  *
  * This closes the underlying socket and stops any handling of QMI messages.
  */
-void qmi_client_release(struct qmi_handle *qmi)
+void qmi_handle_release(struct qmi_handle *qmi)
 {
-	qrtr_client_release(&qmi->qrtr);
+	struct socket *sock = qmi->sock;
+	struct qmi_service *svc, *tmp;
+
+	sock->sk->sk_user_data = NULL;
+	cancel_work_sync(&qmi->work);
+
+	qmi_recv_del_server(qmi, -1, -1);
+
+	sock_release(sock);
+	qmi->sock = NULL;
+
+	destroy_workqueue(qmi->wq);
 
 	idr_destroy(&qmi->txns);
 
+	kfree(qmi->recv_buf);
+
+	/* Free registered lookup requests */
+	list_for_each_entry_safe(svc, tmp, &qmi->lookups, list_node) {
+		list_del(&svc->list_node);
+		kfree(svc);
+	}
+
+	/* Free registered service information */
+	list_for_each_entry_safe(svc, tmp, &qmi->services, list_node) {
+		list_del(&svc->list_node);
+		kfree(svc);
+	}
 }
-EXPORT_SYMBOL(qmi_client_release);
+EXPORT_SYMBOL(qmi_handle_release);
 
 /**
  * qmi_send_message() - send a QMI message
@@ -511,12 +684,11 @@ EXPORT_SYMBOL(qmi_client_release);
  * with @msg_id and @txn into a buffer of maximum size @len, and sends this to
  * @sq.
  */
-ssize_t qmi_send_message(struct qmi_handle *qmi,
-			 struct sockaddr_qrtr *sq, struct qmi_txn *txn,
-			 int type, int msg_id, size_t len,
-			 struct qmi_elem_info *ei, const void *c_struct)
+static ssize_t qmi_send_message(struct qmi_handle *qmi,
+				struct sockaddr_qrtr *sq, struct qmi_txn *txn,
+				int type, int msg_id, size_t len,
+				struct qmi_elem_info *ei, const void *c_struct)
 {
-	struct qrtr_handle *qrtr = &qmi->qrtr;
 	struct msghdr msghdr = {0};
 	struct kvec iv;
 	void *msg;
@@ -537,7 +709,7 @@ ssize_t qmi_send_message(struct qmi_handle *qmi,
 		msghdr.msg_namelen = sizeof(*sq);
 	}
 
-	ret = kernel_sendmsg(qrtr->sock, &msghdr, &iv, 1, len);
+	ret = kernel_sendmsg(qmi->sock, &msghdr, &iv, 1, len);
 	if (ret < 0)
 		pr_err("failed to send QMI message\n");
 
@@ -545,4 +717,79 @@ ssize_t qmi_send_message(struct qmi_handle *qmi,
 
 	return ret < 0 ? ret : 0;
 }
-EXPORT_SYMBOL(qmi_send_message);
+
+/**
+ * qmi_send_indication() - send a request QMI message
+ * @qmi:	QMI client handle
+ * @sq:		destination sockaddr
+ * @txn:	transaction object to use for the message
+ * @msg_id:	message id
+ * @len:	max length of the QMI message
+ * @ei:		QMI message description
+ * @c_struct:	object to be encoded
+ *
+ * Returns 0 on success, negative errno on failure.
+ */
+ssize_t qmi_send_request(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
+			 struct qmi_txn *txn, int msg_id, size_t len,
+			 struct qmi_elem_info *ei, const void *c_struct)
+{
+	return qmi_send_message(qmi, sq, txn, QMI_REQUEST, msg_id, len, ei,
+				c_struct);
+}
+EXPORT_SYMBOL(qmi_send_request);
+
+/**
+ * qmi_send_indication() - send a response QMI message
+ * @qmi:	QMI client handle
+ * @sq:		destination sockaddr
+ * @txn:	transaction object to use for the message
+ * @msg_id:	message id
+ * @len:	max length of the QMI message
+ * @ei:		QMI message description
+ * @c_struct:	object to be encoded
+ *
+ * Returns 0 on success, negative errno on failure.
+ */
+ssize_t qmi_send_response(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
+			  struct qmi_txn *txn, int msg_id, size_t len,
+			  struct qmi_elem_info *ei, const void *c_struct)
+{
+	return qmi_send_message(qmi, sq, txn, QMI_RESPONSE, msg_id, len, ei,
+				c_struct);
+}
+EXPORT_SYMBOL(qmi_send_response);
+
+/**
+ * qmi_send_indication() - send an indication QMI message
+ * @qmi:	QMI client handle
+ * @sq:		destination sockaddr
+ * @txn:	transaction object to use for the message
+ * @msg_id:	message id
+ * @len:	max length of the QMI message
+ * @ei:		QMI message description
+ * @c_struct:	object to be encoded
+ *
+ * Returns 0 on success, negative errno on failure.
+ */
+ssize_t qmi_send_indication(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
+			    int msg_id, size_t len, struct qmi_elem_info *ei,
+			    const void *c_struct)
+{
+	struct qmi_txn txn;
+	ssize_t rval;
+	int ret;
+
+	ret = qmi_txn_init(qmi, &txn, NULL, NULL);
+	if (ret < 0)
+		return ret;;
+
+	rval = qmi_send_message(qmi, sq, &txn, QMI_INDICATION, msg_id, len, ei,
+				c_struct);
+
+	/* We don't care about future messages on this txn */
+	qmi_txn_cancel(&txn);
+
+	return rval;
+}
+EXPORT_SYMBOL(qmi_send_indication);
