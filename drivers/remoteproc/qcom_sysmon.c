@@ -15,12 +15,15 @@
 #include <linux/notifier.h>
 #include <linux/slab.h>
 #include <linux/io.h>
+#include <linux/notifier.h>
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
 #include <linux/remoteproc/qcom_rproc.h>
 #include <linux/rpmsg.h>
 
 #include "qcom_common.h"
+
+static BLOCKING_NOTIFIER_HEAD(sysmon_notifiers);
 
 struct qcom_sysmon {
 	struct rproc_subdev subdev;
@@ -45,7 +48,6 @@ struct qcom_sysmon {
 
 	struct qmi_handle qmi;
 	struct sockaddr_qrtr ssctl;
-	struct work_struct net_reset_work;
 };
 
 static DEFINE_MUTEX(sysmon_lock);
@@ -272,8 +274,8 @@ static void ssctl_request_shutdown(struct qcom_sysmon *sysmon)
 		return;
 	}
 
-	ret = qmi_send_message(&sysmon->qmi, &sysmon->ssctl, &txn,
-			       QMI_REQUEST, SSCTL_SHUTDOWN_REQ, 0, NULL, NULL);
+	ret = qmi_send_request(&sysmon->qmi, &sysmon->ssctl, &txn,
+			       SSCTL_SHUTDOWN_REQ, 0, NULL, NULL);
 	if (ret < 0) {
 		dev_err(sysmon->dev, "failed to send shutdown request\n");
 		qmi_txn_cancel(&txn);
@@ -315,9 +317,9 @@ static void ssctl_send_event(struct qcom_sysmon *sysmon, const char *name)
 	req.evt_driven_valid = true;
 	req.evt_driven = SSCTL_SSR_EVENT_FORCED;
 
-	ret = qmi_send_message(&sysmon->qmi, &sysmon->ssctl, &txn,
-			       QMI_REQUEST, SSCTL_SUBSYS_EVENT_REQ,
-			       40, ssctl_subsys_event_req_ei, &req);
+	ret = qmi_send_request(&sysmon->qmi, &sysmon->ssctl, &txn,
+			       SSCTL_SUBSYS_EVENT_REQ, 40,
+			       ssctl_subsys_event_req_ei, &req);
 	if (ret < 0) {
 		dev_err(sysmon->dev, "failed to send shutdown request\n");
 		qmi_txn_cancel(&txn);
@@ -328,21 +330,20 @@ static void ssctl_send_event(struct qcom_sysmon *sysmon, const char *name)
 	if (ret < 0)
 		dev_err(sysmon->dev, "failed receiving QMI response\n");
 	else if (resp.resp.result)
-		dev_err(sysmon->dev, "shutdown request failed\n");
+		dev_err(sysmon->dev, "ssr event send failed\n");
 	else
-		dev_dbg(sysmon->dev, "shutdown request completed\n");
+		dev_dbg(sysmon->dev, "ssr event send completed\n");
 }
 
 /**
  * ssctl_new_server() - QMI callback indicating a new service
- * @qrtr:	QRTR helper context
+ * @qmi:	QMI handle
  * @svc:	service information
  *
  * Returns 0 if we're interested in this service, -EINVAL otherwise.
  */
-static int ssctl_new_server(struct qrtr_handle *qrtr, struct qrtr_service *svc)
+static int ssctl_new_server(struct qmi_handle *qmi, struct qmi_service *svc)
 {
-	struct qmi_handle *qmi = container_of(qrtr, struct qmi_handle, qrtr);
 	struct qcom_sysmon *sysmon = container_of(qmi, struct qcom_sysmon, qmi);
 
 	switch (svc->version) {
@@ -373,52 +374,34 @@ static int ssctl_new_server(struct qrtr_handle *qrtr, struct qrtr_service *svc)
 
 /**
  * ssctl_del_server() - QMI callback indicating that @svc is removed
- * @qrtr:	QRTR helper context
+ * @qmi:	QMI handle
  * @svc:	service information
  */
-static void ssctl_del_server(struct qrtr_handle *qrtr, struct qrtr_service *svc)
+static void ssctl_del_server(struct qmi_handle *qmi, struct qmi_service *svc)
 {
 	struct qcom_sysmon *sysmon = svc->cookie;
 
 	sysmon->ssctl_version = 0;
 }
 
-static void ssctl_net_reset(struct qrtr_handle *qrtr);
-
-static void ssctl_net_reset_work(struct work_struct *work)
-{
-	struct qcom_sysmon *sysmon = container_of(work, struct qcom_sysmon, net_reset_work);
-	int ret;
-
-	qmi_client_release(&sysmon->qmi);
-
-	ret = qmi_client_init(&sysmon->qmi, SSCTL_MAX_MSG_LEN, NULL);
-	if (ret < 0)
-		return;
-
-	sysmon->qmi.qrtr.ops.new_server = ssctl_new_server;
-	sysmon->qmi.qrtr.ops.del_server = ssctl_del_server;
-	sysmon->qmi.qrtr.ops.net_reset = ssctl_net_reset;
-
-	qrtr_client_new_lookup(&sysmon->qmi.qrtr, 43, 0);
-}
-
-static void ssctl_net_reset(struct qrtr_handle *qrtr)
-{
-	struct qmi_handle *qmi = container_of(qrtr, struct qmi_handle, qrtr);
-	struct qcom_sysmon *sysmon = container_of(qmi, struct qcom_sysmon, qmi);
-
-	schedule_work(&sysmon->net_reset_work);
-}
+struct qmi_ops ssctl_ops = {
+	.new_server = ssctl_new_server,
+	.del_server = ssctl_del_server,
+};
 
 static int sysmon_start(struct rproc_subdev *subdev)
 {
+
+	dev_dbg(sysmon->dev, "%s()\n", __func__);
+
 	return  0;
 }
 
 static void sysmon_stop(struct rproc_subdev *subdev)
 {
 	struct qcom_sysmon *sysmon = container_of(subdev, struct qcom_sysmon, subdev);
+
+	blocking_notifier_call_chain(&sysmon_notifiers, 0, (void *)sysmon->name);
 
 	if (sysmon->ssctl_version)
 		ssctl_request_shutdown(sysmon);
@@ -436,10 +419,13 @@ static int sysmon_notify(struct notifier_block *nb, unsigned long event,
 			 void *data)
 {
 	struct qcom_sysmon *sysmon = container_of(nb, struct qcom_sysmon, nb);
+	struct rproc *rproc = sysmon->rproc;
 	char *ssr_name = data;
 
-	if (!strcmp(sysmon->name, data))
+	if (rproc->state != RPROC_RUNNING || !strcmp(data, sysmon->name)) {
+		dev_dbg(sysmon->dev, "not notifying %s\n", sysmon->name);
 		return NOTIFY_DONE;
+	}
 
 	/* Only SSCTL version 2 supports SSR events */
 	if (sysmon->ssctl_version == 2)
@@ -478,24 +464,19 @@ struct qcom_sysmon *qcom_add_sysmon_subdev(struct rproc *rproc,
 	init_completion(&sysmon->comp);
 	mutex_init(&sysmon->lock);
 
-	INIT_WORK(&sysmon->net_reset_work, ssctl_net_reset_work);
-
-	ret = qmi_client_init(&sysmon->qmi, SSCTL_MAX_MSG_LEN, NULL);
+	ret = qmi_handle_init(&sysmon->qmi, SSCTL_MAX_MSG_LEN, &ssctl_ops, NULL);
 	if (ret < 0) {
+		dev_err(sysmon->dev, "failed to initialize qmi handle\n");
 		kfree(sysmon);
 		return NULL;
 	}
 
-	sysmon->qmi.qrtr.ops.new_server = ssctl_new_server;
-	sysmon->qmi.qrtr.ops.del_server = ssctl_del_server;
-	sysmon->qmi.qrtr.ops.net_reset = ssctl_net_reset;
-
-	qrtr_client_new_lookup(&sysmon->qmi.qrtr, 43, 0);
+	qmi_add_lookup(&sysmon->qmi, 43, 0, 0);
 
 	rproc_add_subdev(rproc, &sysmon->subdev, sysmon_start, sysmon_stop);
 
 	sysmon->nb.notifier_call = sysmon_notify;
-	qcom_register_ssr_notifier(&sysmon->nb);
+	blocking_notifier_chain_register(&sysmon_notifiers, &sysmon->nb);
 
 	mutex_lock(&sysmon_lock);
 	list_add(&sysmon->node, &sysmon_list);
@@ -518,13 +499,11 @@ void qcom_remove_sysmon_subdev(struct qcom_sysmon *sysmon)
 	list_del(&sysmon->node);
 	mutex_unlock(&sysmon_lock);
 
-	qcom_unregister_ssr_notifier(&sysmon->nb);
+	blocking_notifier_chain_unregister(&sysmon_notifiers, &sysmon->nb);
 
 	rproc_remove_subdev(sysmon->rproc, &sysmon->subdev);
 
-	cancel_work_sync(&sysmon->net_reset_work);
-
-	qmi_client_release(&sysmon->qmi);
+	qmi_handle_release(&sysmon->qmi);
 
 	kfree(sysmon);
 }
