@@ -60,7 +60,7 @@ static int glink_subdev_probe(struct rproc_subdev *subdev)
 	return IS_ERR(glink->edge) ? PTR_ERR(glink->edge) : 0;
 }
 
-static void glink_subdev_remove(struct rproc_subdev *subdev)
+static void glink_subdev_remove(struct rproc_subdev *subdev, bool graceful)
 {
 	struct qcom_rproc_glink *glink = to_glink_subdev(subdev);
 
@@ -107,7 +107,7 @@ static int smd_subdev_probe(struct rproc_subdev *subdev)
 	return PTR_ERR_OR_ZERO(smd->edge);
 }
 
-static void smd_subdev_remove(struct rproc_subdev *subdev)
+static void smd_subdev_remove(struct rproc_subdev *subdev, bool graceful)
 {
 	struct qcom_rproc_subdev *smd = to_smd_subdev(subdev);
 
@@ -176,7 +176,7 @@ static int ssr_notify_start(struct rproc_subdev *subdev)
 	return  0;
 }
 
-static void ssr_notify_stop(struct rproc_subdev *subdev)
+static void ssr_notify_stop(struct rproc_subdev *subdev, bool graceful)
 {
 	struct qcom_rproc_ssr *ssr = to_ssr_subdev(subdev);
 

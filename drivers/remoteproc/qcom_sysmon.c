@@ -391,17 +391,17 @@ struct qmi_ops ssctl_ops = {
 
 static int sysmon_start(struct rproc_subdev *subdev)
 {
-
-	dev_dbg(sysmon->dev, "%s()\n", __func__);
-
 	return  0;
 }
 
-static void sysmon_stop(struct rproc_subdev *subdev)
+static void sysmon_stop(struct rproc_subdev *subdev, bool graceful)
 {
 	struct qcom_sysmon *sysmon = container_of(subdev, struct qcom_sysmon, subdev);
 
 	blocking_notifier_call_chain(&sysmon_notifiers, 0, (void *)sysmon->name);
+
+	if (!graceful)
+		return;
 
 	if (sysmon->ssctl_version)
 		ssctl_request_shutdown(sysmon);
