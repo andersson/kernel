@@ -1173,10 +1173,12 @@ static int ufshcd_devfreq_target(struct device *dev,
 	if (!ufshcd_is_clkscaling_supported(hba))
 		return -EINVAL;
 
+#if 0
 	if ((*freq > 0) && (*freq < UINT_MAX)) {
 		dev_err(hba->dev, "%s: invalid freq = %lu\n", __func__, *freq);
 		return -EINVAL;
 	}
+#endif
 
 	spin_lock_irqsave(hba->host->host_lock, irq_flags);
 	if (ufshcd_eh_in_progress(hba)) {
@@ -1187,7 +1189,7 @@ static int ufshcd_devfreq_target(struct device *dev,
 	if (!hba->clk_scaling.active_reqs)
 		sched_clk_scaling_suspend_work = true;
 
-	scale_up = (*freq == UINT_MAX) ? true : false;
+	scale_up = (*freq == 200000000) ? true : false;
 	if (!ufshcd_is_devfreq_scaling_required(hba, scale_up)) {
 		spin_unlock_irqrestore(hba->host->host_lock, irq_flags);
 		ret = 0;

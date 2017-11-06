@@ -16,6 +16,8 @@
 #include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/phy/phy.h>
+#include <linux/phy/phy-qcom-ufs.h>
+#include <linux/pm_opp.h>
 
 #include "ufshcd.h"
 #include "ufshcd-pltfrm.h"
@@ -1713,6 +1715,9 @@ static int ufs_qcom_probe(struct platform_device *pdev)
 {
 	int err;
 	struct device *dev = &pdev->dev;
+
+	dev_pm_opp_add(&pdev->dev, 100000000, 0);
+	dev_pm_opp_add(&pdev->dev, 200000000, 0);
 
 	/* Perform generic probe */
 	err = ufshcd_pltfrm_init(pdev, &ufs_hba_qcom_vops);
