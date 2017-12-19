@@ -10,6 +10,7 @@ Required properties:
 	       "qcom,msm8996-qmp-pcie-phy" for 14nm PCIe phy on msm8996,
 	       "qcom,msm8996-qmp-usb3-phy" for 14nm USB3 phy on msm8996,
 	       "qcom,qmp-v3-usb3-phy" for USB3 QMP V3 phy.
+	       "qcom,sdm845-qmp-ufs-phy" for UFS PHY on SDM845
 
  - reg: offset and length of register set for PHY's common serdes block.
 
