@@ -16,7 +16,6 @@
 #include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/phy/phy.h>
-#include <linux/phy/phy-qcom-ufs.h>
 
 #include "ufshcd.h"
 #include "ufshcd-pltfrm.h"
@@ -196,21 +195,11 @@ out:
 
 static int ufs_qcom_link_startup_post_change(struct ufs_hba *hba)
 {
-	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
-	struct phy *phy = host->generic_phy;
 	u32 tx_lanes;
 	int err = 0;
 
 	err = ufs_qcom_get_connected_tx_lanes(hba, &tx_lanes);
-	if (err)
-		goto out;
 
-	err = ufs_qcom_phy_set_tx_lane_enable(phy, tx_lanes);
-	if (err)
-		dev_err(hba->dev, "%s: ufs_qcom_phy_set_tx_lane_enable failed\n",
-			__func__);
-
-out:
 	return err;
 }
 
@@ -266,13 +255,16 @@ static void ufs_qcom_select_unipro_mode(struct ufs_qcom_host *host)
 static int ufs_qcom_power_up_sequence(struct ufs_hba *hba)
 {
 	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
-	struct phy *phy = host->generic_phy;
+	struct phy *phy_lane0 = host->phy_lane0;
+	struct phy *phy_lane1 = host->phy_lane1;
 	int ret = 0;
 	bool is_rate_B = (UFS_QCOM_LIMIT_HS_RATE == PA_HS_MODE_B)
 							? true : false;
 
-	if (is_rate_B)
-		phy_set_mode(phy, PHY_MODE_UFS_HS_B);
+	if (is_rate_B) {
+		phy_set_mode(phy_lane0, PHY_MODE_UFS_HS_B);
+		phy_set_mode(phy_lane1, PHY_MODE_UFS_HS_B);
+	}
 
 	/* Assert PHY reset and apply PHY calibration values */
 	ufs_qcom_assert_reset(hba);
@@ -280,9 +272,16 @@ static int ufs_qcom_power_up_sequence(struct ufs_hba *hba)
 	usleep_range(1000, 1100);
 
 	/* phy initialization - calibrate the phy */
-	ret = phy_init(phy);
+	ret = phy_init(phy_lane0);
 	if (ret) {
-		dev_err(hba->dev, "%s: phy init failed, ret = %d\n",
+		dev_err(hba->dev, "%s: phy lane0 init failed, ret = %d\n",
+			__func__, ret);
+		goto out;
+	}
+
+	ret = phy_init(phy_lane1);
+	if (ret) {
+		dev_err(hba->dev, "%s: phy lane1 init failed, ret = %d\n",
 			__func__, ret);
 		goto out;
 	}
@@ -297,9 +296,16 @@ static int ufs_qcom_power_up_sequence(struct ufs_hba *hba)
 	usleep_range(1000, 1100);
 
 	/* power on phy - start serdes and phy's power and clocks */
-	ret = phy_power_on(phy);
+	ret = phy_power_on(phy_lane0);
 	if (ret) {
-		dev_err(hba->dev, "%s: phy power on failed, ret = %d\n",
+		dev_err(hba->dev, "%s: phy lane0 power on failed, ret = %d\n",
+			__func__, ret);
+		goto out_disable_phy;
+	}
+
+	ret = phy_power_on(phy_lane1);
+	if (ret) {
+		dev_err(hba->dev, "%s: phy lane1 power on failed, ret = %d\n",
 			__func__, ret);
 		goto out_disable_phy;
 	}
@@ -310,7 +316,8 @@ static int ufs_qcom_power_up_sequence(struct ufs_hba *hba)
 
 out_disable_phy:
 	ufs_qcom_assert_reset(hba);
-	phy_exit(phy);
+	phy_exit(phy_lane0);
+	phy_exit(phy_lane1);
 out:
 	return ret;
 }
@@ -561,7 +568,8 @@ out:
 static int ufs_qcom_suspend(struct ufs_hba *hba, enum ufs_pm_op pm_op)
 {
 	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
-	struct phy *phy = host->generic_phy;
+	struct phy *phy_lane0 = host->phy_lane0;
+	struct phy *phy_lane1 = host->phy_lane1;
 	int ret = 0;
 
 	if (ufs_qcom_is_link_off(hba)) {
@@ -571,7 +579,8 @@ static int ufs_qcom_suspend(struct ufs_hba *hba, enum ufs_pm_op pm_op)
 		 * after downstream clocks are disabled.
 		 */
 		ufs_qcom_disable_lane_clks(host);
-		phy_power_off(phy);
+		phy_power_off(phy_lane0);
+		phy_power_off(phy_lane1);
 
 		/* Assert PHY soft reset */
 		ufs_qcom_assert_reset(hba);
@@ -584,7 +593,8 @@ static int ufs_qcom_suspend(struct ufs_hba *hba, enum ufs_pm_op pm_op)
 	 */
 	if (!ufs_qcom_is_link_active(hba)) {
 		ufs_qcom_disable_lane_clks(host);
-		phy_power_off(phy);
+		phy_power_off(phy_lane0);
+		phy_power_off(phy_lane1);
 	}
 
 out:
@@ -594,12 +604,20 @@ out:
 static int ufs_qcom_resume(struct ufs_hba *hba, enum ufs_pm_op pm_op)
 {
 	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
-	struct phy *phy = host->generic_phy;
+	struct phy *phy_lane0 = host->phy_lane0;
+	struct phy *phy_lane1 = host->phy_lane1;
 	int err;
 
-	err = phy_power_on(phy);
+	err = phy_power_on(phy_lane0);
 	if (err) {
-		dev_err(hba->dev, "%s: failed enabling regs, err = %d\n",
+		dev_err(hba->dev, "%s: failed enabling phy lane0 regs, err = %d\n",
+			__func__, err);
+		goto out;
+	}
+
+	err = phy_power_on(phy_lane1);
+	if (err) {
+		dev_err(hba->dev, "%s: failed enabling phy lane1 regs, err = %d\n",
 			__func__, err);
 		goto out;
 	}
@@ -937,12 +955,9 @@ static int ufs_qcom_pwr_change_notify(struct ufs_hba *hba,
 				struct ufs_pa_layer_attr *dev_max_params,
 				struct ufs_pa_layer_attr *dev_req_params)
 {
-	u32 val;
 	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
-	struct phy *phy = host->generic_phy;
 	struct ufs_qcom_dev_params ufs_qcom_cap;
 	int ret = 0;
-	int res = 0;
 
 	if (!dev_req_params) {
 		pr_err("%s: incoming dev_req_params is NULL\n", __func__);
@@ -1006,14 +1021,6 @@ static int ufs_qcom_pwr_change_notify(struct ufs_hba *hba,
 			 * and bus voting as usual
 			 */
 			ret = -EINVAL;
-		}
-
-		val = ~(MAX_U32 << dev_req_params->lane_tx);
-		res = ufs_qcom_phy_set_tx_lane_enable(phy, val);
-		if (res) {
-			dev_err(hba->dev, "%s: ufs_qcom_phy_set_tx_lane_enable() failed res = %d\n",
-				__func__, res);
-			ret = res;
 		}
 
 		/* cache the power mode parameters to use internally */
@@ -1145,7 +1152,8 @@ static int ufs_qcom_setup_clocks(struct ufs_hba *hba, bool on,
 		return 0;
 
 	if (on && (status == POST_CHANGE)) {
-		phy_power_on(host->generic_phy);
+		phy_power_on(host->phy_lane0);
+		phy_power_on(host->phy_lane1);
 
 		/* enable the device ref clock for HS mode*/
 		if (ufshcd_is_hs_mode(&hba->pwr_info))
@@ -1160,7 +1168,8 @@ static int ufs_qcom_setup_clocks(struct ufs_hba *hba, bool on,
 			ufs_qcom_dev_ref_clk_ctrl(host, false);
 
 			/* powering off PHY during aggressive clk gating */
-			phy_power_off(host->generic_phy);
+			phy_power_off(host->phy_lane0);
+			phy_power_off(host->phy_lane1);
 		}
 
 		vote = host->bus_vote.min_bw_vote;
@@ -1223,21 +1232,46 @@ static int ufs_qcom_init(struct ufs_hba *hba)
 	 * skip devoting it during aggressive clock gating. This clock
 	 * will still be gated off during runtime suspend.
 	 */
-	host->generic_phy = devm_phy_get(dev, "ufsphy");
+	host->phy_lane0 = devm_phy_get(dev, "ufsphy_0");
+	if (IS_ERR(host->phy_lane0)) {
+		err = PTR_ERR(host->phy_lane0);
+		if (err == -ENODEV) {
+			host->phy_lane0 = NULL;
+		} else if (err == -EPROBE_DEFER) {
+			/*
+			 * UFS driver might be probed before the phy driver
+			 * does. In that case we would like to return
+			 * EPROBE_DEFER code.
+			 */
+			dev_warn(dev, "%s: required ufsphy_0 device. hasn't probed yet. err = %d\n",
+				__func__, err);
+			goto out_variant_clear;
+		} else {
+			dev_err(dev, "%s: ufsphy_0 get failed %d\n",
+				__func__, err);
+			goto out;
+		}
+	}
 
-	if (host->generic_phy == ERR_PTR(-EPROBE_DEFER)) {
-		/*
-		 * UFS driver might be probed before the phy driver does.
-		 * In that case we would like to return EPROBE_DEFER code.
-		 */
-		err = -EPROBE_DEFER;
-		dev_warn(dev, "%s: required phy device. hasn't probed yet. err = %d\n",
-			__func__, err);
-		goto out_variant_clear;
-	} else if (IS_ERR(host->generic_phy)) {
-		err = PTR_ERR(host->generic_phy);
-		dev_err(dev, "%s: PHY get failed %d\n", __func__, err);
-		goto out_variant_clear;
+	host->phy_lane1 = devm_phy_get(dev, "ufsphy_1");
+	if (IS_ERR(host->phy_lane1)) {
+		err = PTR_ERR(host->phy_lane1);
+		if (err == -ENODEV) {
+			host->phy_lane1 = NULL;
+		} else if (err == -EPROBE_DEFER) {
+			/*
+			 * UFS driver might be probed before the phy driver
+			 * does. In that case we would like to return
+			 * EPROBE_DEFER code.
+			 */
+			dev_warn(dev, "%s: required ufsphy_1 device. hasn't probed yet. err = %d\n",
+				__func__, err);
+			goto out_variant_clear;
+		} else {
+			dev_err(dev, "%s: ufsphy_1 get failed %d\n",
+				__func__, err);
+			goto out;
+		}
 	}
 
 	err = ufs_qcom_bus_register(host);
@@ -1270,10 +1304,6 @@ static int ufs_qcom_init(struct ufs_hba *hba)
 			host->dev_ref_clk_en_mask = BIT(5);
 		}
 	}
-
-	/* update phy revision information before calling phy_init() */
-	ufs_qcom_phy_save_controller_version(host->generic_phy,
-		host->hw_ver.major, host->hw_ver.minor, host->hw_ver.step);
 
 	err = ufs_qcom_init_lane_clks(host);
 	if (err)
@@ -1309,8 +1339,10 @@ static void ufs_qcom_exit(struct ufs_hba *hba)
 	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
 
 	ufs_qcom_disable_lane_clks(host);
-	phy_power_off(host->generic_phy);
-	phy_exit(host->generic_phy);
+	phy_power_off(host->phy_lane0);
+	phy_power_off(host->phy_lane1);
+	phy_exit(host->phy_lane0);
+	phy_exit(host->phy_lane1);
 }
 
 static int ufs_qcom_set_dme_vs_core_clk_ctrl_clear_div(struct ufs_hba *hba,
