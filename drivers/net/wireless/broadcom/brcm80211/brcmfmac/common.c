@@ -182,7 +182,7 @@ static int brcmf_c_process_clm_blob(struct brcmf_if *ifp)
 
 	err = request_firmware(&clm, clm_name, dev);
 	if (err) {
-		if (err == -ENOENT) {
+		if (err == -ENOENT || err == -EAGAIN) {
 			brcmf_dbg(INFO, "continue with CLM data currently present in firmware\n");
 			return 0;
 		}
