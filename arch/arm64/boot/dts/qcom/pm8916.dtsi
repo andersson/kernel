@@ -137,5 +137,13 @@
 			vdd-micbias-supply = <&pm8916_l13>;
 			#sound-dai-cells = <1>;
 		};
+
+		pm8916_pwm: pwm@bc00 {
+			compatible = "qcom,pm8916-pwm";
+
+			#pwm-cells = <2>;
+
+			status = "disabled";
+		};
 	};
 };
