@@ -1049,7 +1049,7 @@
 
 		mdss: mdss@fd900000 {
 			compatible = "qcom,mdss";
-			reg = <0xfd900000 0x22100>,
+			reg = <0xfd900000 0x100>,
 			      <0xfd924000 0x1000>;
 			reg-names = "mdss_phys", "vbif_phys";
 
@@ -1071,11 +1071,11 @@
 			#size-cells = <1>;
 			ranges;
 
-			status = "disabled";
+//			status = "disabled";
 
 			mdp: mdp@fd900000 {
 				compatible = "qcom,mdp5";
-				reg = <0xfd900000 0x22100>;
+				reg = <0xfd900100 0x22000>;
 				reg-names = "mdp_phys";
 
 				interrupt-parent = <&mdss>;
@@ -1180,6 +1180,8 @@
 				clock-names = "iface_clk";
 
 				vddio-supply = <&pm8941_l12>;
+
+				#phy-cells = <0>;
 			};
 		};
 
@@ -1188,10 +1190,8 @@
 
 			reg = <0xfd928000 0x3000>;
 			clocks = <&mmcc MDSS_AHB_CLK>,
-				 <&mmcc MDSS_AXI_CLK>,
-				 <&mmcc MDSS_MDP_CLK>,
-				 <&mmcc MDSS_MDP_LUT_CLK>;
-			clock-names = "iface", "bus", "alt", "lut";
+				 <&mmcc MDSS_AXI_CLK>;
+			clock-names = "iface", "bus";
 
 			qcom,iommu-secure-id = <1>;
 
@@ -1203,7 +1203,7 @@
 
 			power-domains = <&mmcc MDSS_GDSC>;
 
-			status = "disabled";
+			// status = "disabled";
 
 			// mdp_0:
 			iommu-ctx@0 {
@@ -1241,28 +1241,28 @@
 			clock-names = "iface", "bus", "alt";
 
 			ranges = <0 0xfdb17000 0x10000>;
-			qcom,iommu-secure-id = <0>;
+//			qcom,iommu-secure-id = <0>;
 
 			power-domains = <&mmcc OXILICX_GDSC>;
 
-			status = "disabled";
+			//status = "disabled";
 
 			// gfx3d_user:
-			iommu-ctx@0 {
+			kgsl-ctx@0 {
 				compatible = "qcom,msm-iommu-v1-ns";
 				reg = <0x1000 0x1000>;
 				interrupts = <GIC_SPI 241 IRQ_TYPE_LEVEL_HIGH>;
 			};
 
 			// gfx3d_priv:
-			iommu-ctx@1000 {
+			kgsl-ctx@1000 {
 				compatible = "qcom,msm-iommu-v1-ns";
 				reg = <0x2000 0x1000>;
 				interrupts = <GIC_SPI 241 0>;
 			};
 
 			// gfx3d_spare:
-			iommu-ctx@2000 {
+			kgsl-ctx@2000 {
 				compatible = "qcom,msm-iommu-v1-ns";
 				reg = <0x3000 0x1000>;
 				interrupts = <GIC_SPI 241 0>;
@@ -1283,7 +1283,7 @@
 				 <&mmcc OXILICX_AXI_CLK>;
 			power-domains = <&mmcc OXILICX_GDSC>;
 			operating-points-v2 = <&gpu_opp_table>;
-		//	iommus = <&gpu_iommu 1>, <&gpu_iommu 2>;
+			iommus = <&gpu_iommu 1>, <&gpu_iommu 2>;
 		};
 
 		ocmem@fdd00000 {
@@ -1298,7 +1298,7 @@
 
 			clocks = <&rpmcc RPM_SMD_OCMEMGX_CLK>,
 				 <&mmcc OCMEMCX_OCMEMNOC_CLK>;
-			clock-names = "core", "iface";
+			clock-names = "core_clk", "iface_clk";
 		};
 	};
 

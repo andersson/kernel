@@ -422,13 +422,13 @@ static int dsi_clk_init(struct msm_dsi_host *msm_host)
 	}
 
 #if 1
-	mmssnoc_clk = devm_clk_get(dev, "mmssnoc");
+	mmssnoc_clk = msm_clk_get(pdev, "mmssnoc");
 	clk_set_rate(mmssnoc_clk, 100000000);
 	clk_prepare_enable(mmssnoc_clk);
 #endif
 
 #if 1
-	s0_clk = devm_clk_get(dev, "s0_axi");
+	s0_clk = msm_clk_get(pdev, "s0_axi");
 	clk_set_rate(s0_clk, 100000000);
 	clk_prepare_enable(s0_clk);
 #endif

@@ -585,13 +585,6 @@ int __qcom_scm_set_remote_state(struct device *dev, u32 state, u32 id)
 	return ret ? : le32_to_cpu(scm_ret);
 }
 
-int __qcom_scm_assign_mem(struct device *dev, phys_addr_t mem_region,
-			  size_t mem_sz, phys_addr_t src, size_t src_sz,
-			  phys_addr_t dest, size_t dest_sz)
-{
-	return -ENODEV;
-}
-
 int __qcom_scm_restore_sec_cfg(struct device *dev, u32 device_id,
 			       u32 spare)
 {
@@ -610,16 +603,47 @@ int __qcom_scm_restore_sec_cfg(struct device *dev, u32 device_id,
 	return ret ? : le32_to_cpu(scm_ret);
 }
 
-int __qcom_scm_iommu_secure_ptbl_size(struct device *dev, u32 spare,
+int __qcom_scm_iommu_secure_ptbl_size(struct device *dev, u32 _spare,
 				      size_t *size)
 {
-	return -ENODEV;
+	__le32 spare = 0;
+	__le32 resp[2];
+	int ret;
+
+	ret = qcom_scm_call(dev, QCOM_SCM_SVC_MP,
+			    QCOM_SCM_IOMMU_SECURE_PTBL_SIZE,
+			    &spare, sizeof(spare), &resp, sizeof(resp));
+
+	if (ret < 0)
+	       return ret;
+	if (resp[1])
+		return le32_to_cpu(resp[1]);
+
+	*size = le32_to_cpu(resp[0]);
+
+	return 0;
 }
 
 int __qcom_scm_iommu_secure_ptbl_init(struct device *dev, u64 addr, u32 size,
 				      u32 spare)
 {
-	return -ENODEV;
+	struct {
+		__le32 addr;
+		__le32 size;
+		__le32 spare;
+	} args;
+	__le32 resp;
+	int ret;
+
+	args.addr = cpu_to_le32(addr);
+	args.size = cpu_to_le32(size);
+	args.spare = 0;
+
+	ret = qcom_scm_call(dev, QCOM_SCM_SVC_MP,
+			    QCOM_SCM_IOMMU_SECURE_PTBL_INIT,
+			    &args, sizeof(args), &resp, sizeof(resp));
+
+	return ret ? : le32_to_cpu(resp);
 }
 
 int __qcom_scm_io_readl(struct device *dev, phys_addr_t addr,
@@ -672,4 +696,11 @@ int __qcom_scm_ocmem_unlock(struct device *dev, u32 id, u32 offset, u32 size)
 
 	return qcom_scm_call(dev, QCOM_SCM_SVC_OCMEM, QCOM_SCM_OCMEM_UNLOCK_CMD,
 			&request, sizeof(request), NULL, 0);
+}
+
+int __qcom_scm_assign_mem(struct device *dev, phys_addr_t mem_region,
+			  size_t mem_sz, phys_addr_t src, size_t src_sz,
+			  phys_addr_t dest, size_t dest_sz)
+{
+	return -ENODEV;
 }

@@ -30,13 +30,17 @@
 #define sCR0_EXIDENABLE			(1 << 3)
 #define sCR0_GCFGFRE			(1 << 4)
 #define sCR0_GCFGFIE			(1 << 5)
+#define sCR0_STALLD			(1 << 8)
 #define sCR0_USFCFG			(1 << 10)
 #define sCR0_VMIDPNE			(1 << 11)
 #define sCR0_PTM			(1 << 12)
 #define sCR0_FB				(1 << 13)
+#define sCR0_SMCFCFG			(1 << 21)
 #define sCR0_VMID16EN			(1 << 31)
 #define sCR0_BSU_SHIFT			14
 #define sCR0_BSU_MASK			0x3
+
+#define ARM_SMMU_GR0_CR2		0x8
 
 /* Auxiliary Configuration register */
 #define ARM_SMMU_GR0_sACR		0x10
@@ -50,7 +54,9 @@
 #define ARM_SMMU_GR0_ID5		0x34
 #define ARM_SMMU_GR0_ID6		0x38
 #define ARM_SMMU_GR0_ID7		0x3c
+#define ARM_SMMU_GR0_GFAR		0x40
 #define ARM_SMMU_GR0_sGFSR		0x48
+#define ARM_SMMU_GR0_GFSRRESTORE	0x4c
 #define ARM_SMMU_GR0_sGFSYNR0		0x50
 #define ARM_SMMU_GR0_sGFSYNR1		0x54
 #define ARM_SMMU_GR0_sGFSYNR2		0x58
@@ -165,10 +171,12 @@ enum arm_smmu_s2cr_privcfg {
 #define ARM_SMMU_CB_S1_MAIR1		0x3c
 #define ARM_SMMU_CB_PAR			0x50
 #define ARM_SMMU_CB_FSR			0x58
+#define ARM_SMMU_CB_FSRRESTORE		0x5c
 #define ARM_SMMU_CB_FAR			0x60
 #define ARM_SMMU_CB_FSYNR0		0x68
 #define ARM_SMMU_CB_S1_TLBIVA		0x600
 #define ARM_SMMU_CB_S1_TLBIASID		0x610
+#define ARM_SMMU_CB_TLBIALL		0x618
 #define ARM_SMMU_CB_S1_TLBIVAL		0x620
 #define ARM_SMMU_CB_S2_TLBIIPAS2	0x630
 #define ARM_SMMU_CB_S2_TLBIIPAS2L	0x638
