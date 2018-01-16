@@ -278,8 +278,12 @@ int brcmf_c_preinit_dcmds(struct brcmf_if *ifp)
 	}
 	ri->result = err;
 
-	/* Do any optional CLM downloading */
-	brcmf_c_process_clm_blob(ifp);
+	/* Do any CLM downloading */
+	err = brcmf_c_process_clm_blob(ifp);
+	if (err < 0) {
+		brcmf_err("download CLM blob file failed, %d\n", err);
+		goto done;
+	}
 
 	/* query for 'ver' to get version info from firmware */
 	memset(buf, 0, sizeof(buf));
