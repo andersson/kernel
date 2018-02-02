@@ -353,6 +353,14 @@ static int qcom_iommu_init_domain(struct iommu_domain *domain,
 		iommu_writel(ctx, ARM_SMMU_CB_S1_MAIR0, pgtbl_cfg.arm_v7s_cfg.prrr);
 		iommu_writel(ctx, ARM_SMMU_CB_S1_MAIR1, pgtbl_cfg.arm_v7s_cfg.nmrr);
 
+		if (!qcom_iommu->sec_id) {
+			printk(KERN_ERR "%s() cbar\n", __func__);
+
+			ret = 1 << CBAR_TYPE_SHIFT | 1 << CBAR_IRPTNDX_SHIFT | 3 << CBAR_VMID_SHIFT | 2 << CBAR_S1_BPSHCFG_SHIFT | 0xa << CBAR_S1_MEMATTR_SHIFT;
+
+			iommu_writel(ctx, ARM_SMMU_GR1_CBAR(ctx->asid), reg);
+		}
+
 		printk(KERN_ERR "%s() contextidr\n", __func__);
 
 		iommu_writel(ctx, ARM_SMMU_CB_CONTEXTIDR, ctx->asid);
