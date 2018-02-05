@@ -6,6 +6,7 @@
  * Author: Georgi Djakov <georgi.djakov@linaro.org>
  */
 
+#include <linux/debugfs.h>
 #include <linux/device.h>
 #include <linux/init.h>
 #include <linux/interconnect-consumer.h>
@@ -14,11 +15,13 @@
 #include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/slab.h>
+#include <linux/uaccess.h>
 
 static DEFINE_MUTEX(interconnect_provider_list_mutex);
 static LIST_HEAD(interconnect_provider_list);
 static DEFINE_MUTEX(interconnect_orphan_mutex);
 static LIST_HEAD(interconnect_orphan_list);
+static struct dentry *interconnect_debugfs_dir;
 
 /**
  * struct interconnect_path - interconnect path structure
@@ -497,3 +500,71 @@ EXPORT_SYMBOL_GPL(interconnect_del_provider);
 MODULE_AUTHOR("Georgi Djakov <georgi.djakov@linaro.org");
 MODULE_DESCRIPTION("Interconnect Driver Core");
 MODULE_LICENSE("GPL v2");
+
+#ifdef CONFIG_DEBUG_FS
+
+static void interconnect_summary_show_one(struct seq_file *s,
+					  struct interconnect_node *n)
+{
+	if (!n)
+		return;
+
+	seq_printf(s, "%-30s %12d %12d\n",
+		   n->name, n->creq.avg_bw, n->creq.peak_bw);
+}
+
+static int interconnect_summary_show(struct seq_file *s, void *data)
+{
+	struct icp *icp;
+
+	seq_puts(s, " node                                   avg         peak\n");
+	seq_puts(s, "--------------------------------------------------------\n");
+
+	mutex_lock(&interconnect_provider_list_mutex);
+
+	list_for_each_entry(icp, &interconnect_provider_list, icp_list) {
+		struct interconnect_node *n;
+
+		list_for_each_entry(n, &icp->nodes, icn_list) {
+			interconnect_summary_show_one(s, n);
+		}
+	}
+
+	mutex_unlock(&interconnect_provider_list_mutex);
+
+	return 0;
+}
+
+
+static int interconnect_summary_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, interconnect_summary_show, inode->i_private);
+}
+
+static const struct file_operations interconnect_summary_fops = {
+	.open		= interconnect_summary_open,
+	.read		= seq_read,
+	.llseek		= seq_lseek,
+	.release	= single_release,
+};
+
+static int __init interconnect_debugfs_init(void)
+{
+	struct dentry *file;
+
+	interconnect_debugfs_dir = debugfs_create_dir("interconnect", NULL);
+	if (!interconnect_debugfs_dir) {
+		pr_err("interconnect: error creating debugfs directory\n");
+		return -ENODEV;
+	}
+
+	file = debugfs_create_file("interconnect_summary", 0444,
+				   interconnect_debugfs_dir, NULL,
+				   &interconnect_summary_fops);
+	if (!file)
+		return -ENODEV;
+
+	return 0;
+}
+late_initcall(interconnect_debugfs_init);
+#endif
