@@ -1,0 +1,75 @@
+Interconnect Provider Device Tree Bindings
+=========================================
+
+The purpose of this document is to define a common set of generic interconnect
+providers/consumers properties.
+
+
+= interconnect providers =
+
+The interconnect provider binding is intended to represent the interconnect
+controllers in the system. Each provider registers a set of interconnect
+nodes, which expose the interconnect related capabilities of the interconnect
+to consumer drivers. These capabilities can be throughput, latency, priority
+etc. The consumer drivers set constraints on interconnect path (or endpoints)
+depending on the usecase. Interconnect providers can also be interconnect
+consumers, such as in the case where two network-on-chip fabrics interface
+directly
+
+Required properties:
+- compatible : contains the interconnect provider vendor specific compatible
+	       string
+- reg : register space of the interconnect controller hardware
+- #interconnect-cells : number of cells in a interconnect specifier needed to
+		       encode the interconnect node id.
+
+Example:
+
+		snoc: snoc@0580000 {
+			compatible = "qcom,msm8916-snoc";
+			reg = <0x580000 0x14000>;
+			#interconnect-cells = <1>;
+			clock-names = "bus_clk", "bus_a_clk";
+			clocks = <&rpmcc RPM_SMD_SNOC_CLK>, <&rpmcc RPM_SMD_SNOC_A_CLK>;
+			status = "okay";
+		};
+		bimc: bimc@0400000 {
+			compatible = "qcom,msm8916-bimc";
+			reg = <0x400000 0x62000>;
+			#interconnect-cells = <1>;
+			clock-names = "bus_clk", "bus_a_clk";
+			clocks = <&rpmcc RPM_SMD_BIMC_CLK>, <&rpmcc RPM_SMD_BIMC_A_CLK>;
+			status = "okay";
+		};
+		pnoc: pnoc@500000 {
+			compatible = "qcom,msm8916-pnoc";
+			reg = <0x500000 0x11000>;
+			#interconnect-cells = <1>;
+			clock-names = "bus_clk", "bus_a_clk";
+			clocks = <&rpmcc RPM_SMD_PCNOC_CLK>, <&rpmcc RPM_SMD_PCNOC_A_CLK>;
+			status = "okay";
+		};
+
+= interconnect consumers =
+
+The interconnect consumers are device nodes which consume the interconnect
+path(s) provided by the interconnect provider. There can be multiple
+interconnect providers on a SoC and the consumer may consume multiple paths
+from different providers depending on usecase and the components it has to
+interact with.
+
+Required-properties:
+interconnect-src : A phandle and interconnect provider specifier as defined by
+		bindings of the interconnect provider specified by phandle.
+		This denotes the source device port which will be used, as the
+		device may have multiple master ports.
+interconnect-dst : A phandle and internet provider specifier pointing to the
+		local port of the target device.
+
+Example:
+
+	sdhci@07864000 {
+		...
+		interconnect-src = <&pnoc MAS_PNOC_SDCC_2>;
+		interconnect-dst = <&pnoc SLV_BLSP_1>;
+	};
