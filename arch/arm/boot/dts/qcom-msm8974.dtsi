@@ -1199,6 +1199,8 @@
 			#size-cells = <1>;
 			#iommu-cells = <1>;
 
+			interrupts = <0 73 0>;
+
 			ranges = <0 0xfd92f000 0x40000>;
 
 			power-domains = <&mmcc MDSS_GDSC>;
@@ -1239,6 +1241,8 @@
 				 <&mmcc OXILICX_AXI_CLK>,
 				 <&mmcc OXILI_GFX3D_CLK>;
 			clock-names = "iface", "bus", "alt";
+
+			interrupts = <0 38 0>;
 
 			ranges = <0 0xfdb17000 0x10000>;
 //			qcom,iommu-secure-id = <0>;

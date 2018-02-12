@@ -337,6 +337,7 @@
 		pinctrl-0 = <&blsp1_uart2_pin_a>;
 	};
 
+#if 0
 	serial@f995d000 {
 		status = "ok";
 
@@ -358,6 +359,7 @@
 			shutdown-gpios = <&pm8941_gpios 16 GPIO_ACTIVE_HIGH>;
 		};
 	};
+#endif
 
 	usb@f9a55000 {
 		status = "ok";
