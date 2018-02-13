@@ -14,6 +14,9 @@ struct route_payload {
 	int port_id[MAX_COPPS_PER_PORT];
 };
 
+int q6pcm_routing_probe(struct device *dev);
+int q6pcm_routing_remove(struct device *dev);
+
 void *q6adm_get_routing_data(struct device *dev);
 void q6adm_set_routing_data(struct device *dev, void *data);
 int q6adm_open(struct device *dev, int port_id, int path, int rate,
