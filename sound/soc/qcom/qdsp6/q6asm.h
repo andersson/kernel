@@ -33,6 +33,8 @@ enum {
 
 void q6asm_set_dai_data(struct device *dev, void *data);
 void *q6asm_get_dai_data(struct device *dev);
+int q6asm_dai_probe(struct device *dev);
+int q6asm_dai_remove(struct device *dev);
 
 typedef void (*q6asm_cb) (uint32_t opcode, uint32_t token,
 			  void *payload, void *priv);
