@@ -4,6 +4,20 @@
 
 /* Audio Front End (AFE) Ports */
 #define AFE_PORT_HDMI_RX	8
+#define SLIMBUS_0_RX    15
+#define SLIMBUS_0_TX    16
+#define SLIMBUS_1_RX    17
+#define SLIMBUS_1_TX    18
+#define SLIMBUS_2_RX    19
+#define SLIMBUS_2_TX    20
+#define SLIMBUS_3_RX    21
+#define SLIMBUS_3_TX    22
+#define SLIMBUS_4_RX    23
+#define SLIMBUS_4_TX    24
+#define SLIMBUS_5_RX    25
+#define SLIMBUS_5_TX    26
+#define SLIMBUS_6_RX    45
+#define SLIMBUS_6_TX    46
 
 #endif /* __DT_BINDINGS_Q6_AFE_H__ */
 
