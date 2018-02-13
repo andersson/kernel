@@ -26,6 +26,9 @@ struct q6afe_port;
 void q6afe_set_dai_data(struct device *dev, void *data);
 void *q6afe_get_dai_data(struct device *dev);
 
+int q6afe_dai_dev_probe(struct device *dev);
+int q6afe_dai_dev_remove(struct device *dev);
+
 struct q6afe_port *q6afe_port_get_from_id(struct device *dev, int id);
 int q6afe_port_start(struct q6afe_port *port);
 int q6afe_port_stop(struct q6afe_port *port);
