@@ -29,9 +29,18 @@ struct q6afe_slim_cfg {
 	u8	ch_mapping[AFE_MAX_CHAN_COUNT];
 };
 
+struct q6afe_i2s_cfg {
+	u32	sample_rate;
+	u16	bit_width;
+	u16	data_format;
+	u16	num_channels;
+	int fmt;
+};
+
 struct q6afe_port_config {
 	struct q6afe_hdmi_cfg hdmi;
 	struct q6afe_slim_cfg slim;
+	struct q6afe_i2s_cfg i2s_cfg;
 };
 
 struct q6afe_port;
@@ -50,5 +59,6 @@ void q6afe_hdmi_port_prepare(struct q6afe_port *port,
 			    struct q6afe_hdmi_cfg *cfg);
 void q6afe_slim_port_prepare(struct q6afe_port *port,
 			  struct q6afe_slim_cfg *cfg);
+void q6afe_i2s_port_prepare(struct q6afe_port *port, struct q6afe_i2s_cfg *cfg);
 
 #endif /* __Q6AFE_H__ */
