@@ -1131,11 +1131,11 @@ static struct rpmsg_endpoint *qcom_glink_create_ept(struct rpmsg_device *rpdev,
 	if (!channel) {
 		channel = qcom_glink_create_local(glink, name);
 		if (IS_ERR(channel))
-			return NULL;
+			return ERR_CAST(channel);
 	} else {
 		ret = qcom_glink_create_remote(glink, channel);
 		if (ret)
-			return NULL;
+			return ERR_CAST(channel);
 	}
 
 	ept = &channel->ept;
