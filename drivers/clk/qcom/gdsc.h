@@ -47,6 +47,7 @@ struct gdsc {
 #define PWRSTS_OFF		BIT(0)
 #define PWRSTS_RET		BIT(1)
 #define PWRSTS_ON		BIT(2)
+#define ALWAYS_ON		BIT(3)
 #define PWRSTS_OFF_ON		(PWRSTS_OFF | PWRSTS_ON)
 #define PWRSTS_RET_ON		(PWRSTS_RET | PWRSTS_ON)
 	const u8			flags;
