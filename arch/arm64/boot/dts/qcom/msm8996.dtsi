@@ -674,6 +674,8 @@
 			vccq-max-microamp = <450000>;
 			vccq2-max-microamp = <450000>;
 
+			power-domains = <&gcc UFS_GDSC>;
+
 			clock-names =
 				"core_clk_src",
 				"core_clk",
