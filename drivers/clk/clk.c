@@ -1007,6 +1007,13 @@ static void clk_disable_unused_subtree(struct clk_core *core)
 	if (core->flags & CLK_IGNORE_UNUSED)
 		goto unlock_out;
 
+	if (!strcmp(core->name, "gcc_aggre0_cnoc_ahb_clk") || !strcmp(core->name, "gcc_aggre0_snoc_axi_clk") || !strcmp(core->name, "gcc_smmu_aggre0_axi_clk")) {
+		printk(KERN_ERR "%s(%s) SKIP\n", __func__, core->name);
+		goto unlock_out;
+	}
+
+	printk(KERN_ERR "%s(%s)\n", __func__, core->name);
+
 	/*
 	 * some gate clocks have special needs during the disable-unused
 	 * sequence.  call .disable_unused if available, otherwise fall
