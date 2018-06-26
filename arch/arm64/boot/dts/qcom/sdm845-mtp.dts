@@ -58,3 +58,11 @@
 		bias-pull-up;
 	};
 };
+
+&adsp_pil {
+	status = "okay";
+};
+
+&cdsp_pil {
+	status = "okay";
+};
