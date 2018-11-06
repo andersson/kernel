@@ -450,6 +450,10 @@
 				perst-gpio = <&msmgpio 114 GPIO_ACTIVE_LOW>;
 			};
 		};
+
+		remoteproc@2080000 {
+			status = "okay";
+		};
 	};
 
 
