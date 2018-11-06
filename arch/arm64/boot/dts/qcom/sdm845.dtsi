@@ -12,6 +12,7 @@
 #include <dt-bindings/phy/phy-qcom-qusb2.h>
 #include <dt-bindings/reset/qcom,sdm845-aoss.h>
 #include <dt-bindings/soc/qcom,rpmh-rsc.h>
+#include <dt-bindings/reset/qcom,sdm845-aoss.h>
 
 / {
 	interrupt-parent = <&intc>;
