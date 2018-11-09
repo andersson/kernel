@@ -14,6 +14,7 @@
 #include <dt-bindings/soc/qcom,rpmh-rsc.h>
 #include <dt-bindings/reset/qcom,sdm845-aoss.h>
 #include <dt-bindings/reset/qcom,sdm845-pdc.h>
+#include <dt-bindings/power/qcom-rpmpd.h>
 
 / {
 	interrupt-parent = <&intc>;
@@ -466,6 +467,50 @@
 	psci {
 		compatible = "arm,psci-1.0";
 		method = "smc";
+	};
+
+	rpmhpd_opp_table: opp-table {
+		compatible = "operating-points-v2-qcom-level";
+
+		opp1 {
+			qcom,level = <RPMH_REGULATOR_LEVEL_RETENTION>;
+		};
+
+		opp2 {
+			qcom,level = <RPMH_REGULATOR_LEVEL_MIN_SVS>;
+		};
+
+		opp3 {
+			qcom,level = <RPMH_REGULATOR_LEVEL_LOW_SVS>;
+		};
+
+		opp4 {
+			qcom,level = <RPMH_REGULATOR_LEVEL_SVS>;
+		};
+
+		opp5 {
+			qcom,level = <RPMH_REGULATOR_LEVEL_SVS_L1>;
+		};
+
+		opp6 {
+			qcom,level = <RPMH_REGULATOR_LEVEL_NOM>;
+		};
+
+		opp7 {
+			qcom,level = <RPMH_REGULATOR_LEVEL_NOM_L1>;
+		};
+
+		opp8 {
+			qcom,level = <RPMH_REGULATOR_LEVEL_NOM_L2>;
+		};
+
+		opp9 {
+			qcom,level = <RPMH_REGULATOR_LEVEL_TURBO>;
+		};
+
+		opp10 {
+			qcom,level = <RPMH_REGULATOR_LEVEL_TURBO_L1>;
+		};
 	};
 
 	soc: soc {
@@ -1649,6 +1694,12 @@
 			rpmhcc: clock-controller {
 				compatible = "qcom,sdm845-rpmh-clk";
 				#clock-cells = <1>;
+			};
+
+			rpmhpd: power-controller {
+				compatible = "qcom,sdm845-rpmhpd";
+				#power-domain-cells = <1>;
+				operating-points-v2 = <&rpmhpd_opp_table>;
 			};
 		};
 
