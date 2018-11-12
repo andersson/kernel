@@ -1,0 +1,95 @@
+Qualcomm MSM8996 Network-On-Chip interconnect driver binding
+----------------------------------------------------
+
+Required properties :
+- compatible : shall contain only one of the following:
+			"qcom,msm8996-a0noc"
+			"qcom,msm8996-a1noc"
+			"qcom,msm8996-a2noc"
+			"qcom,msm8996-bimc"
+			"qcom,msm8996-cnoc"
+			"qcom,msm8996-mmnoc"
+			"qcom,msm8996-snoc"
+			"qcom,msm8996-pnoc"
+- #interconnect-cells : should contain 1
+- reg : shall contain base register location and length
+
+Optional properties :
+clocks : list of phandles and specifiers to all interconnect bus clocks
+clock-names : clock names should include both "bus_clk" and "bus_a_clk"
+
+Examples:
+
+                bimc: bimc@400000 {
+                        compatible = "qcom,msm8996-bimc";
+                        #interconnect-cells = <1>;
+                        reg = <0x400000 0x62000>;
+                        clock-names = "bus_clk", "bus_a_clk";
+                        clocks = <&rpmcc RPM_SMD_BIMC_CLK>,
+                                 <&rpmcc RPM_SMD_BIMC_A_CLK>;
+                };
+
+		cnoc: cnoc@500000 {
+                        compatible = "qcom,msm8996-cnoc";
+                        #interconnect-cells = <1>;
+                        reg = <0x500000 0x80>;
+                        clock-names = "bus_clk", "bus_a_clk";
+                        clocks = <&rpmcc RPM_SMD_CNOC_CLK>,
+                                 <&rpmcc RPM_SMD_CNOC_A_CLK>;
+                };
+
+                snoc: snoc@520000 {
+                        compatible = "qcom,msm8996-snoc";
+                        #interconnect-cells = <1>;
+                        reg = <0x520000 0xa100>;
+                        clock-names = "bus_clk", "bus_a_clk";
+                        clocks = <&rpmcc RPM_SMD_SNOC_CLK>,
+                                 <&rpmcc RPM_SMD_SNOC_A_CLK>;
+                };
+
+                a0noc: a0noc@540000 {
+                        compatible = "qcom,msm8996-a0noc";
+                        #interconnect-cells = <1>;
+                        reg = <0x540000 0x5100>;
+                        clock-names = "bus_clk", "bus_a_clk";
+                        clocks = <&gcc GCC_AGGRE0_SNOC_AXI_CLK>,
+                                 <&gcc GCC_AGGRE0_SNOC_AXI_CLK>;
+                        power-domains = <&gcc AGGRE0_NOC_GDSC>;
+                };
+
+                a1noc: a1noc@560000 {
+                        compatible = "qcom,msm8996-a1noc";
+                        #interconnect-cells = <1>;
+                        reg = <0x560000 0x3100>;
+                        clock-names = "bus_clk", "bus_a_clk";
+                        clocks = <&rpmcc RPM_SMD_AGGR1_NOC_CLK>,
+                                 <&rpmcc RPM_SMD_AGGR1_NOC_A_CLK>;
+                };
+
+                a2noc: a2noc@580000 {
+                        compatible = "qcom,msm8996-a2noc";
+                        #interconnect-cells = <1>;
+                        reg = <0x580000 0x8100>;
+                        clock-names = "bus_clk", "bus_a_clk";
+                        clocks = <&rpmcc RPM_SMD_AGGR2_NOC_CLK>,
+                                 <&rpmcc RPM_SMD_AGGR2_NOC_A_CLK>;
+                };
+
+                mmnoc: mmnoc@5a0000 {
+                        compatible = "qcom,msm8996-mmnoc";
+                        #interconnect-cells = <1>;
+                        reg = <0x5a0000 0xb080>;
+                        clock-names = "bus_clk", "bus_a_clk";
+                        clocks = <&rpmcc RPM_SMD_MMAXI_CLK>,
+                                 <&rpmcc RPM_SMD_MMAXI_A_CLK>;
+                        power-domains = <&mmcc MMAGIC_BIMC_GDSC>;
+                };
+
+                pnoc: pnoc@5c0000 {
+                        compatible = "qcom,msm8996-pnoc";
+                        #interconnect-cells = <1>;
+                        reg = <0x5c0000 0x2480>;
+                        clock-names = "bus_clk", "bus_a_clk";
+                        clocks = <&rpmcc RPM_SMD_PCNOC_CLK>,
+                                 <&rpmcc RPM_SMD_PCNOC_A_CLK>;
+                };

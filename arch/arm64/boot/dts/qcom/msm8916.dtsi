@@ -11,6 +11,7 @@
  * GNU General Public License for more details.
  */
 
+#include <dt-bindings/interconnect/qcom.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/qcom,gcc-msm8916.h>
 #include <dt-bindings/reset/qcom,gcc-msm8916.h>
@@ -1419,6 +1420,42 @@
 			qcom,vdd-apc-step-down-limit = <1>;
 			qcom,cpr-cpus = <&CPU0 &CPU1 &CPU2 &CPU3>;
 		};
+
+		bimc: bimc@400000 {
+			compatible = "qcom,msm8916-bimc";
+			#interconnect-cells = <1>;
+			reg = <0x400000 0x62000>;
+			clock-names = "bus_clk", "bus_a_clk";
+			clocks = <&rpmcc RPM_SMD_BIMC_CLK>,
+				 <&rpmcc RPM_SMD_BIMC_A_CLK>;
+			base-offset = <0>;
+			qos-offset = <0>;
+			status = "okay";
+		};
+
+		pnoc: pnoc@500000 {
+			compatible = "qcom,msm8916-pnoc";
+			#interconnect-cells = <1>;
+			reg = <0x500000 0x11000>;
+			clock-names = "bus_clk", "bus_a_clk";
+			clocks = <&rpmcc RPM_SMD_PCNOC_CLK>,
+				 <&rpmcc RPM_SMD_PCNOC_A_CLK>;
+			base-offset = <0x7000>;
+			qos-offset = <0x1000>;
+			status = "okay";
+		};
+
+		snoc: snoc@580000 {
+			compatible = "qcom,msm8916-snoc";
+			#interconnect-cells = <1>;
+			reg = <0x580000 0x14000>;
+			clock-names = "bus_clk", "bus_a_clk";
+			clocks = <&rpmcc RPM_SMD_SNOC_CLK>,
+				 <&rpmcc RPM_SMD_SNOC_A_CLK>;
+			base-offset = <0x7000>;
+			qos-offset = <0x1000>;
+			status = "okay";
+		};
 	};
 
 	smd {
@@ -1436,6 +1473,10 @@
 				rpmcc: qcom,rpmcc {
 					compatible = "qcom,rpmcc-msm8916";
 					#clock-cells = <1>;
+				};
+
+				interconnect-smd-rpm {
+					compatible = "qcom,interconnect-smd-rpm";
 				};
 
 				smd_rpm_regulators: pm8916-regulators {
