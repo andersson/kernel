@@ -139,6 +139,11 @@ static void gic_enable_redist(bool enable)
 	u32 count = 1000000;	/* 1s! */
 	u32 val;
 
+	/*
+	 * on msm8996 access to GICR_WAKER is disabled
+	 * This would need a proper fix in TZ firmware
+	 */
+	return;
 	rbase = gic_data_rdist_rd_base();
 
 	val = readl_relaxed(rbase + GICR_WAKER);
