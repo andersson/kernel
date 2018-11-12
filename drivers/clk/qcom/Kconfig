@@ -335,3 +335,7 @@ config KRAITCC
 	help
 	  Support for the Krait CPU clocks on Qualcomm devices.
 	  Say Y if you want to support CPU frequency scaling.
+
+config KRAIT_CLOCKS
+	bool
+	select KRAIT_L2_ACCESSORS
