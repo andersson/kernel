@@ -834,6 +834,8 @@ static int vdec_start_streaming(struct vb2_queue *q, unsigned int count)
 	if (ret)
 		goto deinit_sess;
 
+	/* TODO: determine parameters and set interconnect bandwidth */
+
 	ret = venus_helper_vb2_start_streaming(inst);
 	if (ret)
 		goto deinit_sess;

@@ -7,6 +7,7 @@
 #include <linux/acpi.h>
 #include <linux/clk.h>
 #include <linux/crypto.h>
+#include <linux/interconnect.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
@@ -30,6 +31,7 @@ struct qcom_rng {
 	void __iomem *base;
 	struct clk *clk;
 	unsigned int skip_init;
+	struct icc_path *path;
 };
 
 struct qcom_rng_ctx {
@@ -75,6 +77,8 @@ static int qcom_rng_generate(struct crypto_rng *tfm,
 	struct qcom_rng *rng = ctx->rng;
 	int ret;
 
+	icc_set(rng->path, 0, 800);
+
 	ret = clk_prepare_enable(rng->clk);
 	if (ret)
 		return ret;
@@ -85,6 +89,8 @@ static int qcom_rng_generate(struct crypto_rng *tfm,
 
 	mutex_unlock(&rng->lock);
 	clk_disable_unprepare(rng->clk);
+
+	icc_set(rng->path, 0, 0);
 
 	return 0;
 }
@@ -163,6 +169,10 @@ static int qcom_rng_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, rng);
 	mutex_init(&rng->lock);
+
+	rng->path = of_icc_get(&pdev->dev, "cpu");
+	if (IS_ERR(rng->path))
+		return PTR_ERR(rng->path);
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	rng->base = devm_ioremap_resource(&pdev->dev, res);

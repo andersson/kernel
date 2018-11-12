@@ -136,6 +136,7 @@ config PCIE_QCOM
 	bool "Qualcomm PCIe controller"
 	depends on OF && (ARCH_QCOM || COMPILE_TEST)
 	depends on PCI_MSI_IRQ_DOMAIN
+	depends on INTERCONNECT != m
 	select PCIE_DW_HOST
 	help
 	  Say Y here to enable PCIe controller support on Qualcomm SoCs. The

@@ -15,6 +15,7 @@
 #include <linux/reset.h>
 #include <linux/extcon.h>
 #include <linux/notifier.h>
+#include <linux/interconnect.h>
 
 #define ULPI_PWR_CLK_MNG_REG		0x88
 # define ULPI_PWR_OTG_COMP_DISABLE	BIT(0)
@@ -39,6 +40,7 @@ struct qcom_usb_hs_phy {
 	struct reset_control *reset;
 	struct ulpi_seq *init_seq;
 	struct extcon_dev *vbus_edev;
+	struct icc_path *path;
 	struct notifier_block vbus_notify;
 };
 
@@ -155,6 +157,8 @@ static int qcom_usb_hs_phy_power_on(struct phy *phy)
 			goto err_ulpi;
 	}
 
+	icc_set(uphy->path, 80000, 6000);
+
 	if (uphy->vbus_edev) {
 		state = extcon_get_state(uphy->vbus_edev, EXTCON_USB);
 		/* setup initial state */
@@ -181,6 +185,8 @@ err_sleep:
 static int qcom_usb_hs_phy_power_off(struct phy *phy)
 {
 	struct qcom_usb_hs_phy *uphy = phy_get_drvdata(phy);
+
+	icc_set(uphy->path, 0, 0);
 
 	regulator_disable(uphy->v3p3);
 	regulator_disable(uphy->v1p8);
@@ -249,6 +255,10 @@ static int qcom_usb_hs_phy_probe(struct ulpi *ulpi)
 			return PTR_ERR(reset);
 		uphy->reset = NULL;
 	}
+
+	uphy->path = of_icc_get(&ulpi->dev, "ddr");
+	if (IS_ERR(uphy->path))
+		return PTR_ERR(uphy->path);
 
 	uphy->phy = devm_phy_create(&ulpi->dev, ulpi->dev.of_node,
 				    &qcom_usb_hs_phy_ops);

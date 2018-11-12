@@ -11,6 +11,7 @@
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
+#include <linux/interconnect.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/iopoll.h>
@@ -110,6 +111,7 @@ struct qcom_pcie_resources_2_3_2 {
 	struct clk *cfg_clk;
 	struct clk *pipe_clk;
 	struct regulator_bulk_data supplies[QCOM_PCIE_2_3_2_MAX_SUPPLY];
+	struct icc_path *path;
 };
 
 struct qcom_pcie_resources_2_4_0 {
@@ -504,6 +506,10 @@ static int qcom_pcie_get_resources_2_3_2(struct qcom_pcie *pcie)
 	if (ret)
 		return ret;
 
+	res->path = of_icc_get(dev, "pcie-mem");
+	if (IS_ERR(res->path))
+		return PTR_ERR(res->path);
+
 	res->aux_clk = devm_clk_get(dev, "aux");
 	if (IS_ERR(res->aux_clk))
 		return PTR_ERR(res->aux_clk);
@@ -534,6 +540,7 @@ static void qcom_pcie_deinit_2_3_2(struct qcom_pcie *pcie)
 	clk_disable_unprepare(res->aux_clk);
 
 	regulator_bulk_disable(ARRAY_SIZE(res->supplies), res->supplies);
+	icc_put(res->path);
 }
 
 static void qcom_pcie_post_deinit_2_3_2(struct qcom_pcie *pcie)
@@ -580,6 +587,8 @@ static int qcom_pcie_init_2_3_2(struct qcom_pcie *pcie)
 		dev_err(dev, "cannot prepare/enable slave clock\n");
 		goto err_slave_clk;
 	}
+
+	icc_set(res->path, 500, 800);
 
 	/* enable PCIe clocks and resets */
 	val = readl(pcie->parf + PCIE20_PARF_PHY_CTRL);

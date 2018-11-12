@@ -14,6 +14,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/err.h>
 #include <linux/i2c.h>
+#include <linux/interconnect.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/module.h>
@@ -280,6 +281,11 @@ struct qup_i2c_dev {
 	void (*read_rx_fifo)(struct qup_i2c_dev *qup);
 	/* function to write tags in tx fifo for i2c read transfer */
 	void (*write_rx_tags)(struct qup_i2c_dev *qup);
+
+	/* frequency mode standard */
+	u32			clk_freq;
+	/* interconnect path to scale according to bandwidth needs */
+	struct icc_path		*path;
 };
 
 static irqreturn_t qup_i2c_interrupt(int irq, void *dev)
@@ -1654,6 +1660,16 @@ static void qup_i2c_disable_clocks(struct qup_i2c_dev *qup)
 	clk_disable_unprepare(qup->pclk);
 }
 
+static void qup_i2c_enable_icc(struct qup_i2c_dev *qup)
+{
+	icc_set(qup->path, 0, qup->clk_freq / 8000);
+}
+
+static void qup_i2c_disable_icc(struct qup_i2c_dev *qup)
+{
+	icc_set(qup->path, 0, 0);
+}
+
 static const struct acpi_device_id qup_i2c_acpi_match[] = {
 	{ "QCOM8010"},
 	{ },
@@ -1782,6 +1798,10 @@ nodma:
 		}
 		ACPI_COMPANION_SET(&qup->adap.dev, ACPI_COMPANION(qup->dev));
 	} else {
+		qup->path = of_icc_get(qup->dev, "i2c-mem");
+		if (IS_ERR(qup->path))
+			return PTR_ERR(qup->path);
+
 		qup->clk = devm_clk_get(qup->dev, "core");
 		if (IS_ERR(qup->clk)) {
 			dev_err(qup->dev, "Could not get core clock\n");
@@ -1793,6 +1813,8 @@ nodma:
 			dev_err(qup->dev, "Could not get iface clock\n");
 			return PTR_ERR(qup->pclk);
 		}
+		qup->clk_freq = clk_freq;
+		qup_i2c_enable_icc(qup);
 		qup_i2c_enable_clocks(qup);
 		src_clk_freq = clk_get_rate(qup->clk);
 	}
@@ -1925,6 +1947,7 @@ static int qup_i2c_remove(struct platform_device *pdev)
 
 	disable_irq(qup->irq);
 	qup_i2c_disable_clocks(qup);
+	icc_put(qup->path);
 	i2c_del_adapter(&qup->adap);
 	pm_runtime_disable(qup->dev);
 	pm_runtime_set_suspended(qup->dev);
@@ -1937,6 +1960,7 @@ static int qup_i2c_pm_suspend_runtime(struct device *device)
 	struct qup_i2c_dev *qup = dev_get_drvdata(device);
 
 	dev_dbg(device, "pm_runtime: suspending...\n");
+	qup_i2c_disable_icc(qup);
 	qup_i2c_disable_clocks(qup);
 	return 0;
 }
@@ -1946,6 +1970,7 @@ static int qup_i2c_pm_resume_runtime(struct device *device)
 	struct qup_i2c_dev *qup = dev_get_drvdata(device);
 
 	dev_dbg(device, "pm_runtime: resuming...\n");
+	qup_i2c_enable_icc(qup);
 	qup_i2c_enable_clocks(qup);
 	return 0;
 }

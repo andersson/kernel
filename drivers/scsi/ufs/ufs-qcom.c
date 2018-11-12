@@ -12,6 +12,7 @@
  *
  */
 
+#include <linux/interconnect.h>
 #include <linux/time.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
@@ -877,6 +878,7 @@ static int ufs_qcom_bus_register(struct ufs_qcom_host *host)
 }
 #endif /* CONFIG_MSM_BUS_SCALING */
 
+
 static void ufs_qcom_dev_ref_clk_ctrl(struct ufs_qcom_host *host, bool enable)
 {
 	if (host->dev_ref_clk_ctrl_mmio &&
@@ -1652,6 +1654,17 @@ static int ufs_qcom_probe(struct platform_device *pdev)
 {
 	int err;
 	struct device *dev = &pdev->dev;
+	struct icc_path *path = of_icc_get(dev, "ddr");
+	struct icc_path *path_cfg = of_icc_get(dev, "cfg");
+
+	if (IS_ERR(path))
+		return PTR_ERR(path);
+
+	if (IS_ERR(path_cfg))
+		return PTR_ERR(path_cfg);
+
+	icc_set(path, 4096000, 0);
+	icc_set(path_cfg, 1000, 0);
 
 	/* Perform generic probe */
 	err = ufshcd_pltfrm_init(pdev, &ufs_hba_qcom_vops);

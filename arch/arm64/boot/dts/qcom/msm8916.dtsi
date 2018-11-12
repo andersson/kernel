@@ -521,6 +521,8 @@
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&i2c2_default>;
 			pinctrl-1 = <&i2c2_sleep>;
+			interconnect-names = "i2c-mem";
+			interconnects = <&pnoc MASTER_BLSP_1 &bimc SLAVE_EBI_CH0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -536,6 +538,8 @@
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&i2c4_default>;
 			pinctrl-1 = <&i2c4_sleep>;
+			interconnect-names = "i2c-mem";
+			interconnects = <&pnoc MASTER_BLSP_1 &bimc SLAVE_EBI_CH0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -551,6 +555,8 @@
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&i2c6_default>;
 			pinctrl-1 = <&i2c6_sleep>;
+			interconnect-names = "i2c-mem";
+			interconnects = <&pnoc MASTER_BLSP_1 &bimc SLAVE_EBI_CH0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -602,6 +608,8 @@
 				 <&gcc GCC_SDCC1_AHB_CLK>,
 				 <&xo_board>;
 			clock-names = "core", "iface", "xo";
+			interconnect-names = "sdhc-mem";
+			interconnects = <&pnoc MASTER_SDCC_1 &bimc SLAVE_EBI_CH0>;
 			mmc-ddr-1_8v;
 			bus-width = <8>;
 			non-removable;
@@ -619,6 +627,8 @@
 				 <&gcc GCC_SDCC2_AHB_CLK>,
 				 <&xo_board>;
 			clock-names = "core", "iface", "xo";
+			interconnect-names = "sdhc-mem";
+			interconnects = <&pnoc MASTER_SDCC_2 &bimc SLAVE_EBI_CH0>;
 			bus-width = <4>;
 			status = "disabled";
 		};
@@ -655,6 +665,8 @@
 					reset-names = "phy", "por";
 					qcom,init-seq = /bits/ 8 <0x0 0x44
 						0x1 0x6b 0x2 0x24 0x3 0x13>;
+					interconnect-names = "ddr";
+					interconnects = <&pnoc MASTER_USB_HS &bimc SLAVE_EBI_CH0>;
 				};
 			};
 		};
@@ -748,6 +760,8 @@
 			reg = <0x00022000 0x200>;
 			clocks = <&gcc GCC_PRNG_AHB_CLK>;
 			clock-names = "core";
+			interconnects = <&bimc MASTER_AMPSS_M0 &pnoc SLAVE_PRNG>;
+			interconnect-names = "cpu";
 		};
 
 		qfprom: qfprom@5c000 {
@@ -847,6 +861,8 @@
 			power-domains = <&gcc OXILI_GDSC>;
 			operating-points-v2 = <&gpu_opp_table>;
 			iommus = <&gpu_iommu 1>, <&gpu_iommu 2>;
+			interconnects = <&bimc MASTER_GRAPHICS_3D &bimc SLAVE_EBI_CH0>;
+			interconnect-names = "gfx";
 		};
 
 		mdss: mdss@1a00000 {
@@ -891,6 +907,9 @@
 					      "vsync";
 
 				iommus = <&apps_iommu 4>;
+
+				interconnects = <&snoc MASTER_MDP_PORT0 &bimc SLAVE_EBI_CH0>;
+				interconnect-names = "port0";
 
 				ports {
 					#address-cells = <1>;
@@ -1384,6 +1403,10 @@
 			clock-names = "core", "iface", "bus";
 			iommus = <&apps_iommu 5>;
 			memory-region = <&venus_mem>;
+			interconnects = <&snoc MASTER_VIDEO_P0 &bimc SLAVE_EBI_CH0>,
+					<&snoc MASTER_MDP_PORT0 &bimc SLAVE_EBI_CH0>,
+					<&bimc MASTER_GRAPHICS_3D &bimc SLAVE_EBI_CH0>;
+			interconnect-names = "video", "mdp0", "gpu";
 			status = "okay";
 
 			video-decoder {

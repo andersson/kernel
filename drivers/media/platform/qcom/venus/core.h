@@ -150,6 +150,10 @@ struct venus_core {
 	struct delayed_work work;
 	struct venus_caps caps[MAX_CODEC_NUM];
 	unsigned int codecs_count;
+	struct icc_path *path;
+	struct icc_path *path_mdp0;
+	struct icc_path *path_mdp1;
+	struct icc_path *path_gpu;
 };
 
 struct vdec_controls {

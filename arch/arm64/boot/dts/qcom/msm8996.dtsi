@@ -972,6 +972,8 @@
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&blsp2_i2c0_default>;
 			pinctrl-1 = <&blsp2_i2c0_sleep>;
+			interconnects = <&pnoc MASTER_BLSP_2 &bimc SLAVE_EBI_CH0>;
+			interconnect-names = "ddr";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -984,6 +986,8 @@
 			clocks = <&gcc GCC_BLSP2_UART2_APPS_CLK>,
 				 <&gcc GCC_BLSP2_AHB_CLK>;
 			clock-names = "core", "iface";
+			interconnects = <&pnoc MASTER_BLSP_2 &bimc SLAVE_EBI_CH0>;
+			interconnect-names = "ddr";
 			status = "disabled";
 		};
 
@@ -997,6 +1001,8 @@
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&blsp2_i2c1_default>;
 			pinctrl-1 = <&blsp2_i2c1_sleep>;
+			interconnects = <&pnoc MASTER_BLSP_2 &bimc SLAVE_EBI_CH0>;
+			interconnect-names = "ddr";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -1022,6 +1028,8 @@
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&blsp1_i2c2_default>;
 			pinctrl-1 = <&blsp1_i2c2_sleep>;
+			interconnects = <&pnoc MASTER_BLSP_1 &bimc SLAVE_EBI_CH0>;
+			interconnect-names = "ddr";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -1056,6 +1064,8 @@
 			 clocks = <&gcc GCC_SDCC2_AHB_CLK>,
 			 <&gcc GCC_SDCC2_APPS_CLK>,
 			 <&xo_board>;
+			 interconnects = <&pnoc MASTER_SDCC_2 &bimc SLAVE_EBI_CH0>;
+			 interconnect-names = "sdhc-mem";
 			 bus-width = <4>;
 		 };
 
@@ -1417,6 +1427,9 @@
 			assigned-clock-rates = <19200000>, <60000000>;
 
 			power-domains = <&gcc USB30_GDSC>;
+
+			interconnects = <&pnoc MASTER_USB_HS &bimc SLAVE_EBI_CH0>;
+			interconnect-names = "ddr";
 			status = "disabled";
 
 			dwc3@7600000 {
@@ -1444,6 +1457,9 @@
 			assigned-clocks = <&gcc GCC_USB30_MOCK_UTMI_CLK>,
 					  <&gcc GCC_USB30_MASTER_CLK>;
 			assigned-clock-rates = <19200000>, <120000000>;
+
+			interconnects = <&pnoc MASTER_USB3 &bimc SLAVE_EBI_CH0>;
+			interconnect-names = "ddr";
 
 			power-domains = <&gcc USB30_GDSC>;
 			status = "disabled";
@@ -1515,6 +1531,8 @@
 						"bus_master",
 						"bus_slave";
 
+				interconnects = <&a0noc MASTER_PCIE &bimc SLAVE_EBI_CH0>;
+				interconnect-names = "pcie-mem";
 			};
 
 			pcie1: pcie@608000 {
@@ -1568,6 +1586,9 @@
 						"cfg",
 						"bus_master",
 						"bus_slave";
+
+				interconnects = <&a0noc MASTER_PCIE_1 &bimc SLAVE_EBI_CH0>;
+				interconnect-names = "pcie-mem";
 			};
 
 			pcie2: pcie@610000 {
