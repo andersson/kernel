@@ -92,7 +92,7 @@ int init_common(struct tsens_device *);
 int get_temp_common(struct tsens_device *, int, int *);
 
 /* TSENS v1 targets */
-extern const struct tsens_data data_8916, data_8974, data_8960;
+extern const struct tsens_data data_8916, data_8974, data_8960, data_tsens_v1;
 /* TSENS v2 targets */
 extern const struct tsens_data data_8996, data_tsens_v2;
 
