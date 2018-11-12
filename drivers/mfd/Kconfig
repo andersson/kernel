@@ -1823,6 +1823,20 @@ config MFD_WM97xx
 	  support for the WM97xx, in order to use the actual functionaltiy of
 	  the device other drivers must be enabled.
 
+config MFD_WCD9335_SLIM
+	tristate "Qualcomm WCD9335 with SLIMbus"
+	select MFD_CORE
+	select REGMAP_IRQ
+	select REGMAP_SLIMBUS
+	depends on SLIMBUS
+	help
+	  The WCD9335 is a standalone Hi-Fi audio CODEC IC, supports
+	  Qualcomm Technologies, Inc. (QTI) multimedia solutions,
+	  including the MSM8996, MSM8976, and MSM8956 chipsets.
+	  It has in-build Soundwire controller, interrupt mux.
+	  It supports both I2S/I2C and SLIMbus audio interfaces.
+	  This option selects SLIMbus audio interface.
+
 config MFD_STW481X
 	tristate "Support for ST Microelectronics STw481x"
 	depends on I2C && (ARCH_NOMADIK || COMPILE_TEST)
