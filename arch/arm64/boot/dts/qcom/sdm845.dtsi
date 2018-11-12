@@ -1636,9 +1636,11 @@
 			resets = <&aoss_reset AOSS_CC_MSS_RESTART>, <&pdc_reset PDC_MODEM_SYNC_RESET>;
 			reset-names = "mss_restart", "pdc_reset";
 
-			/* cx-supply = <&pm8998_s9>; */
-			/* mx-supply = <&pm8998_s6>; */
-			/* mss-supply = <&pm8005_s2_level>; */
+			power-domains = <&aoss_qmp AOSS_QMP_LS_MODEM>,
+					<&rpmhpd SDM845_CX>,
+					<&rpmhpd SDM845_MX>,
+					<&rpmhpd SDM845_MSS>;
+			power-domain-names = "load_state", "cx", "mx", "mss";
 
 			qcom,halt-regs = <&tcsr_mutex_regs 0x23000 0x25000 0x24000>;
 
