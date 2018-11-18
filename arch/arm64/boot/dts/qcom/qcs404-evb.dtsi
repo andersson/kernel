@@ -21,6 +21,34 @@
 	};
 };
 
+&blsp1_i2c1 {
+	status = "okay";
+	clock-frequency = <400000>;
+
+	led-controller@65 {
+		compatible = "nxp,pca9956b";
+		reg = <0x65>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		nxp,irefall = <0x2f>;
+
+		led@0 {
+			reg = <0>;
+			label = "led0";
+		};
+	};
+
+	led-controller@69 {
+		compatible = "nxp,pca9956b";
+		reg = <0x69>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		nxp,irefall = <0x2f>;
+	};
+};
+
 &remoteproc_adsp {
 	status = "ok";
 };
@@ -188,6 +216,11 @@
 };
 
 /* PINCTRL - additions to nodes defined in qcs404.dtsi */
+
+&blsp1_i2c1_default {
+	drive-strength = <2>;
+	bias-disable;
+};
 
 &blsp1_uart2_default {
 	rx {
