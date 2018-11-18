@@ -186,3 +186,17 @@
 		};
 	};
 };
+
+/* PINCTRL - additions to nodes defined in qcs404.dtsi */
+
+&blsp1_uart2_default {
+	rx {
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	tx {
+		drive-strength = <2>;
+		bias-disable;
+	};
+};
