@@ -109,16 +109,6 @@
 			regulator-max-microvolt = <>;
 		};
 
-		vreg_l1_1p3: l1 {
-			regulator-min-microvolt = <1240000>;
-			regulator-max-microvolt = <1352000>;
-		};
-
-		vreg_l2_1p275: l2 {
-			regulator-min-microvolt = <1048000>;
-			regulator-max-microvolt = <1280000>;
-		};
-
 		vreg_l3_1p05: l3 {
 			regulator-min-microvolt = <976000>;
 			regulator-max-microvolt = <1160000>;
