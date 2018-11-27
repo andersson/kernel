@@ -631,7 +631,7 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&perst_state>, <&pcie_dis_state>;
 
-//			status = "disabled";
+			status = "disabled";
 		};
 
 		pcie_phy: phy@07786000 {
