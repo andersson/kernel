@@ -3324,7 +3324,7 @@ int hci_register_dev(struct hci_dev *hdev)
 		hci_dev_set_flag(hdev, HCI_RFKILLED);
 
 	hci_dev_set_flag(hdev, HCI_SETUP);
-	hci_dev_set_flag(hdev, HCI_AUTO_OFF);
+	//hci_dev_set_flag(hdev, HCI_AUTO_OFF);
 
 	if (hdev->dev_type == HCI_PRIMARY) {
 		/* Assume BR/EDR support until proven otherwise (such as
