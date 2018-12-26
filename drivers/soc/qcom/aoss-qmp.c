@@ -33,6 +33,8 @@
 #define QMP_MAGIC	0x4d41494c
 #define QMP_VERSION	1
 
+#define QMP_MAX_COOLING_DEVICES		3
+
 /**
  * struct qmp - driver state for QMP implementation
  * @msgram: iomem referencing the message RAM used for communication
@@ -44,6 +46,8 @@
  * @event: wait_queue for synchronization with the IRQ
  * @tx_lock: provides syncrhonization between multiple callers of qmp_send()
  * @pd_pdev: platform device for the power-domain child device
+ * @cdev_pdevs: platform device for the cooling devices
+ * @cdev_count: number of valid @cdev_pdevs
  */
 struct qmp {
 	void __iomem *msgram;
@@ -60,6 +64,9 @@ struct qmp {
 	struct mutex tx_lock;
 
 	struct platform_device *pd_pdev;
+
+	struct platform_device *cdev_pdevs[QMP_MAX_COOLING_DEVICES];
+	size_t cdev_count;
 };
 
 static void qmp_kick(struct qmp *qmp)
@@ -237,6 +244,8 @@ EXPORT_SYMBOL(qmp_send);
 
 static int qmp_probe(struct platform_device *pdev)
 {
+	struct platform_device *cdev;
+	struct device_node *cdev_node;
 	struct resource *res;
 	struct qmp *qmp;
 	int irq;
@@ -286,13 +295,40 @@ static int qmp_probe(struct platform_device *pdev)
 			dev_err(&pdev->dev, "failed to register AOSS PD\n");
 	}
 
+	for_each_available_child_of_node(pdev->dev.of_node, cdev_node) {
+		if (!of_property_read_bool(cdev_node, "#cooling-cells"))
+			continue;
+
+		/* Register cooling device, with its device_node as platform_data */
+		cdev = platform_device_register_data(&pdev->dev,
+						     "aoss_qmp_cdev",
+						     PLATFORM_DEVID_AUTO,
+						     of_node_get(cdev_node),
+						     sizeof(cdev_node));
+		if (IS_ERR(cdev)) {
+			dev_err(&pdev->dev,
+				"failed to register cooling device: %pOFn\n",
+				cdev_node);
+			continue;
+		}
+
+		qmp->cdev_pdevs[qmp->cdev_count++] = cdev;
+	}
+
 	return 0;
 }
 
 static int qmp_remove(struct platform_device *pdev)
 {
 	struct qmp *qmp = platform_get_drvdata(pdev);
+	struct device_node *np;
+	int i;
 
+	for (i = 0; i < qmp->cdev_count; i++) {
+		np = dev_get_platdata(&qmp->cdev_pdevs[i]->dev);
+		platform_device_unregister(qmp->cdev_pdevs[i]);
+		of_node_put(np);
+	}
 	platform_device_unregister(qmp->pd_pdev);
 
 	qmp_close(qmp);
