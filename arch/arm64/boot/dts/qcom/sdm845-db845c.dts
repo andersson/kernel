@@ -228,10 +228,19 @@
 			regulator-max-microvolt = <1028000>;
 		};
 
+		vdda_pcie_core:
+		vdda_usb1_ss_core:
 		vdda_ufs1_core:
 		vreg_l1a_0p875: ldo1 {
 			regulator-min-microvolt = <880000>;
 			regulator-max-microvolt = <880000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vdda_qusb_hs0_1p8:
+		vreg_l12a_1p8: ldo12 {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
@@ -254,7 +263,16 @@
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
+		vdda_qusb_hs0_3p1:
+		vreg_l24a_3p075: ldo24 {
+			regulator-min-microvolt = <3088000>;
+			regulator-max-microvolt = <3088000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vdda_pcie_1p2:
 		vdda_ufs1_1p2:
+		vdda_usb1_ss_1p2:
 		vreg_l26a_1p2: ldo26 {
 			regulator-min-microvolt = <1200000>;
 			regulator-max-microvolt = <1200000>;
@@ -281,6 +299,21 @@
 	protected-clocks = <GCC_QSPI_CORE_CLK>,
 			   <GCC_QSPI_CORE_CLK_SRC>,
 			   <GCC_QSPI_CNOC_PERIPH_AHB_CLK>;
+};
+
+&pcie0 {
+	status = "okay";
+	perst-gpio = <&tlmm 35 GPIO_ACTIVE_LOW>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_perst_state>, <&pcie0_clkreq_state>, <&pcie0_ponrst_state>;
+};
+
+&pcie0_phy {
+	status = "okay";
+
+	vdda-phy-supply = <&vdda_pcie_core>;
+	vdda-pll-supply = <&vdda_pcie_1p2>;
 };
 
 &pm8998_gpio {
@@ -323,6 +356,38 @@
 &tlmm {
 	gpio-reserved-ranges = <0 4>, <81 4>;
 
+	pcie0_pwren_state: pcie0-pwren {
+		pins = "gpio90";
+		function = "gpio";
+
+		drive-strength = <2>;
+		output-high;
+	};
+
+	pcie0_perst_state: pcie0-reset {
+		pins = "gpio35";
+		function = "gpio";
+		drive-strength = <2>;
+		output-high;
+	};
+
+	pcie0_clkreq_state: pcie0-clkreq {
+		pins = "gpio36";
+		function = "pci_e0";
+
+		input-enable;
+		bias-pull-up;
+	};
+
+	pcie0_ponrst_state: pcie0-ponrst {
+		pins = "gpio134";
+		function = "gpio";
+
+		drive-strength = <2>;
+		output-high;
+	};
+
+
 	sdc2_clk: sdc2-clk {
 		pins = "sdc2_clk";
 		bias-disable;
@@ -356,6 +421,35 @@
 &uart9 {
 	status = "okay";
 };
+
+&usb_1 {
+	status = "okay";
+};
+
+&usb_1_dwc3 {
+	dr_mode = "peripheral";
+};
+
+&usb_1_hsphy {
+	status = "okay";
+
+	vdd-supply = <&vdda_usb1_ss_core>;
+	vdda-pll-supply = <&vdda_qusb_hs0_1p8>;
+	vdda-phy-dpdm-supply = <&vdda_qusb_hs0_3p1>;
+
+	qcom,imp-res-offset-value = <8>;
+	qcom,hstx-trim-value = <QUSB2_V2_HSTX_TRIM_21_6_MA>;
+	qcom,preemphasis-level = <QUSB2_V2_PREEMPHASIS_5_PERCENT>;
+	qcom,preemphasis-width = <QUSB2_V2_PREEMPHASIS_WIDTH_HALF_BIT>;
+};
+
+&usb_1_qmpphy {
+	status = "okay";
+
+	vdda-phy-supply = <&vdda_usb1_ss_1p2>;
+	vdda-pll-supply = <&vdda_usb1_ss_core>;
+};
+
 
 &ufs_mem_hc {
 	status = "okay";
