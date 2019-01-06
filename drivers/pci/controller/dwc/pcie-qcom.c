@@ -1199,7 +1199,12 @@ static void qcom_pcie_post_deinit_2_7_0(struct qcom_pcie *pcie)
 
 static int qcom_pcie_link_up(struct dw_pcie *pci)
 {
+	struct qcom_pcie *pcie = to_qcom_pcie(pci);
+	u32 ltssm;
 	u16 val = readw(pci->dbi_base + PCIE20_CAP + PCI_EXP_LNKSTA);
+
+	ltssm = readl(pcie->parf + PCIE20_PARF_LTSSM);
+	printk(KERN_ERR "%s() LTSSM = 0x%x\n", __func__, ltssm);
 
 	return !!(val & PCI_EXP_LNKSTA_DLLLA);
 }
