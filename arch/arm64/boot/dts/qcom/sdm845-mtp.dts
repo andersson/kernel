@@ -92,13 +92,15 @@
 		};
 
 		vreg_s5a_2p04: smps5 {
-			regulator-min-microvolt = <1904000>;
+			regulator-min-microvolt = <1950000>;
 			regulator-max-microvolt = <2040000>;
+			regulator-always-on;
 		};
 
 		vreg_s7a_1p025: smps7 {
-			regulator-min-microvolt = <900000>;
+			regulator-min-microvolt = <1028000>;
 			regulator-max-microvolt = <1028000>;
+			regulator-always-on;
 		};
 
 		vdd_qusb_hs0:
@@ -355,6 +357,22 @@
 	clock-frequency = <400000>;
 };
 
+&pcie0 {
+	status = "okay";
+
+	perst-gpio = <&tlmm 35 GPIO_ACTIVE_LOW>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_clkreq_state>, <&pcie0_perst_state>, <&pcie0_wake_state>, <&wigig_enable_state>;
+};
+
+&pcie0_phy {
+	status = "okay";
+
+	vdda-phy-supply = <&vdda_pcie_core>;
+	vdda-pll-supply = <&vdda_pcie_1p2>;
+};
+
 &qupv3_id_1 {
 	status = "okay";
 };
@@ -476,6 +494,38 @@
 
 &tlmm {
 	gpio-reserved-ranges = <0 4>, <81 4>;
+
+	pcie0_clkreq_state: pcie0-clkreq {
+		pins = "gpio36";
+		function = "pci_e0";
+
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	pcie0_perst_state: pcie0-perst {
+		pins = "gpio35";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+
+	pcie0_wake_state: pcie0-wake {
+		pins = "gpio37";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+	};
+
+	wigig_enable_state: wigig-enable {
+		pins = "gpio39";
+		function = "gpio";
+
+		drive-strength = <2>;
+		output-high;
+	};
 
 	sdc2_clk: sdc2-clk {
 		pinconf {
