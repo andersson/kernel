@@ -110,6 +110,34 @@
 			mboxes = <&apcs_glb 8>;
 
 			label = "adsp";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			fastrpc {
+				compatible = "qcom,fastrpc";
+				qcom,glink-channels = "fastrpcglink-apps-dsp";
+				label = "adsp";
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				qcom,msm_fastrpc_compute_cb_1 {
+					compatible = "qcom,fastrpc-compute-cb";
+					reg = <4>;
+				};
+
+				qcom,msm_fastrpc_compute_cb_2 {
+					compatible = "qcom,fastrpc-compute-cb";
+					reg = <5>;
+				};
+
+				qcom,msm_fastrpc_compute_cb_3 {
+					compatible = "qcom,fastrpc-compute-cb";
+					reg = <6>;
+					shared-cb = <5>;
+				};
+			};
 		};
 	};
 
@@ -305,6 +333,40 @@
 				mboxes = <&apcs_glb 12>;
 
 				label = "cdsp";
+
+				fastrpc_cdsp: fastrpc {
+					compatible = "qcom,fastrpc";
+					qcom,glink-channels = "fastrpcglink-apps-dsp";
+					label = "cdsp";
+
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					qcom,msm_fastrpc_compute_cb_1 {
+						compatible = "qcom,fastrpc-compute-cb";
+						reg = <1>;
+					};
+
+					qcom,msm_fastrpc_compute_cb_2 {
+						compatible = "qcom,fastrpc-compute-cb";
+						reg = <2>;
+					};
+
+					qcom,msm_fastrpc_compute_cb_3 {
+						compatible = "qcom,fastrpc-compute-cb";
+						reg = <3>;
+					};
+
+					qcom,msm_fastrpc_compute_cb_4 {
+						compatible = "qcom,fastrpc-compute-cb";
+						reg = <4>;
+					};
+
+					qcom,msm_fastrpc_compute_cb_5 {
+						compatible = "qcom,fastrpc-compute-cb";
+						reg = <5>;
+					};
+				};
 			};
 		};
 
