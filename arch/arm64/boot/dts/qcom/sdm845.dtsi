@@ -79,15 +79,6 @@
 			no-map;
 		};
 
-		mpss_efs: memory@85d00000 {
-			compatible = "qcom,rmtfs-mem";
-			reg = <0 0x85d00000 0 0x200000>;
-			no-map;
-
-			qcom,client-id = <1>;
-			qcom,vmid = <15>;
-		};
-
 		xbl_mem: memory@85e00000 {
 			reg = <0x0 0x85e00000 0 0x100000>;
 			no-map;
@@ -117,6 +108,15 @@
 		tz_mem: memory@86300000 {
 			reg = <0 0x86300000 0 0x2c00000>;
 			no-map;
+		};
+
+		mpss_efs: memory@88f0000 {
+			compatible = "qcom,rmtfs-mem";
+			reg = <0 0x88f00000 0 0x200000>;
+			no-map;
+
+			qcom,client-id = <1>;
+			qcom,vmid = <15>;
 		};
 
 		qseecom_mem: memory@8ab00000 {
@@ -2426,7 +2426,10 @@
 			status = "disabled";
 			reg = <0 0x18800000 0 0x800000>;
 			reg-names = "membase";
+			clock-names = "cxo_ref_clk_pin";
+			clocks = <&rpmhcc RPMH_RF_CLK2>;
 			memory-region = <&wlan_msa_mem>;
+			iommus = <&apps_smmu 0x0040 0x1>;
 			interrupts =
 				<GIC_SPI 414 IRQ_TYPE_LEVEL_HIGH>,
 				<GIC_SPI 415 IRQ_TYPE_LEVEL_HIGH>,
