@@ -48,3 +48,5 @@ obj-$(CONFIG_ARM64) += pci-thunder-ecam.o
 obj-$(CONFIG_ARM64) += pci-thunder-pem.o
 obj-$(CONFIG_ARM64) += pci-xgene.o
 endif
+
+obj-$(CONFIG_PCI_MSM) += pci-msm.o
