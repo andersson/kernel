@@ -281,4 +281,10 @@ config VMD
 	  module will be called vmd.
 
 source "drivers/pci/controller/dwc/Kconfig"
+
+config PCI_MSM
+	tristate "Downstream Qualcomm PCI driver"
+	help
+	  Foobar
+
 endmenu

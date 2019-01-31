@@ -308,8 +308,18 @@
 			   <GCC_QSPI_CNOC_PERIPH_AHB_CLK>;
 };
 
-&pcie0 {
+&msm_pcie {
 	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_perst_state>, <&pcie0_clkreq_state>, <&pcie0_wake_state>;
+
+	vreg-1.8-supply = <&vdda_pcie_1p2>;
+	vreg-0.9-supply = <&vdda_pcie_core>;
+};
+
+&pcie0 {
+//	status = "okay";
 	perst-gpio = <&tlmm 35 GPIO_ACTIVE_LOW>;
 	enable-gpio = <&tlmm 134 GPIO_ACTIVE_HIGH>;
 
@@ -318,7 +328,7 @@
 };
 
 &pcie0_phy {
-	status = "okay";
+//	status = "okay";
 
 	vdda-phy-supply = <&vdda_pcie_core>;
 	vdda-pll-supply = <&vdda_pcie_1p2>;
