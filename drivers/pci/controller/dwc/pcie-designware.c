@@ -67,6 +67,7 @@ u32 __dw_pcie_read_dbi(struct dw_pcie *pci, void __iomem *base, u32 reg,
 	if (pci->ops->read_dbi)
 		return pci->ops->read_dbi(pci, base, reg, size);
 
+	printk(KERN_ERR "%s(0x%lx, 0x%x)\n", __func__, (unsigned long)base, reg);
 	ret = dw_pcie_read(base + reg, size, &val);
 	if (ret)
 		dev_err(pci->dev, "Read DBI address failed\n");

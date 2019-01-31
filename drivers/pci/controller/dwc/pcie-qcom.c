@@ -140,7 +140,7 @@ struct qcom_pcie_resources_2_3_3 {
 };
 
 struct qcom_pcie_resources_2_7_0 {
-	struct clk_bulk_data clks[6];
+	struct clk_bulk_data clks[7];
 	struct regulator_bulk_data supplies[2];
 
 	struct reset_control *pci_reset;
@@ -174,6 +174,7 @@ struct qcom_pcie {
 	union qcom_pcie_resources res;
 	struct phy *phy;
 	struct gpio_desc *reset;
+	struct gpio_desc *enable;
 	const struct qcom_pcie_ops *ops;
 };
 
@@ -181,12 +182,14 @@ struct qcom_pcie {
 
 static void qcom_ep_reset_assert(struct qcom_pcie *pcie)
 {
+	printk(KERN_ERR "%s()\n", __func__);
 	gpiod_set_value_cansleep(pcie->reset, 1);
 	usleep_range(PERST_DELAY_US, PERST_DELAY_US + 500);
 }
 
 static void qcom_ep_reset_deassert(struct qcom_pcie *pcie)
 {
+	printk(KERN_ERR "%s()\n", __func__);
 	gpiod_set_value_cansleep(pcie->reset, 0);
 	usleep_range(PERST_DELAY_US, PERST_DELAY_US + 500);
 }
@@ -194,6 +197,8 @@ static void qcom_ep_reset_deassert(struct qcom_pcie *pcie)
 static int qcom_pcie_establish_link(struct qcom_pcie *pcie)
 {
 	struct dw_pcie *pci = pcie->pci;
+	u32 val;
+	int i;
 
 	if (dw_pcie_link_up(pci))
 		return 0;
@@ -201,6 +206,12 @@ static int qcom_pcie_establish_link(struct qcom_pcie *pcie)
 	/* Enable Link Training state machine */
 	if (pcie->ops->ltssm_enable)
 		pcie->ops->ltssm_enable(pcie);
+
+	for (i = 0; i < 20; i++) {
+		val = readl(pcie->parf + PCIE20_PARF_LTSSM);
+		printk(KERN_ERR "LTSSM: 0x%x\n", val);
+		msleep(100);
+	}
 
 	return dw_pcie_wait_for_link(pci);
 }
@@ -1110,7 +1121,8 @@ static int qcom_pcie_get_resources_2_7_0(struct qcom_pcie *pcie)
 	res->clks[2].id = "bus_master";
 	res->clks[3].id = "bus_slave";
 	res->clks[4].id = "slave_q2a";
-	res->clks[5].id = "tbu";
+	res->clks[5].id = "ref";
+	res->clks[6].id = "tbu";
 
 	ret = devm_clk_bulk_get(dev, ARRAY_SIZE(res->clks), res->clks);
 	if (ret < 0)
@@ -1144,7 +1156,10 @@ static int qcom_pcie_init_2_7_0(struct qcom_pcie *pcie)
 		return ret;
 	}
 
-	clk_prepare_enable(res->pipe_clk);
+	ret = clk_set_rate(res->pipe_clk, 125000000);
+	printk(KERN_ERR "%s() clk_set_rate() = %d\n", __func__, ret);
+	ret = clk_prepare_enable(res->pipe_clk);
+	printk(KERN_ERR "%s() clk_prepare_enable() = %d\n", __func__, ret);
 
 	/* enable PCIe clocks and resets */
 	val = readl(pcie->parf + PCIE20_PARF_PHY_CTRL);
@@ -1167,6 +1182,12 @@ static int qcom_pcie_init_2_7_0(struct qcom_pcie *pcie)
 	val |= BIT(31);
 	writel(val, pcie->parf + PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2);
 
+//	writel(0x14, pci->dbi_base + 0xb40);
+
+	val = readl(pci->dbi_base + 0x70c);
+	val |= BIT(15);
+	writel(val, pci->dbi_base + 0x70c);
+
 	return 0;
 
 err_disable_regulators:
@@ -1179,7 +1200,7 @@ static void qcom_pcie_deinit_2_7_0(struct qcom_pcie *pcie)
 {
 	struct qcom_pcie_resources_2_7_0 *res = &pcie->res.v2_7_0;
 
-	clk_bulk_disable_unprepare(ARRAY_SIZE(res->clks), res->clks);
+//	clk_bulk_disable_unprepare(ARRAY_SIZE(res->clks), res->clks);
 	regulator_bulk_disable(ARRAY_SIZE(res->supplies), res->supplies);
 }
 
@@ -1194,12 +1215,14 @@ static void qcom_pcie_post_deinit_2_7_0(struct qcom_pcie *pcie)
 {
 	struct qcom_pcie_resources_2_7_0 *res = &pcie->res.v2_7_0;
 
-	clk_disable_unprepare(res->pipe_clk);
+//	clk_disable_unprepare(res->pipe_clk);
 }
 
 static int qcom_pcie_link_up(struct dw_pcie *pci)
 {
 	u16 val = readw(pci->dbi_base + PCIE20_CAP + PCI_EXP_LNKSTA);
+
+	printk(KERN_ERR "%s() 0x%x = 0x%x\n", __func__, PCIE20_CAP + PCI_EXP_LNKSTA, val);
 
 	return !!(val & PCI_EXP_LNKSTA_DLLLA);
 }
@@ -1231,11 +1254,13 @@ static int qcom_pcie_host_init(struct pcie_port *pp)
 	if (IS_ENABLED(CONFIG_PCI_MSI))
 		dw_pcie_msi_init(pp);
 
+	msleep(1000);
+
 	qcom_ep_reset_deassert(pcie);
 
 	ret = qcom_pcie_establish_link(pcie);
-	if (ret)
-		goto err;
+//	if (ret)
+//		goto err;
 
 	return 0;
 err:
@@ -1327,6 +1352,16 @@ static const struct dw_pcie_ops dw_pcie_ops = {
 	.link_up = qcom_pcie_link_up,
 };
 
+static void msm_pcie_fixup_early(struct pci_dev *dev)
+{
+	printk(KERN_ERR "%s() hdr_type %d (is_root_bus: %d)\n", __func__, dev->hdr_type, pci_is_root_bus(dev->bus));
+
+	if (pci_is_root_bus(dev->bus))
+		dev->class = (dev->class & 0xff) | (PCI_CLASS_BRIDGE_PCI << 8);
+}
+
+DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, PCI_ANY_ID, msm_pcie_fixup_early);
+
 static int qcom_pcie_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -1359,7 +1394,10 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 
 	pcie->ops = of_device_get_match_data(dev);
 
-	pcie->reset = devm_gpiod_get_optional(dev, "perst", GPIOD_OUT_LOW);
+	msleep(10);
+	pcie->enable = devm_gpiod_get_optional(dev, "enable", GPIOD_OUT_HIGH);
+
+	pcie->reset = devm_gpiod_get_optional(dev, "perst", GPIOD_OUT_HIGH);
 	if (IS_ERR(pcie->reset)) {
 		ret = PTR_ERR(pcie->reset);
 		goto err_pm_runtime_put;
@@ -1411,6 +1449,9 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 		pm_runtime_disable(&pdev->dev);
 		goto err_pm_runtime_put;
 	}
+
+	printk(KERN_ERR "%s() phy initialized\n", __func__);
+	msleep(100);
 
 	platform_set_drvdata(pdev, pcie);
 

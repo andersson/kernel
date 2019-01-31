@@ -103,6 +103,11 @@
 		regulator-min-microvolt = <1050000>;
 		regulator-max-microvolt = <1050000>;
 
+		regulator-always-on;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcie0_pwren_state>;
+
 		gpio = <&tlmm 90 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
@@ -115,6 +120,8 @@
 		vin-supply = <&vbat>;
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
+
+		regulator-always-on;
 
 		// TODO: make it possible to drive same GPIO from two clients
 		// gpio = <&tlmm 90 GPIO_ACTIVE_HIGH>;
@@ -304,9 +311,10 @@
 &pcie0 {
 	status = "okay";
 	perst-gpio = <&tlmm 35 GPIO_ACTIVE_LOW>;
+	enable-gpio = <&tlmm 134 GPIO_ACTIVE_HIGH>;
 
 	pinctrl-names = "default";
-	pinctrl-0 = <&pcie0_perst_state>, <&pcie0_clkreq_state>, <&pcie0_ponrst_state>;
+	pinctrl-0 = <&pcie0_perst_state>, <&pcie0_clkreq_state>, <&pcie0_wake_state>;
 };
 
 &pcie0_phy {
@@ -361,32 +369,31 @@
 		function = "gpio";
 
 		drive-strength = <2>;
-		output-high;
+		bias-disable;
 	};
 
 	pcie0_perst_state: pcie0-reset {
 		pins = "gpio35";
 		function = "gpio";
+
 		drive-strength = <2>;
-		output-high;
+		output-low;
+		bias-pull-down;
 	};
 
 	pcie0_clkreq_state: pcie0-clkreq {
 		pins = "gpio36";
 		function = "pci_e0";
-
-		input-enable;
 		bias-pull-up;
 	};
 
-	pcie0_ponrst_state: pcie0-ponrst {
-		pins = "gpio134";
+	pcie0_wake_state: pcie0-wake {
+		pins = "gpio37";
 		function = "gpio";
 
 		drive-strength = <2>;
-		output-high;
+		bias-pull-up;
 	};
-
 
 	sdc2_clk: sdc2-clk {
 		pins = "sdc2_clk";
@@ -423,7 +430,7 @@
 };
 
 &usb_1 {
-	status = "okay";
+//	status = "okay";
 };
 
 &usb_1_dwc3 {
@@ -431,7 +438,7 @@
 };
 
 &usb_1_hsphy {
-	status = "okay";
+//	status = "okay";
 
 	vdd-supply = <&vdda_usb1_ss_core>;
 	vdda-pll-supply = <&vdda_qusb_hs0_1p8>;
@@ -444,7 +451,7 @@
 };
 
 &usb_1_qmpphy {
-	status = "okay";
+//	status = "okay";
 
 	vdda-phy-supply = <&vdda_usb1_ss_1p2>;
 	vdda-pll-supply = <&vdda_usb1_ss_core>;
@@ -452,14 +459,14 @@
 
 
 &ufs_mem_hc {
-	status = "okay";
+//	status = "okay";
 
 	vcc-supply = <&vreg_l20a_2p95>;
 	vcc-max-microamp = <800000>;
 };
 
 &ufs_mem_phy {
-	status = "okay";
+//	status = "okay";
 
 	vdda-phy-supply = <&vdda_ufs1_core>;
 	vdda-pll-supply = <&vdda_ufs1_1p2>;

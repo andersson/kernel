@@ -1027,24 +1027,26 @@ struct qcom_qmp {
 	enum phy_mode mode;
 };
 
-static inline void qphy_setbits(void __iomem *base, u32 offset, u32 val)
+static inline void qphy_setbits(void __iomem *base, u32 offset, u32 val, int century)
 {
 	u32 reg;
 
 	reg = readl(base + offset);
 	reg |= val;
+	printk(KERN_ERR "%s(0x%x, 0x%x)\n", __func__, century + offset, reg);
 	writel(reg, base + offset);
 
 	/* ensure that above write is through */
 	readl(base + offset);
 }
 
-static inline void qphy_clrbits(void __iomem *base, u32 offset, u32 val)
+static inline void qphy_clrbits(void __iomem *base, u32 offset, u32 val, int century)
 {
 	u32 reg;
 
 	reg = readl(base + offset);
 	reg &= ~val;
+	printk(KERN_ERR "%s(0x%x, 0x%x)\n", __func__, century + offset, reg);
 	writel(reg, base + offset);
 
 	/* ensure that above write is through */
@@ -1061,7 +1063,7 @@ static const char * const qmp_v3_phy_clk_l[] = {
 };
 
 static const char * const sdm845_pciephy_clk_l[] = {
-	"aux", "cfg_ahb", "ref", "refgen",
+	"aux", "cfg_ahb", "ref",
 };
 
 static const char * const sdm845_ufs_phy_clk_l[] = {
@@ -1075,6 +1077,10 @@ static const char * const msm8996_pciephy_reset_l[] = {
 
 static const char * const msm8996_usb3phy_reset_l[] = {
 	"phy", "common",
+};
+
+static const char * const sdm845_pciephy_reset_l[] = {
+	"phy",
 };
 
 /* list of regulators */
@@ -1190,6 +1196,8 @@ static const struct qmp_phy_cfg sdm845_pciephy_cfg = {
 	.pcs_misc_tbl_num	= ARRAY_SIZE(sdm845_pcie_pcs_misc_tbl),
 	.clk_list		= sdm845_pciephy_clk_l,
 	.num_clks		= ARRAY_SIZE(sdm845_pciephy_clk_l),
+	.reset_list		= sdm845_pciephy_reset_l,
+	.num_resets		= ARRAY_SIZE(sdm845_pciephy_reset_l),
 	.vreg_list		= qmp_phy_vreg_l,
 	.num_vregs		= ARRAY_SIZE(qmp_phy_vreg_l),
 	.regs			= sdm845_pciephy_regs_layout,
@@ -1199,10 +1207,10 @@ static const struct qmp_phy_cfg sdm845_pciephy_cfg = {
 	.mask_com_pcs_ready	= PCS_READY,
 
 	.has_phy_com_ctrl	= false,
-	.has_lane_rst		= true,
+	.has_lane_rst		= false,
 	.has_pwrdn_delay	= true,
-	.pwrdn_delay_min	= POWER_DOWN_DELAY_US_MIN,
-	.pwrdn_delay_max	= POWER_DOWN_DELAY_US_MAX,
+	.pwrdn_delay_min	= 995,		/* us */
+	.pwrdn_delay_max	= 1005,		/* us */
 };
 
 static const struct qmp_phy_cfg qmp_v3_usb3phy_cfg = {
@@ -1322,7 +1330,7 @@ static const struct qmp_phy_cfg msm8998_usb3phy_cfg = {
 static void qcom_qmp_phy_configure(void __iomem *base,
 				   const unsigned int *regs,
 				   const struct qmp_phy_init_tbl tbl[],
-				   int num)
+				   int num, int century)
 {
 	int i;
 	const struct qmp_phy_init_tbl *t = tbl;
@@ -1331,6 +1339,7 @@ static void qcom_qmp_phy_configure(void __iomem *base,
 		return;
 
 	for (i = 0; i < num; i++, t++) {
+		printk(KERN_ERR "%s() 0x%x = 0x%x\n", __func__, century + t->offset, t->val);
 		if (t->in_layout)
 			writel(t->val, base + regs[t->offset]);
 		else
@@ -1386,38 +1395,38 @@ static int qcom_qmp_phy_com_init(struct qmp_phy *qphy)
 
 	if (cfg->has_phy_dp_com_ctrl) {
 		qphy_setbits(dp_com, QPHY_V3_DP_COM_POWER_DOWN_CTRL,
-			     SW_PWRDN);
+			     SW_PWRDN, 0);
 		/* override hardware control for reset of qmp phy */
 		qphy_setbits(dp_com, QPHY_V3_DP_COM_RESET_OVRD_CTRL,
 			     SW_DPPHY_RESET_MUX | SW_DPPHY_RESET |
-			     SW_USB3PHY_RESET_MUX | SW_USB3PHY_RESET);
+			     SW_USB3PHY_RESET_MUX | SW_USB3PHY_RESET, 0);
 
 		qphy_setbits(dp_com, QPHY_V3_DP_COM_PHY_MODE_CTRL,
-			     USB3_MODE | DP_MODE);
+			     USB3_MODE | DP_MODE, 0);
 
 		/* bring both QMP USB and QMP DP PHYs PCS block out of reset */
 		qphy_clrbits(dp_com, QPHY_V3_DP_COM_RESET_OVRD_CTRL,
 			     SW_DPPHY_RESET_MUX | SW_DPPHY_RESET |
-			     SW_USB3PHY_RESET_MUX | SW_USB3PHY_RESET);
+			     SW_USB3PHY_RESET_MUX | SW_USB3PHY_RESET, 0);
 	}
 
 	if (cfg->has_phy_com_ctrl)
 		qphy_setbits(serdes, cfg->regs[QPHY_COM_POWER_DOWN_CONTROL],
-			     SW_PWRDN);
+			     SW_PWRDN, 0);
 	else
-		qphy_setbits(pcs, QPHY_POWER_DOWN_CONTROL, cfg->pwrdn_ctrl);
+		qphy_setbits(pcs, QPHY_POWER_DOWN_CONTROL, cfg->pwrdn_ctrl, 0x800);
 
 	/* Serdes configuration */
 	qcom_qmp_phy_configure(serdes, cfg->regs, cfg->serdes_tbl,
-			       cfg->serdes_tbl_num);
+			       cfg->serdes_tbl_num, 0);
 
 	if (cfg->has_phy_com_ctrl) {
 		void __iomem *status;
 		unsigned int mask, val;
 
-		qphy_clrbits(serdes, cfg->regs[QPHY_COM_SW_RESET], SW_RESET);
+		qphy_clrbits(serdes, cfg->regs[QPHY_COM_SW_RESET], SW_RESET, 0);
 		qphy_setbits(serdes, cfg->regs[QPHY_COM_START_CONTROL],
-			     SERDES_START | PCS_START);
+			     SERDES_START | PCS_START, 0);
 
 		status = serdes + cfg->regs[QPHY_COM_PCS_READY_STATUS];
 		mask = cfg->mask_com_pcs_ready;
@@ -1462,11 +1471,11 @@ static int qcom_qmp_phy_com_exit(struct qcom_qmp *qmp)
 
 	if (cfg->has_phy_com_ctrl) {
 		qphy_setbits(serdes, cfg->regs[QPHY_COM_START_CONTROL],
-			     SERDES_START | PCS_START);
+			     SERDES_START | PCS_START, 0);
 		qphy_clrbits(serdes, cfg->regs[QPHY_COM_SW_RESET],
-			     SW_RESET);
+			     SW_RESET, 0);
 		qphy_setbits(serdes, cfg->regs[QPHY_COM_POWER_DOWN_CONTROL],
-			     SW_PWRDN);
+			     SW_PWRDN, 0);
 	}
 
 	while (--i >= 0)
@@ -1518,22 +1527,22 @@ static int qcom_qmp_phy_init(struct phy *phy)
 	}
 
 	/* Tx, Rx, and PCS configurations */
-	qcom_qmp_phy_configure(tx, cfg->regs, cfg->tx_tbl, cfg->tx_tbl_num);
+	qcom_qmp_phy_configure(tx, cfg->regs, cfg->tx_tbl, cfg->tx_tbl_num, 0x200);
 	/* Configuration for other LANE for USB-DP combo PHY */
 	if (cfg->is_dual_lane_phy)
 		qcom_qmp_phy_configure(qphy->tx2, cfg->regs,
-				       cfg->tx_tbl, cfg->tx_tbl_num);
+				       cfg->tx_tbl, cfg->tx_tbl_num, 0x1000);
 
-	qcom_qmp_phy_configure(rx, cfg->regs, cfg->rx_tbl, cfg->rx_tbl_num);
+	qcom_qmp_phy_configure(rx, cfg->regs, cfg->rx_tbl, cfg->rx_tbl_num, 0x400);
 	if (cfg->is_dual_lane_phy)
 		qcom_qmp_phy_configure(qphy->rx2, cfg->regs,
-				       cfg->rx_tbl, cfg->rx_tbl_num);
+				       cfg->rx_tbl, cfg->rx_tbl_num, 0x2000);
 
-	qcom_qmp_phy_configure(pcs, cfg->regs, cfg->pcs_tbl, cfg->pcs_tbl_num);
+	qcom_qmp_phy_configure(pcs, cfg->regs, cfg->pcs_tbl, cfg->pcs_tbl_num, 0x800);
 
 	if (cfg->pcs_misc_tbl) {
 		qcom_qmp_phy_configure(pcs_misc, cfg->regs, cfg->pcs_misc_tbl,
-				       cfg->pcs_misc_tbl_num);
+				       cfg->pcs_misc_tbl_num, 0x600);
 	}
 
 	/*
@@ -1549,18 +1558,18 @@ static int qcom_qmp_phy_init(struct phy *phy)
 	 * This is active low enable signal to power-down PHY.
 	 */
 	if(cfg->type == PHY_TYPE_PCIE)
-		qphy_setbits(pcs, QPHY_POWER_DOWN_CONTROL, cfg->pwrdn_ctrl);
+		qphy_setbits(pcs, QPHY_POWER_DOWN_CONTROL, 3, 0x800);
 
 	if (cfg->has_pwrdn_delay)
 		usleep_range(cfg->pwrdn_delay_min, cfg->pwrdn_delay_max);
 
 	/* Pull PHY out of reset state */
-	qphy_clrbits(pcs, cfg->regs[QPHY_SW_RESET], SW_RESET);
+	qphy_clrbits(pcs, cfg->regs[QPHY_SW_RESET], SW_RESET, 0x800);
 	if (cfg->has_phy_dp_com_ctrl)
-		qphy_clrbits(dp_com, QPHY_V3_DP_COM_SW_RESET, SW_RESET);
+		qphy_clrbits(dp_com, QPHY_V3_DP_COM_SW_RESET, SW_RESET, 0);
 
 	/* start SerDes and Phy-Coding-Sublayer */
-	qphy_setbits(pcs, cfg->regs[QPHY_START_CTRL], cfg->start_ctrl);
+	qphy_setbits(pcs, cfg->regs[QPHY_START_CTRL], cfg->start_ctrl, 0x800);
 
 	status = pcs + cfg->regs[QPHY_PCS_READY_STATUS];
 	mask = cfg->mask_pcs_ready;
@@ -1597,13 +1606,13 @@ static int qcom_qmp_phy_exit(struct phy *phy)
 
 	/* PHY reset */
 	if (!cfg->no_pcs_sw_reset)
-		qphy_setbits(qphy->pcs, cfg->regs[QPHY_SW_RESET], SW_RESET);
+		qphy_setbits(qphy->pcs, cfg->regs[QPHY_SW_RESET], SW_RESET, 0x800);
 
 	/* stop SerDes and Phy-Coding-Sublayer */
-	qphy_clrbits(qphy->pcs, cfg->regs[QPHY_START_CTRL], cfg->start_ctrl);
+	qphy_clrbits(qphy->pcs, cfg->regs[QPHY_START_CTRL], cfg->start_ctrl, 0x800);
 
 	/* Put PHY into POWER DOWN state: active low */
-	qphy_clrbits(qphy->pcs, QPHY_POWER_DOWN_CONTROL, cfg->pwrdn_ctrl);
+	qphy_clrbits(qphy->pcs, QPHY_POWER_DOWN_CONTROL, cfg->pwrdn_ctrl, 0x800);
 
 	if (cfg->has_lane_rst)
 		reset_control_assert(qphy->lane_rst);
@@ -1636,7 +1645,7 @@ static int qcom_qmp_phy_poweron(struct phy *phy)
 	if (cfg->no_pcs_sw_reset && !qmp->phy_initialized &&
 	    (qmp->init_count != 0)) {
 		/* start SerDes and Phy-Coding-Sublayer */
-		qphy_setbits(pcs, cfg->regs[QPHY_START_CTRL], cfg->start_ctrl);
+		qphy_setbits(pcs, cfg->regs[QPHY_START_CTRL], cfg->start_ctrl, 0x800);
 
 		status = pcs + cfg->regs[QPHY_PCS_READY_STATUS];
 		mask = cfg->mask_pcs_ready;
@@ -1679,19 +1688,19 @@ static void qcom_qmp_phy_enable_autonomous_mode(struct qmp_phy *qphy)
 		intr_mask = ARCVR_DTCT_EN | ARCVR_DTCT_EVENT_SEL;
 
 	/* Clear any pending interrupts status */
-	qphy_setbits(pcs, cfg->regs[QPHY_PCS_LFPS_RXTERM_IRQ_CLEAR], IRQ_CLEAR);
+	qphy_setbits(pcs, cfg->regs[QPHY_PCS_LFPS_RXTERM_IRQ_CLEAR], IRQ_CLEAR, 0x800);
 	/* Writing 1 followed by 0 clears the interrupt */
-	qphy_clrbits(pcs, cfg->regs[QPHY_PCS_LFPS_RXTERM_IRQ_CLEAR], IRQ_CLEAR);
+	qphy_clrbits(pcs, cfg->regs[QPHY_PCS_LFPS_RXTERM_IRQ_CLEAR], IRQ_CLEAR, 0x800);
 
 	qphy_clrbits(pcs, cfg->regs[QPHY_PCS_AUTONOMOUS_MODE_CTRL],
-		     ARCVR_DTCT_EN | ALFPS_DTCT_EN | ARCVR_DTCT_EVENT_SEL);
+		     ARCVR_DTCT_EN | ALFPS_DTCT_EN | ARCVR_DTCT_EVENT_SEL, 0x800);
 
 	/* Enable required PHY autonomous mode interrupts */
-	qphy_setbits(pcs, cfg->regs[QPHY_PCS_AUTONOMOUS_MODE_CTRL], intr_mask);
+	qphy_setbits(pcs, cfg->regs[QPHY_PCS_AUTONOMOUS_MODE_CTRL], intr_mask, 0x800);
 
 	/* Enable i/o clamp_n for autonomous mode */
 	if (pcs_misc && 0)
-		qphy_clrbits(pcs_misc, QPHY_V3_PCS_MISC_CLAMP_ENABLE, CLAMP_EN);
+		qphy_clrbits(pcs_misc, QPHY_V3_PCS_MISC_CLAMP_ENABLE, CLAMP_EN, 0x600);
 }
 
 static void qcom_qmp_phy_disable_autonomous_mode(struct qmp_phy *qphy)
@@ -1703,14 +1712,14 @@ static void qcom_qmp_phy_disable_autonomous_mode(struct qmp_phy *qphy)
 
 	/* Disable i/o clamp_n on resume for normal mode */
 	if (pcs_misc && 0)
-		qphy_setbits(pcs_misc, QPHY_V3_PCS_MISC_CLAMP_ENABLE, CLAMP_EN);
+		qphy_setbits(pcs_misc, QPHY_V3_PCS_MISC_CLAMP_ENABLE, CLAMP_EN, 0x800);
 
 	qphy_clrbits(pcs, cfg->regs[QPHY_PCS_AUTONOMOUS_MODE_CTRL],
-		     ARCVR_DTCT_EN | ARCVR_DTCT_EVENT_SEL | ALFPS_DTCT_EN);
+		     ARCVR_DTCT_EN | ARCVR_DTCT_EVENT_SEL | ALFPS_DTCT_EN, 0x800);
 
-	qphy_setbits(pcs, cfg->regs[QPHY_PCS_LFPS_RXTERM_IRQ_CLEAR], IRQ_CLEAR);
+	qphy_setbits(pcs, cfg->regs[QPHY_PCS_LFPS_RXTERM_IRQ_CLEAR], IRQ_CLEAR, 0x800);
 	/* Writing 1 followed by 0 clears the interrupt */
-	qphy_clrbits(pcs, cfg->regs[QPHY_PCS_LFPS_RXTERM_IRQ_CLEAR], IRQ_CLEAR);
+	qphy_clrbits(pcs, cfg->regs[QPHY_PCS_LFPS_RXTERM_IRQ_CLEAR], IRQ_CLEAR, 0x800);
 }
 
 static int __maybe_unused qcom_qmp_phy_runtime_suspend(struct device *dev)
