@@ -404,6 +404,8 @@ static dma_addr_t iommu_dma_alloc_iova(struct iommu_domain *domain,
 		iova = alloc_iova_fast(iovad, iova_len, dma_limit >> shift,
 				       true);
 
+	WARN_ON((iova << shift) >> 36);
+
 	return (dma_addr_t)iova << shift;
 }
 
