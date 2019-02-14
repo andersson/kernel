@@ -329,6 +329,14 @@
 			   <GCC_QSPI_CNOC_PERIPH_AHB_CLK>;
 };
 
+&mdss {
+	status = "okay";
+};
+
+&mdss_mdp {
+	status = "okay";
+};
+
 &mss_pil {
 	firmware-name = "qcom/db845c/mba.mbn", "qcom/db845c/modem.mdt";
 };
