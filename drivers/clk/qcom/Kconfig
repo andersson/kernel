@@ -252,6 +252,12 @@ config QCS_WCSS_404
 	  Say Y if you want to use the WCSS branch clocks of the WCSS clock
 	  controller to reset the WCSS subsystem.
 
+config QCS_TURING_404
+	tristate "QCS404 Turing Clock Controller"
+	help
+	  Support for the Turing Clock Controller on QCS404, provides clocks
+	  and resets for the Turing subsystem.
+
 config SDM_GCC_845
 	tristate "SDM845 Global Clock Controller"
 	select QCOM_GDSC
