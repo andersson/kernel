@@ -146,6 +146,10 @@
 #define GCC_MDP_TBU_CLK					138
 #define GCC_QDSS_DAP_CLK				139
 #define GCC_DCC_XO_CLK					140
+#define GCC_CDSP_CFG_AHB_CLK				143
+#define GCC_BIMC_CDSP_CLK				144
+#define GCC_CDSP_TBU_CLK				145
+#define GCC_CDSP_BIMC_CLK_SRC				146
 
 #define GCC_GENI_IR_BCR					0
 #define GCC_USB_HS_BCR					1
@@ -168,5 +172,6 @@
 #define GCC_PCIE_0_CORE_STICKY_ARES			18
 #define GCC_PCIE_0_SLEEP_ARES				19
 #define GCC_PCIE_0_PIPE_ARES				20
+#define GCC_CDSP_RESTART				21
 
 #endif
