@@ -4,6 +4,7 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/qcom,gcc-qcs404.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/clock/qcom,turingcc-qcs404.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
 #include <dt-bindings/clock/qcom,wcss-qcs404.h>
 
@@ -210,6 +211,15 @@
 		#size-cells = <1>;
 		ranges = <0 0 0 0xffffffff>;
 		compatible = "simple-bus";
+
+		turingcc: clock-controller@800000 {
+			compatible = "qcom,qcs404-turingcc";
+			reg = <0x00800000 0x30000>;
+			clocks = <&gcc GCC_CDSP_CFG_AHB_CLK>;
+
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+		};
 
 		rpm_msg_ram: memory@60000 {
 			compatible = "qcom,rpm-msg-ram";
