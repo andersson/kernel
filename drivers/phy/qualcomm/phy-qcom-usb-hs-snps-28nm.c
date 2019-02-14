@@ -136,7 +136,7 @@ static void qcom_snps_hsphy_disable_regulators(struct hsphy_priv *priv)
 	qcom_snps_hsphy_config_regulators(priv, 0);
 }
 
-static int qcom_snps_hsphy_set_mode(struct phy *phy, enum phy_mode mode)
+static int qcom_snps_hsphy_set_mode(struct phy *phy, enum phy_mode mode, int submode)
 {
 	struct hsphy_priv *priv = phy_get_drvdata(phy);
 
