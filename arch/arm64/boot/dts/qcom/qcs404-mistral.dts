@@ -146,6 +146,10 @@
 	};
 };
 
+&remoteproc_cdsp {
+	status = "okay";
+};
+
 &tlmm {
 	ethernet_defaults: ethernet-defaults {
 		int {
