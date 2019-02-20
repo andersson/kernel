@@ -869,10 +869,8 @@ static int fastrpc_init_create_process(struct fastrpc_user *fl,
 		       1024 * 1024);
 	err = fastrpc_buf_alloc(fl, fl->sctx->dev, memlen,
 				&imem);
-	if (err) {
-		fastrpc_map_put(map);
+	if (err)
 		goto bail;
-	}
 
 	fl->init_mem = imem;
 	args[0].ptr = (u64)(uintptr_t)&inbuf;
@@ -908,13 +906,20 @@ static int fastrpc_init_create_process(struct fastrpc_user *fl,
 
 	err = fastrpc_internal_invoke(fl, true, FASTRPC_INIT_HANDLE,
 				      sc, args);
-
+bail:
 	if (err) {
-		fastrpc_map_put(map);
-		fastrpc_buf_free(imem);
+		if (map) {
+			spin_lock(&fl->lock);
+			list_del(&map->node);
+			spin_unlock(&fl->lock);
+
+			fastrpc_map_put(map);
+		}
+
+		if (imem)
+			fastrpc_buf_free(imem);
 	}
 
-bail:
 	kfree(args);
 
 	return err;
