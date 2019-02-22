@@ -39,6 +39,14 @@
 
 };
 
+&blsp1_dma {
+	/delete-property/ qcom,controlled-remotely;
+};
+
+&blsp2_dma {
+	/delete-property/ qcom,controlled-remotely;
+};
+
 &blsp1_i2c1 {
 	status = "okay";
 	clock-frequency = <400000>;
