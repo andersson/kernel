@@ -388,13 +388,6 @@
 	};
 };
 
-&soc {
-	restart@4ab000 {
-		compatible = "qcom,pshold";
-		reg = <0x004ab000 0x4>;
-	};
-};
-
 &tlmm {
 	/* Add required gpio names to use gpio hog mechanism */
 	gpio-line-names = "", "", "", "", "", "", "", "", "", "",
