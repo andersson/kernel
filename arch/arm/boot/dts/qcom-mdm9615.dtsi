@@ -310,6 +310,7 @@
 						     <29 IRQ_TYPE_NONE>;
 					reg = <0x50>;
 					gpio-controller;
+					gpio-ranges = <&pmicgpio 0 0 6>;
 					#gpio-cells = <2>;
 				};
 
