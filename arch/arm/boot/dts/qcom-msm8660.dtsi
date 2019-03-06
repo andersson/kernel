@@ -307,6 +307,7 @@
 						     "qcom,ssbi-mpp";
 					reg = <0x50>;
 					gpio-controller;
+					gpio-ranges = <&pm8058_gpio 0 0 44>;
 					#gpio-cells = <2>;
 					interrupt-parent = <&pm8058>;
 					interrupts =
