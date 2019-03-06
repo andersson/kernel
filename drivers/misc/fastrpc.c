@@ -1017,6 +1017,7 @@ static int fastrpc_init_create_process(struct fastrpc_user *fl,
 				      sc, args);
 bail:
 	if (err) {
+		printk(KERN_ERR "%s() err: %d (%#x)\n", __func__, err, err);
 		if (map) {
 			spin_lock(&fl->lock);
 			list_del(&map->node);
@@ -1025,8 +1026,10 @@ bail:
 			fastrpc_map_put(map);
 		}
 
-		if (imem)
+		if (imem) {
 			fastrpc_buf_free(imem);
+			fl->init_mem = NULL;
+		}
 	}
 
 	kfree(args);
