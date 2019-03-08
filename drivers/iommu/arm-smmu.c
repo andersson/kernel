@@ -2180,6 +2180,11 @@ static int arm_smmu_device_probe(struct platform_device *pdev)
 	struct arm_smmu_device *smmu;
 	struct device *dev = &pdev->dev;
 	int num_irqs, i, err;
+	void __iomem *mdp_intf;
+
+	mdp_intf = ioremap(0xae6b800, 0x300);
+	writel(0, mdp_intf + 0);
+	iounmap(mdp_intf);
 
 	smmu = devm_kzalloc(dev, sizeof(*smmu), GFP_KERNEL);
 	if (!smmu) {
