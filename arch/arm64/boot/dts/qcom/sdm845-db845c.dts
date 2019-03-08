@@ -115,8 +115,9 @@
 		regulator-min-microvolt = <1050000>;
 		regulator-max-microvolt = <1050000>;
 
-		gpio = <&tlmm 90 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
+		// TODO: make it possible to drive same GPIO from two clients
+		// gpio = <&tlmm 90 GPIO_ACTIVE_HIGH>;
+		// enable-active-high;
 	};
 
 	pcie0_3p3v_dual: vldo-3v3-regulator {
@@ -127,9 +128,8 @@
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 
-		// TODO: make it possible to drive same GPIO from two clients
-		// gpio = <&tlmm 90 GPIO_ACTIVE_HIGH>;
-		// enable-active-high;
+		gpio = <&tlmm 90 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
 
 	vph_pwr: vph-pwr-regulator {
@@ -345,6 +345,8 @@
 	status = "okay";
 	perst-gpio = <&tlmm 35 GPIO_ACTIVE_LOW>;
 	enable-gpio = <&tlmm 134 GPIO_ACTIVE_HIGH>;
+
+	vddpe-3v3-supply = <&pcie0_3p3v_dual>;
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie0_perst_state>, <&pcie0_clkreq_state>, <&pcie0_wake_state>;

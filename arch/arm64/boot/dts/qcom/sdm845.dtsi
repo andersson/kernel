@@ -1155,7 +1155,7 @@
 
 		pcie0: pci@1c00000 {
 			compatible = "qcom,pcie-sdm845", "snps,dw-pcie";
-			ret = <0 0x01c00000 0 0x2000>,
+			reg = <0 0x01c00000 0 0x2000>,
 			      <0 0x60000000 0 0xf1d>,
 			      <0 0x60000f20 0 0xa8>,
 			      <0 0x60100000 0 0x100000>;
