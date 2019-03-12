@@ -2126,6 +2126,10 @@
 
 			qcom,gmu = <&gmu>;
 
+			zap-shader {
+				memory-region = <&gpu_mem>;
+			};
+
 			gpu_opp_table: opp-table {
 				compatible = "operating-points-v2";
 
