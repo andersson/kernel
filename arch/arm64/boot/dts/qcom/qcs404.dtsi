@@ -122,20 +122,22 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				qcom,msm_fastrpc_compute_cb_1 {
+				cb@804 {
 					compatible = "qcom,fastrpc-compute-cb";
-					reg = <4>;
+					reg = <0x804>;
+					iommus = <&apps_iommu 23>;
 				};
 
-				qcom,msm_fastrpc_compute_cb_2 {
+				cb@805 {
 					compatible = "qcom,fastrpc-compute-cb";
-					reg = <5>;
+					reg = <0x805>;
+					iommus = <&apps_iommu 24>;
 				};
 
-				qcom,msm_fastrpc_compute_cb_3 {
+				cb@806 {
 					compatible = "qcom,fastrpc-compute-cb";
-					reg = <6>;
-					shared-cb = <5>;
+					reg = <0x806>;
+					iommus = <&apps_iommu 25>;
 				};
 			};
 		};
@@ -342,29 +344,34 @@
 					#address-cells = <1>;
 					#size-cells = <0>;
 
-					qcom,msm_fastrpc_compute_cb_1 {
+					cb@1001 {
 						compatible = "qcom,fastrpc-compute-cb";
-						reg = <1>;
+						reg = <0x1001>;
+						iommus = <&apps_iommu 5>;
 					};
 
-					qcom,msm_fastrpc_compute_cb_2 {
+					cb@1002 {
 						compatible = "qcom,fastrpc-compute-cb";
-						reg = <2>;
+						reg = <0x1002>;
+						iommus = <&apps_iommu 6>;
 					};
 
-					qcom,msm_fastrpc_compute_cb_3 {
+					cb@1003 {
 						compatible = "qcom,fastrpc-compute-cb";
-						reg = <3>;
+						reg = <0x1003>;
+						iommus = <&apps_iommu 7>;
 					};
 
-					qcom,msm_fastrpc_compute_cb_4 {
+					cb@1004 {
 						compatible = "qcom,fastrpc-compute-cb";
-						reg = <4>;
+						reg = <0x1004>;
+						iommus = <&apps_iommu 8>;
 					};
 
-					qcom,msm_fastrpc_compute_cb_5 {
+					cb@1005 {
 						compatible = "qcom,fastrpc-compute-cb";
-						reg = <5>;
+						reg = <0x1005>;
+						iommus = <&apps_iommu 9>;
 					};
 				};
 			};
