@@ -125,19 +125,19 @@
 				cb@804 {
 					compatible = "qcom,fastrpc-compute-cb";
 					reg = <0x804>;
-					iommus = <&apps_iommu 23>;
+					iommus = <&apps_iommu 0x804>;
 				};
 
 				cb@805 {
 					compatible = "qcom,fastrpc-compute-cb";
 					reg = <0x805>;
-					iommus = <&apps_iommu 24>;
+					iommus = <&apps_iommu 0x805>;
 				};
 
 				cb@806 {
 					compatible = "qcom,fastrpc-compute-cb";
 					reg = <0x806>;
-					iommus = <&apps_iommu 25>;
+					iommus = <&apps_iommu 0x806>;
 				};
 			};
 		};
@@ -347,31 +347,31 @@
 					cb@1001 {
 						compatible = "qcom,fastrpc-compute-cb";
 						reg = <0x1001>;
-						iommus = <&apps_iommu 5>;
+						iommus = <&apps_iommu 0x1001>;
 					};
 
 					cb@1002 {
 						compatible = "qcom,fastrpc-compute-cb";
 						reg = <0x1002>;
-						iommus = <&apps_iommu 6>;
+						iommus = <&apps_iommu 0x1002>;
 					};
 
 					cb@1003 {
 						compatible = "qcom,fastrpc-compute-cb";
 						reg = <0x1003>;
-						iommus = <&apps_iommu 7>;
+						iommus = <&apps_iommu 0x1003>;
 					};
 
 					cb@1004 {
 						compatible = "qcom,fastrpc-compute-cb";
 						reg = <0x1004>;
-						iommus = <&apps_iommu 8>;
+						iommus = <&apps_iommu 0x1004>;
 					};
 
 					cb@1005 {
 						compatible = "qcom,fastrpc-compute-cb";
 						reg = <0x1005>;
-						iommus = <&apps_iommu 9>;
+						iommus = <&apps_iommu 0x1005>;
 					};
 				};
 			};
@@ -611,89 +611,48 @@
 			reg = <0x01937000 0x25000>;
 		};
 
-		apps_iommu: iommu@1e20000 {
-			compatible = "qcom,qcs404-iommu", "qcom,msm-iommu-v1";
-			clocks = <&gcc GCC_SMMU_CFG_CLK>,
-				 <&gcc GCC_APSS_TCU_CLK>;
+		apps_iommu: iommu@1e00000 {
+			compatible = "qcom,qcs404-smmu-v2", "qcom,smmu-v2";
+			reg = <0x1e00000 0x110000>;
+
+			#global-interrupts = <1>;
+			interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 247 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 248 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 249 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 250 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 251 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 252 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 253 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 254 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 255 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 76 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 77 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 80 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 94 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 101 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 102 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 103 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 104 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 105 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 106 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 110 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 111 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 112 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 114 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 115 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 116 IRQ_TYPE_LEVEL_HIGH>,
+				     clocks = <&gcc GCC_SMMU_CFG_CLK>,
+				     <&gcc GCC_APSS_TCU_CLK>;
 			clock-names = "iface", "bus";
-			qcom,iommu-secure-id = <17>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
 			#iommu-cells = <1>;
-
-			/* Define ranges such that the first bank is at 0x1000 */
-			ranges = <0 0x01e20000 0x40000>;
-
-			/* Bank 5: CDSP compute bank 1 */
-			iommu-ctx@5000 {
-				compatible = "qcom,msm-iommu-v1-ns";
-				reg = <0x5000 0x1000>;
-				interrupts = <GIC_SPI 251 IRQ_TYPE_LEVEL_HIGH>;
-			};
-
-			/* Bank 6: CDSP compute bank 2 */
-			iommu-ctx@6000 {
-				compatible = "qcom,msm-iommu-v1-ns";
-				reg = <0x6000 0x1000>;
-				interrupts = <GIC_SPI 252 IRQ_TYPE_LEVEL_HIGH>;
-			};
-
-			/* Bank 7: CDSP compute bank 3 */
-			iommu-ctx@7000 {
-				compatible = "qcom,msm-iommu-v1-ns";
-				reg = <0x7000 0x1000>;
-				interrupts = <GIC_SPI 253 IRQ_TYPE_LEVEL_HIGH>;
-			};
-
-			/* Bank 8: CDSP compute bank 4 */
-			iommu-ctx@8000 {
-				compatible = "qcom,msm-iommu-v1-ns";
-				reg = <0x8000 0x1000>;
-				interrupts = <GIC_SPI 254 IRQ_TYPE_LEVEL_HIGH>;
-			};
-
-			/* Bank 9: CDSP compute bank 5 */
-			iommu-ctx@9000 {
-				compatible = "qcom,msm-iommu-v1-ns";
-				reg = <0x9000 0x1000>;
-				interrupts = <GIC_SPI 255 IRQ_TYPE_LEVEL_HIGH>;
-			};
-
-			/* Bank 10: MDP */
-			iommu-ctx@a000 {
-				compatible = "qcom,msm-iommu-v1-ns";
-				reg = <0xa000 0x1000>;
-				interrupts = <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>;
-			};
-
-			/* Bank 21: WLAN 0 */
-			iommu-ctx@15000 {
-				compatible = "qcom,msm-iommu-v1-ns";
-				reg = <0x15000 0x1000>;
-				interrupts = <GIC_SPI 103 IRQ_TYPE_LEVEL_HIGH>;
-			};
-
-			/* Bank 23: ADSP compute bank 2 */
-			iommu-ctx@17000 {
-				compatible = "qcom,msm-iommu-v1-ns";
-				reg = <0x17000 0x1000>;
-				interrupts = <GIC_SPI 105 IRQ_TYPE_LEVEL_HIGH>;
-			};
-
-			/* Bank 24: ADSP compute bank 3 */
-			iommu-ctx@18000 {
-				compatible = "qcom,msm-iommu-v1-ns";
-				reg = <0x18000 0x1000>;
-				interrupts = <GIC_SPI 106 IRQ_TYPE_LEVEL_HIGH>;
-			};
-
-			/* Bank 25: ADSP compute bank 4 */
-			iommu-ctx@19000 {
-				compatible = "qcom,msm-iommu-v1-ns";
-				reg = <0x19000 0x1000>;
-				interrupts = <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>;
-			};
 		};
 
 		spmi_bus: spmi@200f000 {
