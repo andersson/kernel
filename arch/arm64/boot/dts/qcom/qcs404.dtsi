@@ -101,6 +101,8 @@
 		qcom,smem-states = <&adsp_smp2p_out 0>;
 		qcom,smem-state-names = "stop";
 
+		firmware-name = "qcom/qcs404/r1.0-5/adsp.mdt";
+
 		status = "disabled";
 
 		glink-edge {
@@ -161,6 +163,8 @@
 
 		qcom,smem-states = <&wcss_smp2p_out 0>;
 		qcom,smem-state-names = "stop";
+
+		firmware-name = "qcom/qcs404/r1.0-5/wcnss.mdt";
 
 		status = "disabled";
 
@@ -325,6 +329,8 @@
 
 			qcom,smem-states = <&cdsp_smp2p_out 0>;
 			qcom,smem-state-names = "stop";
+
+			firmware-name = "qcom/qcs404/r1.0-5/cdsp.mdt";
 
 			status = "disabled";
 
