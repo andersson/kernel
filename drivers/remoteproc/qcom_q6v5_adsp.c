@@ -410,6 +410,7 @@ static int adsp_probe(struct platform_device *pdev)
 {
 	const struct adsp_pil_data *desc;
 	struct qcom_adsp *adsp;
+	const char *fw_name;
 	struct rproc *rproc;
 	int ret;
 
@@ -417,8 +418,14 @@ static int adsp_probe(struct platform_device *pdev)
 	if (!desc)
 		return -EINVAL;
 
+	fw_name = desc->firmware_name;
+	ret = of_property_read_string(pdev->dev.of_node, "firmware-name",
+				      &fw_name);
+	if (ret < 0 && ret != -EINVAL)
+		return ret;
+
 	rproc = rproc_alloc(&pdev->dev, pdev->name, &adsp_ops,
-			    desc->firmware_name, sizeof(*adsp));
+			    fw_name, sizeof(*adsp));
 	if (!rproc) {
 		dev_err(&pdev->dev, "unable to allocate remoteproc\n");
 		return -ENOMEM;
