@@ -222,6 +222,7 @@
 		vreg_s5_1p35: s5 {
 			regulator-min-microvolt = <1352000>;
 			regulator-max-microvolt = <1352000>;
+			regulator-always-on;
 		};
 
 		vreg_l1_1p3: l1 {
@@ -252,6 +253,7 @@
 		vreg_l6_1p8: l6 {
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
+			regulator-always-on;
 		};
 
 		vreg_l7_1p8: l7 {
@@ -260,10 +262,12 @@
 			regulator-always-on;
 		};
 
+#if 0
 		vreg_l8_1p2: l8 {
 			regulator-min-microvolt = <1136000>;
 			regulator-max-microvolt = <1352000>;
 		};
+#endif
 
 		vreg_l10_3p3: l10 {
 			regulator-min-microvolt = <2936000>;
