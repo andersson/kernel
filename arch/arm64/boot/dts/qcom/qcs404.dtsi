@@ -124,22 +124,22 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				cb@804 {
+				cb@4 {
 					compatible = "qcom,fastrpc-compute-cb";
-					reg = <0x804>;
-					iommus = <&apps_iommu 0x804>;
+					reg = <0x4>;
+					iommus = <&apps_iommu 0x804 0>;
 				};
 
-				cb@805 {
+				cb@5 {
 					compatible = "qcom,fastrpc-compute-cb";
-					reg = <0x805>;
-					iommus = <&apps_iommu 0x805>;
+					reg = <0x5>;
+					iommus = <&apps_iommu 0x805 0>;
 				};
 
-				cb@806 {
+				cb@6 {
 					compatible = "qcom,fastrpc-compute-cb";
-					reg = <0x806>;
-					iommus = <&apps_iommu 0x806>;
+					reg = <0x6>;
+					iommus = <&apps_iommu 0x806 0>;
 				};
 			};
 		};
@@ -350,34 +350,34 @@
 					#address-cells = <1>;
 					#size-cells = <0>;
 
-					cb@1001 {
+					cb@1 {
 						compatible = "qcom,fastrpc-compute-cb";
-						reg = <0x1001>;
-						iommus = <&apps_iommu 0x1001>;
+						reg = <0x1>;
+						iommus = <&apps_iommu 0x1001 0>;
 					};
 
-					cb@1002 {
+					cb@2 {
 						compatible = "qcom,fastrpc-compute-cb";
-						reg = <0x1002>;
-						iommus = <&apps_iommu 0x1002>;
+						reg = <0x2>;
+						iommus = <&apps_iommu 0x1002 0>;
 					};
 
-					cb@1003 {
+					cb@3 {
 						compatible = "qcom,fastrpc-compute-cb";
-						reg = <0x1003>;
-						iommus = <&apps_iommu 0x1003>;
+						reg = <0x3>;
+						iommus = <&apps_iommu 0x1003 0>;
 					};
 
-					cb@1004 {
+					cb@4 {
 						compatible = "qcom,fastrpc-compute-cb";
-						reg = <0x1004>;
-						iommus = <&apps_iommu 0x1004>;
+						reg = <0x4>;
+						iommus = <&apps_iommu 0x1004 0>;
 					};
 
-					cb@1005 {
+					cb@5 {
 						compatible = "qcom,fastrpc-compute-cb";
-						reg = <0x1005>;
-						iommus = <&apps_iommu 0x1005>;
+						reg = <0x5>;
+						iommus = <&apps_iommu 0x1005 0>;
 					};
 				};
 			};
@@ -658,7 +658,7 @@
 			clocks = <&gcc GCC_SMMU_CFG_CLK>,
 			         <&gcc GCC_APSS_TCU_CLK>;
 			clock-names = "iface", "bus";
-			#iommu-cells = <1>;
+			#iommu-cells = <2>;
 		};
 
 		spmi_bus: spmi@200f000 {
