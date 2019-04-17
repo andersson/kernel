@@ -5,6 +5,8 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
+#include <dt-bindings/sound/qcom,q6afe.h>
+#include <dt-bindings/sound/qcom,q6asm.h>
 #include "sdm845.dtsi"
 #include "pm8998.dtsi"
 #include "pmi8998.dtsi"
@@ -397,9 +399,10 @@
 	status = "okay";
 	clock-frequency = <400000>;
 
-	hdmi-bridge@3b {
+	lt9611_codec: hdmi-bridge@3b {
 		compatible = "lt,lt9611";
 		reg = <0x3b>;
+		#sound-dai-cells = <1>;
 
 		interrupts-extended = <&tlmm 84 IRQ_TYPE_EDGE_FALLING>;
 
@@ -497,6 +500,14 @@
 	};
 };
 
+/* QUAT I2S Uses 4 I2S SD Lines for audio on LT9611 HDMI Bridge */
+&q6afedai {
+	qi2s@22 {
+		reg = <22>;
+		qcom,sd-lines = <0 1 2 3>;
+	};
+};
+
 &qupv3_id_0 {
 	status = "okay";
 };
@@ -516,6 +527,35 @@
 
 	bus-width = <4>;
 	cd-gpios = <&tlmm 126 GPIO_ACTIVE_LOW>;
+};
+
+&sound {
+	compatible = "qcom,db845c-sndcard";
+	pinctrl-0 = <&quat_mi2s_active &quat_mi2s_sd0_active &quat_mi2s_sd1_active &quat_mi2s_sd2_active &quat_mi2s_sd3_active>;
+	pinctrl-names = "default";
+	model = "DB845c";
+
+	mm1-dai-link {
+		link-name = "MultiMedia1";
+		cpu {
+			sound-dai = <&q6asmdai  MSM_FRONTEND_DAI_MULTIMEDIA1>;
+		};
+	};
+
+	hdmi-dai-link {
+		link-name = "HDMI";
+		cpu {
+			sound-dai = <&q6afedai QUATERNARY_MI2S_RX>;
+		};
+
+		platform {
+			sound-dai = <&q6routing>;
+		};
+
+		codec {
+			sound-dai = <&lt9611_codec 0>;
+		};
+	};
 };
 
 &tlmm {
