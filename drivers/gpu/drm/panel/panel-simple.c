@@ -1845,6 +1845,7 @@ static const struct drm_display_mode ivo_m133nwf4_r0_mode = {
 	.vsync_end = 1080 + 3 + 12,
 	.vtotal = 1080 + 3 + 12 + 17,
 	.vrefresh = 60,
+	.flags = DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC,
 };
 
 static const struct panel_desc ivo_m133nwf4_r0 = {
@@ -1854,6 +1855,37 @@ static const struct panel_desc ivo_m133nwf4_r0 = {
 	.size = {
 		.width = 294,
 		.height = 165,
+	},
+	.delay = {
+		.hpd_absent_delay = 200,
+		.unprepare = 500,
+	},
+};
+
+static const struct drm_display_mode ivo_nv133fhm_n61_modes = {
+	.clock = 147840,
+	.hdisplay = 1920,
+	.hsync_start = 1920 + 48,
+	.hsync_end = 1920 + 48 + 32,
+	.htotal = 1920 + 48 + 32 + 200,
+	.vdisplay = 1080,
+	.vsync_start = 1080 + 3,
+	.vsync_end = 1080 + 3 + 6,
+	.vtotal = 1080 + 3 + 6 + 31,
+	.vrefresh = 60,
+};
+
+static const struct panel_desc ivo_nv133fhm_n61 = {
+	.modes = &ivo_nv133fhm_n61_modes,
+	.num_modes = 1,
+	.bpc = 8,
+	.size = {
+		.width = 300,
+		.height = 187,
+	},
+	.delay = {
+		.hpd_absent_delay = 200,
+		.unprepare = 500,
 	},
 };
 
@@ -3286,6 +3318,9 @@ static const struct of_device_id platform_of_match[] = {
 	}, {
 		.compatible = "ivo,m133nwf4-r0",
 		.data = &ivo_m133nwf4_r0,
+	}, {
+		.compatible = "ivo,nv133fhm-n61",
+		.data = &ivo_nv133fhm_n61,
 	}, {
 		.compatible = "koe,tx14d24vm1bpa",
 		.data = &koe_tx14d24vm1bpa,
