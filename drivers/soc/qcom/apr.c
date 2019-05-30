@@ -11,8 +11,20 @@
 #include <linux/workqueue.h>
 #include <linux/of_device.h>
 #include <linux/soc/qcom/apr.h>
+#include <linux/soc/qcom/qmi.h>
+#include <linux/delay.h>
 #include <linux/rpmsg.h>
 #include <linux/of.h>
+
+#define SERVER_TIMEOUT					500
+#define SERVREG_NOTIF_SERVICE				0x42
+#define SERVREG_NOTIF_STATE_UPDATED_IND_MSG		0x22
+#define SERVREG_NOTIF_REGISTER_LISTENER_REQ		0x20
+#define QMI_SERVREG_NOTIF_NAME_LENGTH_V01		64
+#define SERVREG_NOTIF_REGISTER_LISTENER_REQ_MSG_LEN	71
+#define QMI_SERVREG_NOTIF_SET_ACK_RESP_MSG_V01_MAX_MSG_LEN 7
+#define SERVREG_NOTIF_SET_ACK_REQ_MSG_LEN 72
+#define SERVREG_NOTIF_SET_ACK_REQ 0x23
 
 struct apr {
 	struct rpmsg_endpoint *ch;
@@ -23,13 +35,260 @@ struct apr {
 	int dest_domain_id;
 	struct workqueue_struct *rxwq;
 	struct work_struct rx_work;
+        struct workqueue_struct *indackwq;
 	struct list_head rx_list;
+	struct completion comp;
+	struct completion ind_comp;
+	struct qmi_handle qmi;
+	struct sockaddr_qrtr servreg_sock;
 };
 
 struct apr_rx_buf {
 	struct list_head node;
 	int len;
 	uint8_t buf[];
+};
+
+struct ind_req_resp {
+	int transaction_id;
+	struct work_struct ind_ack;
+	struct apr *client_data;
+};
+
+struct qmi_servreg_notif_state_updated_ind_msg_v01 {
+	u32 curr_state;
+	char service_name[QMI_SERVREG_NOTIF_NAME_LENGTH_V01 + 1];
+	uint16_t transaction_id;
+};
+
+struct qmi_elem_info qmi_servreg_notif_state_updated_ind_msg_v01_ei[] = {
+	{
+		.data_type      = QMI_SIGNED_4_BYTE_ENUM,
+		.elem_len       = 1,
+		.elem_size      = sizeof(uint32_t),
+		.array_type	= NO_ARRAY,
+		.tlv_type       = 0x01,
+		.offset         = offsetof(struct qmi_servreg_notif_state_updated_ind_msg_v01, curr_state),
+	},
+	{
+		.data_type      = QMI_STRING,
+		.elem_len       = QMI_SERVREG_NOTIF_NAME_LENGTH_V01 + 1,
+		.elem_size      = sizeof(char),
+		.array_type	= NO_ARRAY,
+		.tlv_type       = 0x02,
+		.offset         = offsetof(struct qmi_servreg_notif_state_updated_ind_msg_v01, service_name),
+	},
+	{
+		.data_type      = QMI_UNSIGNED_2_BYTE,
+		.elem_len       = 1,
+		.elem_size      = sizeof(uint16_t),
+		.array_type	= NO_ARRAY,
+		.tlv_type       = 0x03,
+		.offset         = offsetof(struct qmi_servreg_notif_state_updated_ind_msg_v01, transaction_id),
+	},
+	{}
+};
+
+struct qmi_servreg_notif_register_listener_req_msg_v01 {
+	uint8_t enable;
+	char service_name[QMI_SERVREG_NOTIF_NAME_LENGTH_V01 + 1];
+};
+
+struct qmi_elem_info qmi_servreg_notif_register_listener_req_msg_v01_ei[] = {
+	{
+		.data_type      = QMI_UNSIGNED_1_BYTE,
+		.elem_len       = 1,
+		.elem_size      = sizeof(uint8_t),
+		.array_type	= NO_ARRAY,
+		.tlv_type       = 0x01,
+		.offset         = offsetof(struct qmi_servreg_notif_register_listener_req_msg_v01, enable),
+	},
+	{
+		.data_type      = QMI_STRING,
+		.elem_len       = QMI_SERVREG_NOTIF_NAME_LENGTH_V01 + 1,
+		.elem_size      = sizeof(char),
+		.array_type	= NO_ARRAY,
+		.tlv_type       = 0x02,
+		.offset         = offsetof(struct qmi_servreg_notif_register_listener_req_msg_v01, service_name),
+	},
+	{}
+};
+
+struct qmi_servreg_notif_register_listener_resp_msg_v01 {
+	struct qmi_response_type_v01 resp;
+	uint8_t curr_state_valid;
+	u32 curr_state;
+};
+
+struct qmi_elem_info qmi_servreg_notif_register_listener_resp_msg_v01_ei[] = {
+	{
+		.data_type      = QMI_STRUCT,
+		.elem_len       = 1,
+		.elem_size      = sizeof(struct qmi_response_type_v01),
+		.array_type	= NO_ARRAY,
+		.tlv_type       = 0x02,
+		.offset         = offsetof(struct qmi_servreg_notif_register_listener_resp_msg_v01, resp),
+		.ei_array      = qmi_response_type_v01_ei,
+	},
+	{
+		.data_type      = QMI_OPT_FLAG,
+		.elem_len       = 1,
+		.elem_size      = sizeof(uint8_t),
+		.array_type	= NO_ARRAY,
+		.tlv_type       = 0x10,
+		.offset         = offsetof(struct qmi_servreg_notif_register_listener_resp_msg_v01, curr_state_valid),
+	},
+	{
+		.data_type      = QMI_SIGNED_4_BYTE_ENUM,
+		.elem_len       = 1,
+		.elem_size      = sizeof(uint32_t),
+		.array_type	= NO_ARRAY,
+		.tlv_type       = 0x10,
+		.offset         = offsetof(struct qmi_servreg_notif_register_listener_resp_msg_v01, curr_state),
+	},
+	{}
+};
+
+struct qmi_servreg_notif_set_ack_resp_msg_v01 {
+	struct qmi_response_type_v01 resp;
+};
+
+struct qmi_elem_info qmi_servreg_notif_set_ack_resp_msg_v01_ei[] = {
+	{
+		.data_type      = QMI_STRUCT,
+		.elem_len       = 1,
+		.elem_size      = sizeof(struct qmi_response_type_v01),
+		.array_type	= NO_ARRAY,
+		.tlv_type       = 0x02,
+		.offset         = offsetof(struct qmi_servreg_notif_set_ack_resp_msg_v01, resp),
+		.ei_array       = qmi_response_type_v01_ei,
+	},
+	{}
+};
+
+struct qmi_servreg_notif_set_ack_req_msg_v01 {
+	char service_name[QMI_SERVREG_NOTIF_NAME_LENGTH_V01 + 1];
+	uint16_t transaction_id;
+};
+
+struct qmi_elem_info qmi_servreg_notif_set_ack_req_msg_v01_ei[] = {
+	{
+		.data_type      = QMI_STRING,
+		.elem_len       = QMI_SERVREG_NOTIF_NAME_LENGTH_V01 + 1,
+		.elem_size      = sizeof(char),
+		.array_type	= NO_ARRAY,
+		.tlv_type       = 0x01,
+		.offset         = offsetof(struct qmi_servreg_notif_set_ack_req_msg_v01, service_name),
+	},
+	{
+		.data_type      = QMI_UNSIGNED_2_BYTE,
+		.elem_len       = 1,
+		.elem_size      = sizeof(uint16_t),
+		.array_type	= NO_ARRAY,
+		.tlv_type       = 0x02,
+		.offset         = offsetof(struct qmi_servreg_notif_set_ack_req_msg_v01, transaction_id),
+	},
+	{}
+};
+
+static void servreg_ind_ack(struct work_struct *work) {
+	struct ind_req_resp *ind_info = container_of(work, struct ind_req_resp, ind_ack);
+	struct qmi_servreg_notif_set_ack_resp_msg_v01 resp = { { 0, 0 } };
+	struct qmi_servreg_notif_set_ack_req_msg_v01 req;
+	struct apr *apr = ind_info->client_data;
+	struct qmi_txn txn;
+	int ret;
+
+	ret = qmi_txn_init(&apr->qmi, &txn, qmi_servreg_notif_set_ack_resp_msg_v01_ei,
+			   &resp);
+	if (ret < 0) {
+		pr_err("QMI tx init failed , ret - %d\n", ret);
+		return;
+	}
+
+	req.transaction_id = ind_info->transaction_id;
+	snprintf(req.service_name, ARRAY_SIZE(req.service_name), "%s",
+		 "msm/adsp/audio_pd");
+
+	ret = qmi_send_request(&apr->qmi, &apr->servreg_sock,
+			       &txn, SERVREG_NOTIF_SET_ACK_REQ,
+			       SERVREG_NOTIF_SET_ACK_REQ_MSG_LEN,
+			       qmi_servreg_notif_set_ack_req_msg_v01_ei,
+			       &req);
+	if (ret < 0) {
+		pr_err("QMI send ACK failed, ret - %d\n", ret);
+		qmi_txn_cancel(&txn);
+		return;
+	}
+
+	ret = qmi_txn_wait(&txn, msecs_to_jiffies(SERVER_TIMEOUT));
+	if (ret < 0) {
+		pr_err("QMI qmi txn wait failed, ret - %d\n", ret);
+		return;
+	}
+
+	/* Check the response */
+	if (resp.resp.result != QMI_RESULT_SUCCESS_V01)
+		pr_err("QMI request failed 0x%x\n", resp.resp.error);
+	else
+		pr_err("QMI ack success\n");
+}
+
+static void servreg_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
+			   struct qmi_txn *back_txn, const void *data)
+{
+	struct qmi_servreg_notif_state_updated_ind_msg_v01 ind_msg = *((struct qmi_servreg_notif_state_updated_ind_msg_v01 *)data);
+	struct apr *apr = container_of(qmi, struct apr, qmi);
+	struct ind_req_resp *ind_info = kmalloc(sizeof(*ind_info), GFP_KERNEL);
+
+	pr_err("Indication received from %s, state: 0x%x, trans-id: %d\n",
+	       ind_msg.service_name, ind_msg.curr_state, ind_msg.transaction_id);
+
+	if (ind_msg.curr_state == 0x1FFFFFFF)
+		complete(&apr->ind_comp);
+
+	ind_info->transaction_id = ind_msg.transaction_id;
+	ind_info->client_data = apr;
+
+        INIT_WORK(&ind_info->ind_ack, servreg_ind_ack);
+	queue_work(apr->indackwq, &ind_info->ind_ack);
+}
+
+static struct qmi_msg_handler qmi_indication_handler[] = {
+	{
+		.type = QMI_INDICATION,
+		.msg_id = SERVREG_NOTIF_STATE_UPDATED_IND_MSG,
+		.ei = qmi_servreg_notif_state_updated_ind_msg_v01_ei,
+		.decoded_size = sizeof(struct qmi_servreg_notif_state_updated_ind_msg_v01),
+		.fn = servreg_ind_cb,
+	},
+	{}
+};
+
+static int servreg_new_server(struct qmi_handle *qmi, struct qmi_service *serv)
+{
+	struct apr *apr = container_of(qmi, struct apr, qmi);
+
+	pr_err("servreg_new_server\n");
+	apr->servreg_sock.sq_family = AF_QIPCRTR;
+	apr->servreg_sock.sq_node = serv->node;
+	apr->servreg_sock.sq_port = serv->port;
+	complete(&apr->comp);
+
+	return 0;
+};
+
+static void servreg_del_server(struct qmi_handle *qmi, struct qmi_service *serv)
+{
+	struct apr *apr = container_of(qmi, struct apr, qmi);
+	reinit_completion(&apr->comp);
+	reinit_completion(&apr->ind_comp);
+	pr_err("servreg_del_server\n");
+};
+
+static const struct qmi_ops servreg_ops = {
+	.new_server = servreg_new_server,
+	.del_server = servreg_del_server,
 };
 
 /**
@@ -320,7 +579,10 @@ static void of_register_apr_devices(struct device *dev)
 
 static int apr_probe(struct rpmsg_device *rpdev)
 {
+	struct qmi_servreg_notif_register_listener_resp_msg_v01 resp = { { 0, 0 } };
+	struct qmi_servreg_notif_register_listener_req_msg_v01 req;
 	struct device *dev = &rpdev->dev;
+	struct qmi_txn txn;
 	struct apr *apr;
 	int ret;
 
@@ -333,6 +595,8 @@ static int apr_probe(struct rpmsg_device *rpdev)
 		dev_err(dev, "APR Domain ID not specified in DT\n");
 		return ret;
 	}
+	init_completion(&apr->comp);
+	init_completion(&apr->ind_comp);
 
 	dev_set_drvdata(dev, apr);
 	apr->ch = rpdev->ept;
@@ -343,9 +607,81 @@ static int apr_probe(struct rpmsg_device *rpdev)
 		return -ENOMEM;
 	}
 	INIT_WORK(&apr->rx_work, apr_rxwq);
+
+	apr->indackwq = create_singlethread_workqueue("qcom_apr_indack");
+        if (!apr->indackwq) {
+                dev_err(apr->dev, "Failed to start IndAck WQ\n");
+                return -ENOMEM;
+        }
+
 	INIT_LIST_HEAD(&apr->rx_list);
 	spin_lock_init(&apr->rx_lock);
 	spin_lock_init(&apr->svcs_lock);
+
+	/* Wait for PD UP notification */
+	ret = qmi_handle_init(&apr->qmi, 79, &servreg_ops, qmi_indication_handler);
+	if (ret < 0) {
+		pr_err("apr_probe qmi handle init failed\n");
+	}
+
+	qmi_add_lookup(&apr->qmi, SERVREG_NOTIF_SERVICE, 1, 74);
+
+	ret = wait_for_completion_timeout(&apr->comp, 10 * HZ);
+	if (!ret)
+		pr_err("timed out waiting for new server\n");
+
+	ret = qmi_txn_init(&apr->qmi, &txn,
+			   qmi_servreg_notif_register_listener_resp_msg_v01_ei,
+			   &resp);
+	if (ret < 0) {
+		pr_err("QMI tx init failed , ret - %d\n", ret);
+		qmi_handle_release(&apr->qmi);
+		return ret;
+	}
+
+	req.enable = true;
+	snprintf(req.service_name, ARRAY_SIZE(req.service_name), "%s",
+		 "msm/adsp/audio_pd");
+
+	ret = qmi_send_request(&apr->qmi, &apr->servreg_sock,
+			       &txn, SERVREG_NOTIF_REGISTER_LISTENER_REQ,
+			       SERVREG_NOTIF_REGISTER_LISTENER_REQ_MSG_LEN,
+			       qmi_servreg_notif_register_listener_req_msg_v01_ei,
+			       &req);
+	if (ret < 0) {
+		pr_err("QMI send req failed, ret - %d\n", ret);
+		qmi_txn_cancel(&txn);
+		qmi_handle_release(&apr->qmi);
+		return ret;
+	}
+
+	ret = qmi_txn_wait(&txn, msecs_to_jiffies(SERVER_TIMEOUT));
+	if (ret < 0) {
+		pr_err("QMI qmi txn wait failed, ret - %d\n", ret);
+		qmi_handle_release(&apr->qmi);
+		return ret;
+	}
+
+	/* Check the response */
+	if (resp.resp.result != QMI_RESULT_SUCCESS_V01) {
+		pr_err("QMI request failed 0x%x\n", resp.resp.error);
+		qmi_handle_release(&apr->qmi);
+		return -EREMOTEIO;
+	} else {
+		pr_err("QMI request succeeded 0x%x\n", resp.resp.error);
+		pr_err("Serv Reg current state : 0x%x\n", resp.curr_state);
+	}
+
+	/* HACK */
+	if (resp.curr_state != 0x1FFFFFFF) {
+		ret = wait_for_completion_timeout(&apr->ind_comp, 10 * HZ);
+		if (!ret) {
+			pr_err("timed out waiting for PD UP\n");
+			qmi_handle_release(&apr->qmi);
+			return ret;
+		}
+	}
+
 	idr_init(&apr->svcs_idr);
 	of_register_apr_devices(dev);
 
@@ -365,6 +701,7 @@ static void apr_remove(struct rpmsg_device *rpdev)
 {
 	struct apr *apr = dev_get_drvdata(&rpdev->dev);
 
+	qmi_handle_release(&apr->qmi);
 	device_for_each_child(&rpdev->dev, NULL, apr_remove_device);
 	flush_workqueue(apr->rxwq);
 	destroy_workqueue(apr->rxwq);
