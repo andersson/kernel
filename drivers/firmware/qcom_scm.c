@@ -353,6 +353,12 @@ int qcom_scm_iommu_secure_ptbl_init(u64 addr, u32 size, u32 spare)
 }
 EXPORT_SYMBOL(qcom_scm_iommu_secure_ptbl_init);
 
+int qcom_scm_qsmmu500_wait_safe_toggle(bool en)
+{
+	return __qcom_scm_qsmmu500_wait_safe_toggle(__scm->dev, en);
+}
+EXPORT_SYMBOL(qcom_scm_qsmmu500_wait_safe_toggle);
+
 int qcom_scm_io_readl(phys_addr_t addr, unsigned int *val)
 {
 	return __qcom_scm_io_readl(__scm->dev, addr, val);
@@ -364,6 +370,18 @@ int qcom_scm_io_writel(phys_addr_t addr, unsigned int val)
 	return __qcom_scm_io_writel(__scm->dev, addr, val);
 }
 EXPORT_SYMBOL(qcom_scm_io_writel);
+
+int qcom_scm_io_readl_atomic(phys_addr_t addr, unsigned int *val)
+{
+	return __qcom_scm_io_readl_atomic(__scm->dev, addr, val);
+}
+EXPORT_SYMBOL(qcom_scm_io_readl_atomic);
+
+int qcom_scm_io_writel_atomic(phys_addr_t addr, unsigned int val)
+{
+	return __qcom_scm_io_writel_atomic(__scm->dev, addr, val);
+}
+EXPORT_SYMBOL(qcom_scm_io_writel_atomic);
 
 static void qcom_scm_set_download_mode(bool enable)
 {
