@@ -703,7 +703,7 @@ module_param_named(invert_aer_support, msm_pcie_invert_aer_support,
  * For each bit set, keep the resources on when link training fails
  * or linkdown occurs for the corresponding root complex
  */
-static int msm_pcie_keep_resources_on;
+static int msm_pcie_keep_resources_on = 0xffff;
 module_param_named(keep_resources_on, msm_pcie_keep_resources_on,
 			    int, 0644);
 
@@ -3981,6 +3981,8 @@ static int msm_pcie_enable(struct msm_pcie_dev_t *dev, u32 options)
 		link_check_max_count = msm_pcie_link_check_max_count >> 4;
 	else
 		link_check_max_count = LINK_UP_CHECK_MAX_COUNT;
+
+	link_check_max_count = 1000;
 
 	/* Wait for up to 100ms for the link to come up */
 	do {

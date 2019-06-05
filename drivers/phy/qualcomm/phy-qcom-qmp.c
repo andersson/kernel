@@ -1286,7 +1286,7 @@ static const struct qmp_phy_cfg sdm845_pciephy_cfg = {
 
 	.start_ctrl		= PCS_START | SERDES_START,
 	.pwrdn_ctrl		= SW_PWRDN | REFCLK_DRV_DSBL,
-	.mask_com_pcs_ready	= PCS_READY,
+	.mask_pcs_ready		= PHYSTATUS,
 
 	.has_pwrdn_delay	= true,
 	.pwrdn_delay_min	= 995,		/* us */
@@ -1700,8 +1700,9 @@ static int qcom_qmp_phy_enable(struct phy *phy)
 	status = pcs + cfg->regs[QPHY_PCS_READY_STATUS];
 	mask = cfg->mask_pcs_ready;
 
-	ret = readl_poll_timeout(status, val, !(val & mask), 1,
+	ret = readl_poll_timeout(status, val, val & mask, 1,
 				 PHY_INIT_COMPLETE_TIMEOUT);
+	dev_err(qmp->dev, "POLL TIMEOUT: %#x val: %#x\n", ret, readl(status));
 	if (ret) {
 		dev_err(qmp->dev, "phy initialization timed-out\n");
 		goto err_pcs_ready;
