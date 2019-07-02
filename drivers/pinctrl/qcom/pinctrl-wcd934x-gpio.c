@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0
+// Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
 // Copyright (c) 2019, Linaro Limited
 
 #include <linux/module.h>
@@ -47,7 +48,7 @@ struct wcd_gpio_priv {
 };
 
 static int wcd_gpio_read(struct wcd_gpio_priv *priv_data,
-			  struct wcd_gpio_pad *pad, unsigned int addr)
+			 struct wcd_gpio_pad *pad, unsigned int addr)
 {
 	unsigned int val;
 	int ret;
@@ -63,17 +64,16 @@ static int wcd_gpio_read(struct wcd_gpio_priv *priv_data,
 }
 
 static int wcd_gpio_write(struct wcd_gpio_priv *priv_data,
-			   struct wcd_gpio_pad *pad, unsigned int addr,
-			   unsigned int val)
+			  struct wcd_gpio_pad *pad, unsigned int addr,
+			  unsigned int val)
 {
 	int ret;
 
 	ret = regmap_update_bits(priv_data->map, addr, (1 << pad->offset),
-					val << pad->offset);
+				 val << pad->offset);
 	if (ret < 0)
 		dev_err(priv_data->dev, "write 0x%x failed\n", addr);
 
-	dev_err(priv_data->dev, "write 0x%x ....\n", addr);
 	return ret;
 }
 
@@ -83,16 +83,17 @@ static int wcd_get_groups_count(struct pinctrl_dev *pctldev)
 }
 
 static const char *wcd_get_group_name(struct pinctrl_dev *pctldev,
-		unsigned int pin)
+				      unsigned int pin)
 {
 	return pctldev->desc->pins[pin].name;
 }
 
 static int wcd_get_group_pins(struct pinctrl_dev *pctldev, unsigned int pin,
-		const unsigned int **pins, unsigned int *num_pins)
+			      const unsigned int **pins, unsigned int *num_pins)
 {
 	*pins = &pctldev->desc->pins[pin].number;
 	*num_pins = 1;
+
 	return 0;
 }
 
@@ -105,7 +106,7 @@ static const struct pinctrl_ops wcd_pinctrl_ops = {
 };
 
 static int wcd_config_get(struct pinctrl_dev *pctldev,
-				unsigned int pin, unsigned long *config)
+			  unsigned int pin, unsigned long *config)
 {
 	unsigned int param = pinconf_to_config_param(*config);
 	struct wcd_gpio_pad *pad;
@@ -141,7 +142,7 @@ static int wcd_config_get(struct pinctrl_dev *pctldev,
 }
 
 static int wcd_config_set(struct pinctrl_dev *pctldev, unsigned int pin,
-				unsigned long *configs, unsigned int nconfs)
+			  unsigned long *configs, unsigned int nconfs)
 {
 	struct wcd_gpio_priv *priv_data = pinctrl_dev_get_drvdata(pctldev);
 	struct wcd_gpio_pad *pad;
@@ -153,9 +154,6 @@ static int wcd_config_set(struct pinctrl_dev *pctldev, unsigned int pin,
 	for (i = 0; i < nconfs; i++) {
 		param = pinconf_to_config_param(configs[i]);
 		arg = pinconf_to_config_argument(configs[i]);
-
-		dev_dbg(priv_data->dev, "%s: param: %d arg: %d",
-			__func__, param, arg);
 
 		switch (param) {
 		case PIN_CONFIG_BIAS_DISABLE:
@@ -181,22 +179,19 @@ static int wcd_config_set(struct pinctrl_dev *pctldev, unsigned int pin,
 			pad->strength = arg;
 			break;
 		default:
-			ret = -EINVAL;
-			goto done;
+			return -EINVAL;
 		}
 	}
 
-	if (pad->output_enabled) {
-		ret = wcd_gpio_write(priv_data, pad, WCD_REG_DIR_CTL_OFFSET,
-				     pad->output_enabled);
-		if (ret < 0)
-			goto done;
+	ret = wcd_gpio_write(priv_data, pad, WCD_REG_DIR_CTL_OFFSET,
+			     pad->output_enabled);
+	if (ret < 0)
+		return ret;
+
+	if (pad->output_enabled)
 		ret = wcd_gpio_write(priv_data, pad, WCD_REG_VAL_CTL_OFFSET,
 				     pad->value);
-	} else
-		ret = wcd_gpio_write(priv_data, pad, WCD_REG_DIR_CTL_OFFSET,
-				     pad->output_enabled);
-done:
+
 	return ret;
 }
 
@@ -239,6 +234,7 @@ static int wcd_gpio_get(struct gpio_chip *chip, unsigned int pin)
 		return -EINVAL;
 
 	value = wcd_gpio_read(priv_data, pad, WCD_REG_VAL_CTL_OFFSET);
+
 	return value;
 }
 
@@ -266,41 +262,32 @@ static int wcd_pinctrl_probe(struct platform_device *pdev)
 	struct pinctrl_desc *pctrldesc;
 	struct wcd_gpio_pad *pad, *pads;
 	struct wcd_gpio_priv *priv_data;
-	int ret, i, j;
 	u32 npins = WCD934X_NPINS;
 	char **name;
+	int i;
 
 	priv_data = devm_kzalloc(dev, sizeof(*priv_data), GFP_KERNEL);
-	if (!priv_data) {
-		ret = -ENOMEM;
-		goto err_priv_alloc;
-	}
+	if (!priv_data)
+		return -ENOMEM;
 
 	priv_data->dev = dev;
 	priv_data->map = dev_get_regmap(dev->parent, NULL);
 	if (!priv_data->map) {
 		dev_err(dev, "%s: failed to get regmap\n", __func__);
-		ret = -EINVAL;
-		goto err_regmap;
+		return  -EINVAL;
 	}
 
 	pindesc = devm_kcalloc(dev, npins, sizeof(*pindesc), GFP_KERNEL);
-	if (!pindesc) {
-		ret = -ENOMEM;
-		goto err_pinsec_alloc;
-	}
+	if (!pindesc)
+		return -ENOMEM;
 
 	pads = devm_kcalloc(dev, npins, sizeof(*pads), GFP_KERNEL);
-	if (!pads) {
-		ret = -ENOMEM;
-		goto err_pads_alloc;
-	}
+	if (!pads)
+		return -ENOMEM;
 
 	pctrldesc = devm_kzalloc(dev, sizeof(*pctrldesc), GFP_KERNEL);
-	if (!pctrldesc) {
-		ret = -ENOMEM;
-		goto err_pinctrl_alloc;
-	}
+	if (!pctrldesc)
+		return -ENOMEM;
 
 	pctrldesc->pctlops = &wcd_pinctrl_ops;
 	pctrldesc->confops = &wcd_pinconf_ops;
@@ -310,17 +297,15 @@ static int wcd_pinctrl_probe(struct platform_device *pdev)
 	pctrldesc->npins = npins;
 
 	name = devm_kcalloc(dev, npins, sizeof(char *), GFP_KERNEL);
-	if (!name) {
-		ret = -ENOMEM;
-		goto err_name_alloc;
-	}
+	if (!name)
+		return -ENOMEM;
+
 	for (i = 0; i < npins; i++, pindesc++) {
 		name[i] = devm_kzalloc(dev, sizeof(char) * WCD_GPIO_STRING_LEN,
 				       GFP_KERNEL);
-		if (!name[i]) {
-			ret = -ENOMEM;
-			goto err_pin;
-		}
+		if (!name[i])
+			return -ENOMEM;
+
 		pad = &pads[i];
 		pindesc->drv_data = pad;
 		pindesc->number = i;
@@ -337,49 +322,15 @@ static int wcd_pinctrl_probe(struct platform_device *pdev)
 	priv_data->chip.label = dev_name(dev);
 	priv_data->chip.of_gpio_n_cells = 2;
 	priv_data->chip.can_sleep = false;
+	platform_set_drvdata(pdev, priv_data);
 
-	pr_err("DEBUG: %s: %d \n", __func__, __LINE__);
 	priv_data->ctrl = devm_pinctrl_register(dev, pctrldesc, priv_data);
 	if (IS_ERR(priv_data->ctrl)) {
 		dev_err(dev, "%s: failed to register to pinctrl\n", __func__);
-		ret = PTR_ERR(priv_data->ctrl);
-		goto err_pin;
+		return PTR_ERR(priv_data->ctrl);
 	}
 
-	ret = gpiochip_add_data(&priv_data->chip, priv_data);
-	if (ret) {
-		dev_err(dev, "%s: can't add gpio chip\n", __func__);
-		goto err_pin;
-	}
-
-	ret = gpiochip_add_pin_range(&priv_data->chip, dev_name(dev), 0, 0,
-				     npins);
-	if (ret) {
-		dev_err(dev, "%s: failed to add pin range\n", __func__);
-		goto err_range;
-	}
-	platform_set_drvdata(pdev, priv_data);
-
-	pr_err("DEBUG: %s: %d \n", __func__, __LINE__);
-	return 0;
-
-err_range:
-	gpiochip_remove(&priv_data->chip);
-err_pin:
-	for (j = 0; j < i; j++)
-		devm_kfree(dev, name[j]);
-	devm_kfree(dev, name);
-err_name_alloc:
-	devm_kfree(dev, pctrldesc);
-err_pinctrl_alloc:
-	devm_kfree(dev, pads);
-err_pads_alloc:
-	devm_kfree(dev, pindesc);
-err_pinsec_alloc:
-err_regmap:
-	devm_kfree(dev, priv_data);
-err_priv_alloc:
-	return ret;
+	return gpiochip_add_data(&priv_data->chip, priv_data);
 }
 
 static int wcd_pinctrl_remove(struct platform_device *pdev)

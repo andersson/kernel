@@ -22,4 +22,4 @@ obj-$(CONFIG_PINCTRL_QCOM_SSBI_PMIC) += pinctrl-ssbi-gpio.o
 obj-$(CONFIG_PINCTRL_QCOM_SSBI_PMIC) += pinctrl-ssbi-mpp.o
 obj-$(CONFIG_PINCTRL_SDM660)   += pinctrl-sdm660.o
 obj-$(CONFIG_PINCTRL_SDM845) += pinctrl-sdm845.o
-obj-$(CONFIG_PINCTRL_WCD934X) += pinctrl-wcd934x.o
+obj-$(CONFIG_PINCTRL_WCD934X) += pinctrl-wcd934x-gpio.o
