@@ -611,7 +611,7 @@ int sdw_configure_dpn_intr(struct sdw_slave *slave,
 	u32 addr;
 	int ret;
 	u8 val = 0;
-
+return 0; //HACK to not setup interrupts
 	addr = SDW_DPN_INTMASK(port);
 
 	/* Set/Clear port ready interrupt mask */
@@ -636,7 +636,7 @@ static int sdw_initialize_slave(struct sdw_slave *slave)
 	struct sdw_slave_prop *prop = &slave->prop;
 	int ret;
 	u8 val;
-
+return 0; //HACK to not setup interrupts
 	/*
 	 * Set bus clash, parity and SCP implementation
 	 * defined interrupt mask
