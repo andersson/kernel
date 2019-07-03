@@ -155,6 +155,8 @@ static int sdw_program_slave_port_params(struct sdw_bus *bus,
 		addr6 = SDW_DPN_LANECTRL_B0(t_params->port_num);
 	}
 
+#if 0
+	//Do not program these for SDW_STREAM_PDM type
 	/* Program DPN_PortCtrl register */
 	wbuf = p_params->data_mode << SDW_REG_SHIFT(SDW_DPN_PORTCTRL_DATAMODE);
 	wbuf |= p_params->flow_mode;
@@ -176,6 +178,7 @@ static int sdw_program_slave_port_params(struct sdw_bus *bus,
 		return ret;
 	}
 
+#endif
 	/* Program DPN_SampleCtrl1 register */
 	wbuf = (t_params->sample_interval - 1) & SDW_DPN_SAMPLECTRL_LOW;
 	ret = sdw_write(s_rt->slave, addr3, wbuf);
