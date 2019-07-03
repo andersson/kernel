@@ -692,9 +692,12 @@ static int sdw_bank_switch(struct sdw_bus *bus, int m_rt_count)
 	}
 
 	if (!multi_link) {
-		kfree(wr_msg);
-		kfree(wbuf);
-		bus->defer_msg.msg = NULL;
+		if (bus->defer_msg.msg) {
+			kfree(bus->defer_msg.msg->buf);
+			kfree(bus->defer_msg.msg);
+			bus->defer_msg.msg = NULL;
+		}
+
 		bus->params.curr_bank = !bus->params.curr_bank;
 		bus->params.next_bank = !bus->params.next_bank;
 	}
@@ -704,7 +707,11 @@ static int sdw_bank_switch(struct sdw_bus *bus, int m_rt_count)
 error:
 	kfree(wbuf);
 error_1:
-	kfree(wr_msg);
+	if (bus->defer_msg.msg) {
+		kfree(bus->defer_msg.msg);
+		bus->defer_msg.msg = NULL;
+	}
+
 	return ret;
 }
 
@@ -737,6 +744,7 @@ static int sdw_ml_sync_bank_switch(struct sdw_bus *bus)
 	if (bus->defer_msg.msg) {
 		kfree(bus->defer_msg.msg->buf);
 		kfree(bus->defer_msg.msg);
+		bus->defer_msg.msg = NULL;
 	}
 
 	return 0;
@@ -828,9 +836,11 @@ static int do_bank_switch(struct sdw_stream_runtime *stream)
 error:
 	list_for_each_entry(m_rt, &stream->master_list, stream_node) {
 		bus = m_rt->bus;
-
-		kfree(bus->defer_msg.msg->buf);
-		kfree(bus->defer_msg.msg);
+		if (bus->defer_msg.msg) {
+			kfree(bus->defer_msg.msg->buf);
+			kfree(bus->defer_msg.msg);
+			bus->defer_msg.msg = NULL;
+		}
 	}
 
 msg_unlock:
