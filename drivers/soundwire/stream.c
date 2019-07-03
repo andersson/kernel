@@ -157,23 +157,27 @@ static int sdw_program_slave_port_params(struct sdw_bus *bus,
 	wbuf = p_params->data_mode << SDW_REG_SHIFT(SDW_DPN_PORTCTRL_DATAMODE);
 	wbuf |= p_params->flow_mode;
 
+#if 0
 	ret = sdw_update(s_rt->slave, addr1, 0xF, wbuf);
 	if (ret < 0) {
 		dev_err(&s_rt->slave->dev,
-			"DPN_PortCtrl register write failed for port %d\n",
-			t_params->port_num);
+			"DPN_PortCtrl register write failed for port %d val %x\n",
+			t_params->port_num, wbuf);
 		return ret;
 	}
-
+	//Do not program these for SDW_STREAM_PDM type
 	/* Program DPN_BlockCtrl1 register */
+	pr_err("DEBUG:: val %x\n", sdw_read(s_rt->slave, addr2));
+	val = sdw_read(s_rt->slave, SDW_DPN_PREPARESTATUS(p_rt->num));
 	ret = sdw_write(s_rt->slave, addr2, (p_params->bps - 1));
 	if (ret < 0) {
 		dev_err(&s_rt->slave->dev,
-			"DPN_BlockCtrl1 register write failed for port %d\n",
-			t_params->port_num);
-		return ret;
+			"DPN_BlockCtrl1 register write failed for port %d val %x\n",
+			t_params->port_num, (p_params->bps - 1));
+//		return ret;
 	}
 
+#endif
 	/* Program DPN_SampleCtrl1 register */
 	wbuf = (t_params->sample_interval - 1) & SDW_DPN_SAMPLECTRL_LOW;
 	ret = sdw_write(s_rt->slave, addr3, wbuf);
