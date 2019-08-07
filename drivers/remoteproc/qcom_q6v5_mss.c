@@ -34,6 +34,7 @@
 
 #include "remoteproc_internal.h"
 #include "qcom_common.h"
+#include "qcom_pil_info.h"
 #include "qcom_q6v5.h"
 
 #include <linux/qcom_scm.h>
@@ -948,6 +949,8 @@ static int q6v5_mpss_load(struct q6v5 *qproc)
 	else if (ret < 0)
 		dev_err(qproc->dev, "MPSS authentication failed: %d\n", ret);
 
+	qcom_pil_info_store("modem", mpss_reloc, qproc->mpss_size);
+
 release_firmware:
 	release_firmware(fw);
 
@@ -1241,6 +1244,9 @@ static int q6v5_probe(struct platform_device *pdev)
 		return -EINVAL;
 
 	if (desc->need_mem_protection && !qcom_scm_is_available())
+		return -EPROBE_DEFER;
+
+	if (!qcom_pil_info_available())
 		return -EPROBE_DEFER;
 
 	rproc = rproc_alloc(&pdev->dev, pdev->name, &q6v5_ops,
