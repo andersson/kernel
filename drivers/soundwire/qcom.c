@@ -8,6 +8,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/of_irq.h>
 #include <linux/of_device.h>
 #include <linux/regmap.h>
 #include <linux/slab.h>
@@ -25,28 +26,12 @@
 #define SWRM_COMP_PARAMS					0x100
 #define SWRM_COMP_PARAMS_DOUT_PORTS_MASK			GENMASK(4, 0)
 #define SWRM_COMP_PARAMS_DIN_PORTS_MASK				GENMASK(9, 5)
-#define SWRM_COMP_PARAMS_WR_FIFO_DEPTH				GENMASK(14, 10)
-#define SWRM_COMP_PARAMS_RD_FIFO_DEPTH				GENMASK(19, 15)
-#define SWRM_COMP_PARAMS_AUTO_ENUM_SLAVES			GENMASK(32. 20)
 #define SWRM_INTERRUPT_STATUS					0x200
 #define SWRM_INTERRUPT_STATUS_RMSK				GENMASK(16, 0)
-#define SWRM_INTERRUPT_STATUS_SLAVE_PEND_IRQ			BIT(0)
 #define SWRM_INTERRUPT_STATUS_NEW_SLAVE_ATTACHED		BIT(1)
 #define SWRM_INTERRUPT_STATUS_CHANGE_ENUM_SLAVE_STATUS		BIT(2)
-#define SWRM_INTERRUPT_STATUS_MASTER_CLASH_DET			BIT(3)
-#define SWRM_INTERRUPT_STATUS_RD_FIFO_OVERFLOW			BIT(4)
-#define SWRM_INTERRUPT_STATUS_RD_FIFO_UNDERFLOW			BIT(5)
-#define SWRM_INTERRUPT_STATUS_WR_CMD_FIFO_OVERFLOW		BIT(6)
 #define SWRM_INTERRUPT_STATUS_CMD_ERROR				BIT(7)
-#define SWRM_INTERRUPT_STATUS_DOUT_PORT_COLLISION		BIT(8)
-#define SWRM_INTERRUPT_STATUS_READ_EN_RD_VALID_MISMATCH		BIT(9)
 #define SWRM_INTERRUPT_STATUS_SPECIAL_CMD_ID_FINISHED		BIT(10)
-#define SWRM_INTERRUPT_STATUS_NEW_SLAVE_AUTO_ENUM_FINISHED	BIT(11)
-#define SWRM_INTERRUPT_STATUS_AUTO_ENUM_FAILED			BIT(12)
-#define SWRM_INTERRUPT_STATUS_AUTO_ENUM_TABLE_IS_FULL		BIT(13)
-#define SWRM_INTERRUPT_STATUS_BUS_RESET_FINISHED		BIT(14)
-#define SWRM_INTERRUPT_STATUS_CLK_STOP_FINISHED			BIT(15)
-#define SWRM_INTERRUPT_STATUS_ERROR_PORT_TEST			BIT(16)
 #define SWRM_INTERRUPT_MASK_ADDR				0x204
 #define SWRM_INTERRUPT_CLEAR					0x208
 #define SWRM_CMD_FIFO_WR_CMD					0x300
@@ -54,7 +39,6 @@
 #define SWRM_CMD_FIFO_CMD					0x308
 #define SWRM_CMD_FIFO_STATUS					0x30C
 #define SWRM_CMD_FIFO_CFG_ADDR					0x314
-#define SWRM_CMD_FIFO_CFG_NUM_OF_CMD_RETRY_SHFT			0x0
 #define SWRM_RD_WR_CMD_RETRIES					0x7
 #define SWRM_CMD_FIFO_RD_FIFO_ADDR				0x318
 #define SWRM_ENUMERATOR_CFG_ADDR				0x500
@@ -72,14 +56,13 @@
 #define SWRM_MCP_SLV_STATUS					0x1090
 #define SWRM_MCP_SLV_STATUS_MASK				GENMASK(1, 0)
 #define SWRM_DP_PORT_CTRL_BANK(n, m)	(0x1124 + 0x100 * (n - 1) + 0x40 * m)
-#define SWRM_DP_PORT_CTRL2_BANK(n, m)	(0x1126 + 0x100 * (n - 1) + 0x40 * m)
 #define SWRM_DP_PORT_CTRL_EN_CHAN_SHFT				0x18
 #define SWRM_DP_PORT_CTRL_OFFSET2_SHFT				0x10
 #define SWRM_DP_PORT_CTRL_OFFSET1_SHFT				0x08
-#define SWRM_AHB_BRIDGE_WR_DATA_0				0xc885
-#define SWRM_AHB_BRIDGE_WR_ADDR_0				0xc889
-#define SWRM_AHB_BRIDGE_RD_ADDR_0				0xc88d
-#define SWRM_AHB_BRIDGE_RD_DATA_0				0xc891
+#define SWRM_AHB_BRIDGE_WR_DATA_0				0xc85
+#define SWRM_AHB_BRIDGE_WR_ADDR_0				0xc89
+#define SWRM_AHB_BRIDGE_RD_ADDR_0				0xc8d
+#define SWRM_AHB_BRIDGE_RD_DATA_0				0xc91
 
 #define SWRM_REG_VAL_PACK(data, dev, id, reg)	\
 			((reg) | ((id) << 16) | ((dev) << 20) | ((data) << 24))
@@ -132,8 +115,8 @@ struct qcom_swrm_ctrl {
 
 #define to_qcom_sdw(b)	container_of(b, struct qcom_swrm_ctrl, bus)
 
-static int qcom_swrm_slim_reg_read(struct qcom_swrm_ctrl *ctrl, int reg,
-				   u32 *val)
+static int qcom_swrm_abh_reg_read(struct qcom_swrm_ctrl *ctrl, int reg,
+				  u32 *val)
 {
 	struct regmap *wcd_regmap = ctrl->regmap;
 	int ret;
@@ -168,12 +151,11 @@ static int qcom_swrm_mmio_reg_write(struct qcom_swrm_ctrl *ctrl,
 	return 0;
 }
 
-static int qcom_swrm_slim_reg_write(struct qcom_swrm_ctrl *ctrl,
-				    int reg, int val)
+static int qcom_swrm_ahb_reg_write(struct qcom_swrm_ctrl *ctrl,
+				   int reg, int val)
 {
 	struct regmap *wcd_regmap = ctrl->regmap;
 	int ret;
-
 	/* pg register + offset */
 	ret = regmap_bulk_write(wcd_regmap, SWRM_AHB_BRIDGE_WR_DATA_0,
 			  (u8 *)&val, 4);
@@ -209,12 +191,10 @@ static int qcom_swrm_cmd_fifo_wr_cmd(struct qcom_swrm_ctrl *ctrl, u8 cmd_data,
 	ret = wait_for_completion_timeout(ctrl->comp,
 					  msecs_to_jiffies(TIMEOUT_MS));
 
-	if (!ret) {
+	if (!ret)
 		ret = SDW_CMD_IGNORED;
-		goto err;
-	} else {
+	else
 		ret = SDW_CMD_OK;
-	}
 err:
 	spin_lock_irqsave(&ctrl->comp_lock, flags);
 	ctrl->comp = NULL;
@@ -274,7 +254,7 @@ static void qcom_swrm_get_device_status(struct qcom_swrm_ctrl *ctrl)
 
 	ctrl->reg_read(ctrl, SWRM_MCP_SLV_STATUS, &val);
 
-	for (i = 1; i < SDW_MAX_DEVICES; i++) {
+	for (i = 0; i < SDW_MAX_DEVICES; i++) {
 		u32 s;
 
 		s = (val >> (i * 2));
@@ -300,12 +280,8 @@ static irqreturn_t qcom_swrm_irq_handler(int irq, void *dev_id)
 	}
 
 	if ((sts & SWRM_INTERRUPT_STATUS_NEW_SLAVE_ATTACHED) ||
-	    sts & SWRM_INTERRUPT_STATUS_CHANGE_ENUM_SLAVE_STATUS) {
-		if (sts & SWRM_INTERRUPT_STATUS_NEW_SLAVE_ATTACHED)
-			ctrl->status[0] = SDW_SLAVE_ATTACHED;
-
+	    sts & SWRM_INTERRUPT_STATUS_CHANGE_ENUM_SLAVE_STATUS)
 		schedule_work(&ctrl->slave_work);
-	}
 
 	ctrl->reg_write(ctrl, SWRM_INTERRUPT_CLEAR, sts);
 
@@ -638,25 +614,40 @@ static int qcom_swrm_hw_free(struct snd_pcm_substream *substream,
 	return 0;
 }
 
-static void *qcom_pdm_get_sdw_stream(struct snd_soc_dai *dai,
-				     int direction)
+static int qcom_swrm_set_sdw_stream(struct snd_soc_dai *dai,
+                                   void *stream, int direction)
 {
 	struct qcom_swrm_ctrl *ctrl = dev_get_drvdata(dai->dev);
 
-	return ctrl->sruntime[dai->id];
+	ctrl->sruntime[dai->id] = stream;
+
+	return 0;
 }
 
 static int qcom_swrm_startup(struct snd_pcm_substream *stream,
 			     struct snd_soc_dai *dai)
 {
 	struct qcom_swrm_ctrl *ctrl = dev_get_drvdata(dai->dev);
+	struct snd_soc_pcm_runtime *rtd = stream->private_data;
 	struct sdw_stream_runtime *sruntime;
+	int ret, i;
 
 	sruntime = sdw_alloc_stream(dai->name);
 	if (!sruntime)
 		return -ENOMEM;
 
 	ctrl->sruntime[dai->id] = sruntime;
+
+	for (i = 0; i < rtd->num_codecs; i++) {
+		ret = snd_soc_dai_set_sdw_stream(rtd->codec_dais[i], sruntime,
+						 stream->stream);
+		if (ret < 0 && ret != -ENOTSUPP) {
+			dev_err(dai->dev, "Failed to set sdw stream on %s",
+				rtd->codec_dais[i]->name);
+			sdw_release_stream(sruntime);
+			return ret;
+		}
+	}
 
 	return 0;
 }
@@ -676,7 +667,7 @@ static const struct snd_soc_dai_ops qcom_swrm_pdm_dai_ops = {
 	.hw_free = qcom_swrm_hw_free,
 	.startup = qcom_swrm_startup,
 	.shutdown = qcom_swrm_shutdown,
-	.get_sdw_stream = qcom_pdm_get_sdw_stream,
+        .set_sdw_stream = qcom_swrm_set_sdw_stream,
 };
 
 static const struct snd_soc_component_driver qcom_swrm_dai_component = {
@@ -688,27 +679,27 @@ static int qcom_swrm_register_dais(struct qcom_swrm_ctrl *ctrl)
 	int num_dais = ctrl->num_dout_ports + ctrl->num_din_ports;
 	struct snd_soc_dai_driver *dais;
 	struct snd_soc_pcm_stream *stream;
+	struct device *dev = ctrl->dev;
 	int i;
 
 	/* PDM dais are only tested for now */
-	dais = devm_kcalloc(ctrl->dev, num_dais, sizeof(*dais), GFP_KERNEL);
+	dais = devm_kcalloc(dev, num_dais, sizeof(*dais), GFP_KERNEL);
 	if (!dais)
 		return -ENOMEM;
 
 	for (i = 0; i < num_dais; i++) {
-		dais[i].name = devm_kasprintf(ctrl->dev, GFP_KERNEL,
-					      "SDW Pin%d", i);
+		dais[i].name = devm_kasprintf(dev, GFP_KERNEL, "SDW Pin%d", i);
 		if (!dais[i].name)
 			return -ENOMEM;
 
 		if (i < ctrl->num_dout_ports) {
 			stream = &dais[i].playback;
-			stream->stream_name = devm_kasprintf(ctrl->dev,
-							     GFP_KERNEL, "SDW Tx%d", i);
+			stream->stream_name = devm_kasprintf(dev, GFP_KERNEL,
+							     "SDW Tx%d", i);
 		} else {
 			stream = &dais[i].capture;
-			stream->stream_name = devm_kasprintf(ctrl->dev,
-							     GFP_KERNEL, "SDW Rx%d", i);
+			stream->stream_name = devm_kasprintf(dev, GFP_KERNEL,
+							     "SDW Rx%d", i);
 		}
 
 		if (!stream->stream_name)
@@ -802,8 +793,8 @@ static int qcom_swrm_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	if (dev->parent->bus == &slimbus_bus) {
-		ctrl->reg_read = qcom_swrm_slim_reg_read;
-		ctrl->reg_write = qcom_swrm_slim_reg_write;
+		ctrl->reg_read = qcom_swrm_abh_reg_read;
+		ctrl->reg_write = qcom_swrm_ahb_reg_write;
 		ctrl->regmap = dev_get_regmap(dev->parent, NULL);
 		if (!ctrl->regmap)
 			return -EINVAL;
@@ -816,7 +807,7 @@ static int qcom_swrm_probe(struct platform_device *pdev)
 			return PTR_ERR(ctrl->base);
 	}
 
-	ctrl->irq = platform_get_irq(pdev, 0);
+	ctrl->irq = of_irq_get(dev->of_node, 0);
 	if (ctrl->irq < 0)
 		return ctrl->irq;
 
