@@ -8,6 +8,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/of_irq.h>
 #include <linux/of_device.h>
 #include <linux/regmap.h>
 #include <linux/slab.h>
@@ -76,10 +77,10 @@
 #define SWRM_DP_PORT_CTRL_EN_CHAN_SHFT				0x18
 #define SWRM_DP_PORT_CTRL_OFFSET2_SHFT				0x10
 #define SWRM_DP_PORT_CTRL_OFFSET1_SHFT				0x08
-#define SWRM_AHB_BRIDGE_WR_DATA_0				0xc885
-#define SWRM_AHB_BRIDGE_WR_ADDR_0				0xc889
-#define SWRM_AHB_BRIDGE_RD_ADDR_0				0xc88d
-#define SWRM_AHB_BRIDGE_RD_DATA_0				0xc891
+#define SWRM_AHB_BRIDGE_WR_DATA_0				0xc85
+#define SWRM_AHB_BRIDGE_WR_ADDR_0				0xc89
+#define SWRM_AHB_BRIDGE_RD_ADDR_0				0xc8d
+#define SWRM_AHB_BRIDGE_RD_DATA_0				0xc91
 
 #define SWRM_REG_VAL_PACK(data, dev, id, reg)	\
 			((reg) | ((id) << 16) | ((dev) << 20) | ((data) << 24))
@@ -173,7 +174,6 @@ static int qcom_swrm_slim_reg_write(struct qcom_swrm_ctrl *ctrl,
 {
 	struct regmap *wcd_regmap = ctrl->regmap;
 	int ret;
-
 	/* pg register + offset */
 	ret = regmap_bulk_write(wcd_regmap, SWRM_AHB_BRIDGE_WR_DATA_0,
 			  (u8 *)&val, 4);
@@ -274,7 +274,7 @@ static void qcom_swrm_get_device_status(struct qcom_swrm_ctrl *ctrl)
 
 	ctrl->reg_read(ctrl, SWRM_MCP_SLV_STATUS, &val);
 
-	for (i = 1; i < SDW_MAX_DEVICES; i++) {
+	for (i = 0; i < SDW_MAX_DEVICES; i++) {
 		u32 s;
 
 		s = (val >> (i * 2));
@@ -300,12 +300,8 @@ static irqreturn_t qcom_swrm_irq_handler(int irq, void *dev_id)
 	}
 
 	if ((sts & SWRM_INTERRUPT_STATUS_NEW_SLAVE_ATTACHED) ||
-	    sts & SWRM_INTERRUPT_STATUS_CHANGE_ENUM_SLAVE_STATUS) {
-		if (sts & SWRM_INTERRUPT_STATUS_NEW_SLAVE_ATTACHED)
-			ctrl->status[0] = SDW_SLAVE_ATTACHED;
-
+	    sts & SWRM_INTERRUPT_STATUS_CHANGE_ENUM_SLAVE_STATUS)
 		schedule_work(&ctrl->slave_work);
-	}
 
 	ctrl->reg_write(ctrl, SWRM_INTERRUPT_CLEAR, sts);
 
@@ -816,7 +812,7 @@ static int qcom_swrm_probe(struct platform_device *pdev)
 			return PTR_ERR(ctrl->base);
 	}
 
-	ctrl->irq = platform_get_irq(pdev, 0);
+	ctrl->irq = of_irq_get(dev->of_node, 0);
 	if (ctrl->irq < 0)
 		return ctrl->irq;
 
