@@ -391,8 +391,7 @@ static inline void *snd_soc_dai_get_sdw_stream(struct snd_soc_dai *dai, int dire
 	if (dai->driver->ops->get_sdw_stream)
 		return dai->driver->ops->get_sdw_stream(dai, direction);
 	else
-		return NULL;
-
+		return ERR_PTR(-ENOTSUPP);
 }
 
 #endif
