@@ -115,7 +115,6 @@ int sdw_acpi_find_slaves(struct sdw_bus *bus)
 
 #endif
 
-#if IS_ENABLED(CONFIG_OF)
 /*
  * sdw_of_find_slaves() - Find Slave devices in master device tree node
  * @bus: SDW bus instance
@@ -127,40 +126,41 @@ int sdw_of_find_slaves(struct sdw_bus *bus)
 	struct device *dev = bus->dev;
 	struct device_node *node;
 
-	if (!bus->dev->of_node)
-		return 0;
-
 	for_each_child_of_node(bus->dev->of_node, node) {
-		struct sdw_slave_id id;
+		int link_id, sdw_version, ret, len;
 		const char *compat = NULL;
-		int unique_id, ret;
-		int ver, mfg_id, part_id, class_id;
+		struct sdw_slave_id id;
+		const __be32 *addr;
+
 		compat = of_get_property(node, "compatible", NULL);
 		if (!compat)
 			continue;
 
-		ret = sscanf(compat, "sdw%x,%x,%x,%x",
-			     &ver, &mfg_id, &part_id, &class_id);
+		ret = sscanf(compat, "sdw%01x%04hx%04hx%02hhx", &sdw_version,
+			     &id.mfg_id, &id.part_id, &id.class_id);
+
 		if (ret != 4) {
-			dev_err(dev, "Manf ID & Product code not found %s\n",
+			dev_err(dev, "Invalid compatible string found %s\n",
 				compat);
 			continue;
 		}
 
-		ret = of_property_read_u32(node, "sdw-instance-id", &unique_id);
-		if (ret) {
-			dev_err(dev, "Instance id not found:%d\n", ret);
+		addr = of_get_property(node, "reg", &len);
+		if (!addr || (len < 2 * sizeof(u32))) {
+			dev_err(dev, "Invalid Link and Instance ID\n");
 			continue;
 		}
 
-		id.sdw_version = ver - 0xF;
-		id.unique_id = unique_id;
-		id.mfg_id = mfg_id;
-		id.part_id = part_id;
-		id.class_id = class_id;
+		link_id = be32_to_cpup(addr++);
+		id.unique_id = be32_to_cpup(addr);
+		id.sdw_version = sdw_version;
+
+		/* Check for link_id match */
+		if (link_id != bus->link_id)
+			continue;
+
 		sdw_slave_add(bus, &id, of_fwnode_handle(node));
 	}
+
 	return 0;
 }
-
-#endif
