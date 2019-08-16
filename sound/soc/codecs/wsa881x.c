@@ -564,28 +564,28 @@ static struct sdw_dpn_prop wsa_sink_dpn_prop[WSA881X_MAX_SWR_PORTS] = {
 		.num = 1,
 		.type = SDW_DPN_SIMPLE,
 		.min_ch = 1,
-		.max_ch = 8,
+		.max_ch = 1,
 		.simple_ch_prep_sm = true,
 	}, {
 		/* COMP */
 		.num = 2,
 		.type = SDW_DPN_SIMPLE,
 		.min_ch = 1,
-		.max_ch = 8,
+		.max_ch = 1,
 		.simple_ch_prep_sm = true,
 	}, {
 		/* BOOST */
 		.num = 3,
 		.type = SDW_DPN_SIMPLE,
 		.min_ch = 1,
-		.max_ch = 8,
+		.max_ch = 1,
 		.simple_ch_prep_sm = true,
 	}, {
 		/* VISENSE */
 		.num = 4,
 		.type = SDW_DPN_SIMPLE,
 		.min_ch = 1,
-		.max_ch = 8,
+		.max_ch = 1,
 		.simple_ch_prep_sm = true,
 	}
 };
@@ -682,70 +682,58 @@ struct wsa881x_priv {
 	u8 pa_gain;
 };
 
-static void wsa881x_init(struct snd_soc_component *comp)
+static void wsa881x_init(struct wsa881x_priv *wsa881x)
 {
-	struct wsa881x_priv *wsa881x = snd_soc_component_get_drvdata(comp);
+	struct regmap *rm = wsa881x->regmap;
+	unsigned int val = 0;
 
-	wsa881x->version = snd_soc_component_read32(comp, WSA881X_CHIP_ID1);
-	regcache_cache_only(wsa881x->regmap, true);
-	regmap_multi_reg_write(wsa881x->regmap, wsa881x_rev_2_0,
+	regmap_read(rm, WSA881X_CHIP_ID1, &wsa881x->version);
+	regcache_cache_only(rm, true);
+	regmap_multi_reg_write(rm, wsa881x_rev_2_0,
 			       ARRAY_SIZE(wsa881x_rev_2_0));
-	regcache_cache_only(wsa881x->regmap, false);
+	regcache_cache_only(rm, false);
 	/* Enable software reset output from soundwire slave */
-	snd_soc_component_update_bits(comp, WSA881X_SWR_RESET_EN, 0x07, 0x07);
+	regmap_update_bits(rm, WSA881X_SWR_RESET_EN, 0x07, 0x07);
 	/* Bring out of analog reset */
-	snd_soc_component_update_bits(comp, WSA881X_CDC_RST_CTL, 0x02, 0x02);
+	regmap_update_bits(rm, WSA881X_CDC_RST_CTL, 0x02, 0x02);
 	/* Bring out of digital reset */
-	snd_soc_component_update_bits(comp, WSA881X_CDC_RST_CTL, 0x01, 0x01);
+	regmap_update_bits(rm, WSA881X_CDC_RST_CTL, 0x01, 0x01);
+	regmap_update_bits(rm, WSA881X_CLOCK_CONFIG, 0x10, 0x10);
+	regmap_update_bits(rm, WSA881X_SPKR_OCP_CTL, 0x02, 0x02);
+	regmap_update_bits(rm, WSA881X_SPKR_MISC_CTL1, 0xC0, 0x80);
+	regmap_update_bits(rm, WSA881X_SPKR_MISC_CTL1, 0x06, 0x06);
+	regmap_update_bits(rm, WSA881X_SPKR_BIAS_INT, 0xFF, 0x00);
+	regmap_update_bits(rm, WSA881X_SPKR_PA_INT, 0xF0, 0x40);
+	regmap_update_bits(rm, WSA881X_SPKR_PA_INT, 0x0E, 0x0E);
+	regmap_update_bits(rm, WSA881X_BOOST_LOOP_STABILITY, 0x03, 0x03);
+	regmap_update_bits(rm, WSA881X_BOOST_MISC2_CTL, 0xFF, 0x14);
+	regmap_update_bits(rm, WSA881X_BOOST_START_CTL, 0x80, 0x80);
+	regmap_update_bits(rm, WSA881X_BOOST_START_CTL, 0x03, 0x00);
+	regmap_update_bits(rm, WSA881X_BOOST_SLOPE_COMP_ISENSE_FB, 0x0C, 0x04);
+	regmap_update_bits(rm, WSA881X_BOOST_SLOPE_COMP_ISENSE_FB, 0x03, 0x00);
 
-	snd_soc_component_update_bits(comp, WSA881X_CLOCK_CONFIG, 0x10, 0x10);
-	snd_soc_component_update_bits(comp, WSA881X_SPKR_OCP_CTL, 0x02, 0x02);
-	snd_soc_component_update_bits(comp, WSA881X_SPKR_MISC_CTL1, 0xC0, 0x80);
-	snd_soc_component_update_bits(comp, WSA881X_SPKR_MISC_CTL1, 0x06, 0x06);
-	snd_soc_component_update_bits(comp, WSA881X_SPKR_BIAS_INT, 0xFF, 0x00);
-	snd_soc_component_update_bits(comp, WSA881X_SPKR_PA_INT, 0xF0, 0x40);
-	snd_soc_component_update_bits(comp, WSA881X_SPKR_PA_INT, 0x0E, 0x0E);
-	snd_soc_component_update_bits(comp, WSA881X_BOOST_LOOP_STABILITY,
-				      0x03, 0x03);
-	snd_soc_component_update_bits(comp, WSA881X_BOOST_MISC2_CTL,
-				      0xFF, 0x14);
-	snd_soc_component_update_bits(comp, WSA881X_BOOST_START_CTL,
-				      0x80, 0x80);
-	snd_soc_component_update_bits(comp, WSA881X_BOOST_START_CTL,
-				      0x03, 0x00);
-	snd_soc_component_update_bits(comp, WSA881X_BOOST_SLOPE_COMP_ISENSE_FB,
-				      0x0C, 0x04);
-	snd_soc_component_update_bits(comp, WSA881X_BOOST_SLOPE_COMP_ISENSE_FB,
-				      0x03, 0x00);
-	if (snd_soc_component_read32(comp, WSA881X_OTP_REG_0))
-		snd_soc_component_update_bits(comp, WSA881X_BOOST_PRESET_OUT1,
-					      0xF0, 0x70);
-	snd_soc_component_update_bits(comp, WSA881X_BOOST_PRESET_OUT2,
-				      0xF0, 0x30);
-	snd_soc_component_update_bits(comp, WSA881X_SPKR_DRV_EN, 0x08, 0x08);
-	snd_soc_component_update_bits(comp, WSA881X_BOOST_CURRENT_LIMIT,
-				      0x0F, 0x08);
-	snd_soc_component_update_bits(comp, WSA881X_SPKR_OCP_CTL, 0x30, 0x30);
-	snd_soc_component_update_bits(comp, WSA881X_SPKR_OCP_CTL, 0x0C, 0x00);
-	snd_soc_component_update_bits(comp, WSA881X_OTP_REG_28, 0x3F, 0x3A);
-	snd_soc_component_update_bits(comp, WSA881X_BONGO_RESRV_REG1,
-				      0xFF, 0xB2);
-	snd_soc_component_update_bits(comp, WSA881X_BONGO_RESRV_REG2,
-				      0xFF, 0x05);
+	regmap_read(rm, WSA881X_OTP_REG_0, &val);
+	if (val)
+		regmap_update_bits(rm, WSA881X_BOOST_PRESET_OUT1, 0xF0, 0x70);
+
+	regmap_update_bits(rm, WSA881X_BOOST_PRESET_OUT2, 0xF0, 0x30);
+	regmap_update_bits(rm, WSA881X_SPKR_DRV_EN, 0x08, 0x08);
+	regmap_update_bits(rm, WSA881X_BOOST_CURRENT_LIMIT, 0x0F, 0x08);
+	regmap_update_bits(rm, WSA881X_SPKR_OCP_CTL, 0x30, 0x30);
+	regmap_update_bits(rm, WSA881X_SPKR_OCP_CTL, 0x0C, 0x00);
+	regmap_update_bits(rm, WSA881X_OTP_REG_28, 0x3F, 0x3A);
+	regmap_update_bits(rm, WSA881X_BONGO_RESRV_REG1, 0xFF, 0xB2);
+	regmap_update_bits(rm, WSA881X_BONGO_RESRV_REG2, 0xFF, 0x05);
 }
 
 static int wsa881x_component_probe(struct snd_soc_component *comp)
 {
 	struct wsa881x_priv *wsa881x = snd_soc_component_get_drvdata(comp);
 
-	if (!wsa881x)
-		return -EINVAL;
-
 	snd_soc_component_init_regmap(comp, wsa881x->regmap);
-
 	mutex_init(&wsa881x->bg_lock);
 	mutex_init(&wsa881x->res_lock);
-	wsa881x_init(comp);
+	//wsa881x_init(wsa881x);
 	wsa881x->bg_cnt = 0;
 	wsa881x->clk_cnt = 0;
 
@@ -1059,22 +1047,8 @@ static int wsa881x_update_status(struct sdw_slave *slave,
 {
 	struct wsa881x_priv *wsa881x = dev_get_drvdata(&slave->dev);
 
-	if (status == SDW_SLAVE_ATTACHED) {
-		if (!wsa881x->regmap) {
-			wsa881x->regmap = devm_regmap_init_sdw(slave,
-						       &wsa881x_regmap_config);
-			if (IS_ERR(wsa881x->regmap)) {
-				dev_err(&slave->dev, "regmap_init failed\n");
-				return PTR_ERR(wsa881x->regmap);
-			}
-		}
-
-		return snd_soc_register_component(&slave->dev,
-						  &wsa881x_component_drv,
-						  NULL, 0);
-	} else if (status == SDW_SLAVE_UNATTACHED) {
-		snd_soc_unregister_component(&slave->dev);
-	}
+	if (status == SDW_SLAVE_ATTACHED && slave->dev_num > 0)
+		wsa881x_init(wsa881x);
 
 	return 0;
 }
@@ -1131,12 +1105,14 @@ static int wsa881x_probe(struct sdw_slave *pdev,
 	pdev->prop.sink_dpn_prop = wsa_sink_dpn_prop;
 	gpiod_set_value(wsa881x->sd_n, 1);
 
-	return 0;
-}
+	wsa881x->regmap = devm_regmap_init_sdw(pdev, &wsa881x_regmap_config);
+	if (IS_ERR(wsa881x->regmap)) {
+		dev_err(&pdev->dev, "regmap_init failed\n");
+		return PTR_ERR(wsa881x->regmap);
+	}
 
-static int wsa881x_remove(struct sdw_slave *sdw)
-{
-	return 0;
+	return devm_snd_soc_register_component(&pdev->dev,
+					       &wsa881x_component_drv, NULL, 0);
 }
 
 static const struct sdw_device_id wsa881x_slave_id[] = {
@@ -1147,7 +1123,6 @@ MODULE_DEVICE_TABLE(sdw, wsa881x_slave_id);
 
 static struct sdw_driver wsa881x_codec_driver = {
 	.probe	= wsa881x_probe,
-	.remove = wsa881x_remove,
 	.ops = &wsa881x_slave_ops,
 	.id_table = wsa881x_slave_id,
 	.driver = {
