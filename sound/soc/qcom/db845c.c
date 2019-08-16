@@ -390,7 +390,8 @@ static int db845c_snd_platform_probe(struct platform_device *pdev)
 	struct snd_soc_card *card;
 	struct db845c_data *data;
 	int ret;
-	card = kzalloc( sizeof(*card), GFP_KERNEL);
+
+	card = kzalloc(sizeof(*card), GFP_KERNEL);
 	if (!card)
 		return -ENOMEM;
 
