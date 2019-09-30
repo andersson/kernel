@@ -1211,21 +1211,9 @@ static void arm_smmu_test_smr_masks(struct arm_smmu_device *smmu)
 {
 	void __iomem *gr0_base = ARM_SMMU_GR0(smmu);
 	u32 smr;
-	int idx;
 
 	if (!smmu->smrs)
 		return;
-
-	for (idx = 0; idx < smmu->num_mapping_groups; idx++) {
-		smr = readl_relaxed(gr0_base + ARM_SMMU_GR0_SMR(idx));
-		if (!(smr & SMR_VALID))
-			break;
-	}
-
-	if (idx == smmu->num_mapping_groups) {
-		dev_err(smmu->dev, "Unable to compute streamid_mask\n");
-		return;
-	}
 
 	/*
 	 * SMR.ID bits may not be preserved if the corresponding MASK
@@ -1233,13 +1221,13 @@ static void arm_smmu_test_smr_masks(struct arm_smmu_device *smmu)
 	 * masters later if they try to claim IDs outside these masks.
 	 */
 	smr = smmu->streamid_mask << SMR_ID_SHIFT;
-	writel_relaxed(smr, gr0_base + ARM_SMMU_GR0_SMR(idx));
-	smr = readl_relaxed(gr0_base + ARM_SMMU_GR0_SMR(idx));
+	writel_relaxed(smr, gr0_base + ARM_SMMU_GR0_SMR(0));
+	smr = readl_relaxed(gr0_base + ARM_SMMU_GR0_SMR(0));
 	smmu->streamid_mask = smr >> SMR_ID_SHIFT;
 
 	smr = smmu->streamid_mask << SMR_MASK_SHIFT;
-	writel_relaxed(smr, gr0_base + ARM_SMMU_GR0_SMR(idx));
-	smr = readl_relaxed(gr0_base + ARM_SMMU_GR0_SMR(idx));
+	writel_relaxed(smr, gr0_base + ARM_SMMU_GR0_SMR(0));
+	smr = readl_relaxed(gr0_base + ARM_SMMU_GR0_SMR(0));
 	smmu->smr_mask_mask = smr >> SMR_MASK_SHIFT;
 }
 
