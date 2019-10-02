@@ -587,6 +587,9 @@ static int ath10k_qmi_host_cap_send_sync(struct ath10k_qmi *qmi)
 	struct qmi_txn txn;
 	int ret;
 
+	if (test_bit(ATH10K_SNOC_FLAG_SKIP_HOST_CAP_QUIRK, &ar_snoc->flags))
+		return 0;
+
 	req.daemon_support_valid = 1;
 	req.daemon_support = 0;
 
