@@ -712,6 +712,8 @@
 				 <&gcc GCC_APSS_TCU_CLK>;
 			clock-names = "iface", "bus";
 			#iommu-cells = <1>;
+
+			status = "disabled";
 		};
 
 		spmi_bus: spmi@200f000 {
@@ -1180,7 +1182,7 @@
 		};
 
 		remoteproc_cdsp: remoteproc@b00000 {
-			compatible = "qcom,qcs404-cdsp-pil";
+			compatible = "qcom,qcs404-cdsp-pas";
 			reg = <0x00b00000 0x4040>;
 
 			interrupts-extended = <&intc GIC_SPI 229 IRQ_TYPE_EDGE_RISING>,

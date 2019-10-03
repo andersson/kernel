@@ -1639,7 +1639,7 @@ static void ath10k_msa_dump_memory(struct ath10k *ar,
 	buf_len -= sizeof(*hdr);
 
 	hdr->region_type = cpu_to_le32(current_region->type);
-	hdr->start = cpu_to_le32(ar_snoc->qmi->msa_va);
+	hdr->start = cpu_to_le32((unsigned long)ar_snoc->qmi->msa_va);
 	hdr->length = cpu_to_le32(ar_snoc->qmi->msa_mem_size);
 
 	if (current_region->len < ar_snoc->qmi->msa_mem_size) {

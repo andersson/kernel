@@ -549,7 +549,7 @@ static int __init arm64_dma_init(void)
 }
 arch_initcall(arm64_dma_init);
 
-#define PREALLOC_DMA_DEBUG_ENTRIES	4096
+#define PREALLOC_DMA_DEBUG_ENTRIES	(10*4096)
 
 static int __init dma_debug_do_init(void)
 {

@@ -931,10 +931,10 @@ static int fastrpc_invoke_send(struct fastrpc_session_ctx *sctx,
 	fastrpc_context_get(ctx);
 	ret = rpmsg_send(cctx->rpdev->ept, (void *)msg, sizeof(*msg));
 	if (ret)
-		dev_err(fl->sctx->dev, "cpu_to_dsp:  sc 0x%09llx TX %s\n",
+		dev_err(fl->sctx->dev, "cpu_to_dsp:  sc 0x%09x TX %s\n",
 			msg->sc, "KO");
 	else
-		dev_dbg(fl->sctx->dev, "cpu_to_dsp:  sc 0x%09llx TX %s\n",
+		dev_dbg(fl->sctx->dev, "cpu_to_dsp:  sc 0x%09x TX %s\n",
 			msg->sc, "OK");
 
 	return ret;
@@ -980,12 +980,12 @@ static int fastrpc_internal_invoke(struct fastrpc_user *fl,  u32 kernel,
 	if (!kernel) {
 		err = fastrpc_restore_interrupted_context(fl, sc, &ctx);
 		if (err) {
-			dev_err(dev, "\t\tsc 0x%09llx RESTORE ERROR\n", sc);
+			dev_err(dev, "\t\tsc 0x%09x RESTORE ERROR\n", sc);
 			return -EIO;
 		}
 
 		if (ctx)  {
-			dev_dbg(dev, "\t\tsc 0x%09llx RESTORING\n", sc);
+			dev_dbg(dev, "\t\tsc 0x%09x RESTORING\n", sc);
 			goto wait;
 		}
 	}
@@ -1014,7 +1014,7 @@ wait:
 	else {
 		err = wait_for_completion_interruptible(&ctx->work);
 		if (err) {
-			dev_dbg(dev, "\t\tsc 0x%09llx INTERRUPTED\n", ctx->sc);
+			dev_dbg(dev, "\t\tsc 0x%09x INTERRUPTED\n", ctx->sc);
 			goto bail;
 		}
 	}
@@ -1035,9 +1035,9 @@ wait:
 bail:
 	/* do not access the ctx after fastrpc_context_put */
 	if (err)
-		dev_dbg(dev, "\t\tsc 0x%09llx RX KO [err 0x%x]\n", ctx->sc, err);
+		dev_dbg(dev, "\t\tsc 0x%09x RX KO [err 0x%x]\n", ctx->sc, err);
 	else
-		dev_dbg(dev, "\t\tsc 0x%09llx RX OK\n", ctx->sc);
+		dev_dbg(dev, "\t\tsc 0x%09x RX OK\n", ctx->sc);
 
 	if (err != -ERESTARTSYS) {
 		/* We are done with this compute context, remove it from pending
@@ -1446,7 +1446,7 @@ static int fastrpc_req_mmap(struct fastrpc_user *fl, char __user *argp)
 		goto err_invoke;
 	}
 
-	dev_dbg(fl->sctx->dev, "mmap\t\tpt 0x%09llx OK [len 0x%08llx]\n",
+	dev_dbg(fl->sctx->dev, "mmap\t\tpt 0x%09lx OK [len 0x%08llx]\n",
 		buf->raddr, buf->size);
 
 	spin_lock(&fl->lock);
@@ -1497,13 +1497,13 @@ static int fastrpc_req_munmap(struct fastrpc_user *fl, char __user *argp)
 	err = fastrpc_internal_invoke(fl, true, FASTRPC_INIT_HANDLE, sc,
 				      &args[0]);
 	if (!err) {
-		dev_dbg(fl->sctx->dev, "unmmap\tpt 0x%09llx OK\n", buf->raddr);
+		dev_dbg(fl->sctx->dev, "unmmap\tpt 0x%09lx OK\n", buf->raddr);
 		spin_lock(&fl->lock);
 		list_del(&buf->node);
 		spin_unlock(&fl->lock);
 		fastrpc_buf_free(buf);
 	} else
-		dev_err(fl->sctx->dev, "unmmap\tpt 0x%09llx ERROR\n", buf->raddr);
+		dev_err(fl->sctx->dev, "unmmap\tpt 0x%09lx ERROR\n", buf->raddr);
 
 	return err;
 }

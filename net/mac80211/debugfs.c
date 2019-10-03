@@ -184,14 +184,14 @@ static ssize_t txq_airtime_limit_read(struct file *file,
 	rcu_read_lock();
 	len = scnprintf(buf, sizeof(buf),
 			"TID	txq_airtime_limit\n"
-			"0	%u\n"
-			"1	%u\n"
-			"2	%u\n"
-			"3	%u\n"
-			"4	%u\n"
-			"5	%u\n"
-			"6	%u\n"
-			"7	%u\n",
+			"0	%lu\n"
+			"1	%lu\n"
+			"2	%lu\n"
+			"3	%lu\n"
+			"4	%lu\n"
+			"5	%lu\n"
+			"6	%lu\n"
+			"7	%lu\n",
 			local->txq_airtime_limit[0],
 			local->txq_airtime_limit[1],
 			local->txq_airtime_limit[2],
