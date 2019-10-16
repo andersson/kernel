@@ -20,6 +20,7 @@
 #include <dt-bindings/soc/qcom,rpmh-rsc.h>
 #include <dt-bindings/clock/qcom,gcc-sdm845.h>
 #include <dt-bindings/thermal/thermal.h>
+#include <dt-bindings/soc/qcom,apr.h>
 
 / {
 	interrupt-parent = <&intc>;
@@ -508,9 +509,61 @@
 					compatible = "qcom,fastrpc-compute-cb";
 					reg = <4>;
 					iommus = <&apps_smmu 0x1824 0x0>;
+
+				};
+			};
+			apr {
+				compatible = "qcom,apr-v2";
+				qcom,glink-channels = "apr_audio_svc";
+				qcom,apr-domain = <APR_DOMAIN_ADSP>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				qcom,intents = <512 20>;
+
+				q6core {
+					reg = <APR_SVC_ADSP_CORE>;
+					compatible = "qcom,q6core";
+				};
+
+				q6afe: q6afe {
+					compatible = "qcom,q6afe";
+					reg = <APR_SVC_AFE>;
+					q6afedai: dais {
+						compatible = "qcom,q6afe-dais";
+						#address-cells = <1>;
+						#size-cells = <0>;
+						#sound-dai-cells = <1>;
+
+						qi2s@22 {
+							reg = <22>;
+							qcom,sd-lines = <0 1 2 3>;
+						};
+					};
+				};
+
+				q6asm: q6asm {
+					compatible = "qcom,q6asm";
+					reg = <APR_SVC_ASM>;
+					q6asmdai: dais {
+						compatible = "qcom,q6asm-dais";
+						#sound-dai-cells = <1>;
+						iommus = <&apps_smmu 0x1821 0x0>;
+					};
+				};
+
+				q6adm: q6adm {
+					compatible = "qcom,q6adm";
+					reg = <APR_SVC_ADM>;
+					q6routing: routing {
+						compatible = "qcom,q6adm-routing";
+						#sound-dai-cells = <0>;
+					};
 				};
 			};
 		};
+	};
+
+	sound: sound {
 	};
 
 	cdsp_pas: remoteproc-cdsp {
@@ -1567,6 +1620,142 @@
 				};
 			};
 
+			quat_mi2s_sleep: quat_mi2s_sleep {
+				mux {
+					pins = "gpio58", "gpio59";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio58", "gpio59";
+					drive-strength = <2>;   /* 2 mA */
+					bias-pull-down;         /* PULL DOWN */
+					input-enable;
+				};
+			};
+
+			quat_mi2s_active: quat_mi2s_active {
+				mux {
+					pins = "gpio58", "gpio59";
+					function = "qua_mi2s";
+				};
+
+				config {
+					pins = "gpio58", "gpio59";
+					drive-strength = <8>;   /* 8 mA */
+					bias-disable;           /* NO PULL */
+					output-high;
+				};
+			};
+
+			quat_mi2s_sd0_sleep: quat_mi2s_sd0_sleep {
+				mux {
+					pins = "gpio60";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio60";
+					drive-strength = <2>;   /* 2 mA */
+					bias-pull-down;         /* PULL DOWN */
+					input-enable;
+				};
+			};
+
+			quat_mi2s_sd0_active: quat_mi2s_sd0_active {
+				mux {
+					pins = "gpio60";
+					function = "qua_mi2s";
+				};
+
+				config {
+					pins = "gpio60";
+					drive-strength = <8>;   /* 8 mA */
+					bias-disable;           /* NO PULL */
+				};
+			};
+
+			quat_mi2s_sd1_sleep: quat_mi2s_sd1_sleep {
+				mux {
+					pins = "gpio61";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio61";
+					drive-strength = <2>;   /* 2 mA */
+					bias-pull-down;         /* PULL DOWN */
+					input-enable;
+				};
+			};
+
+			quat_mi2s_sd1_active: quat_mi2s_sd1_active {
+				mux {
+					pins = "gpio61";
+					function = "qua_mi2s";
+				};
+
+				config {
+					pins = "gpio61";
+					drive-strength = <8>;   /* 8 mA */
+					bias-disable;           /* NO PULL */
+				};
+			};
+
+			quat_mi2s_sd2_sleep: quat_mi2s_sd2_sleep {
+				mux {
+					pins = "gpio62";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio62";
+					drive-strength = <2>;   /* 2 mA */
+					bias-pull-down;         /* PULL DOWN */
+					input-enable;
+				};
+			};
+
+			quat_mi2s_sd2_active: quat_mi2s_sd2_active {
+				mux {
+					pins = "gpio62";
+					function = "qua_mi2s";
+				};
+
+				config {
+					pins = "gpio62";
+					drive-strength = <8>;   /* 8 mA */
+					bias-disable;           /* NO PULL */
+				};
+			};
+
+			quat_mi2s_sd3_sleep: quat_mi2s_sd3_sleep {
+				mux {
+					pins = "gpio63";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio63";
+					drive-strength = <2>;   /* 2 mA */
+					bias-pull-down;         /* PULL DOWN */
+					input-enable;
+				};
+			};
+
+			quat_mi2s_sd3_active: quat_mi2s_sd3_active {
+				mux {
+					pins = "gpio63";
+					function = "qua_mi2s";
+				};
+
+				config {
+					pins = "gpio63";
+					drive-strength = <8>;   /* 8 mA */
+					bias-disable;           /* NO PULL */
+				};
+			};
+
 			qup_i2c12_default: qup-i2c12-default {
 				pinmux {
 					pins = "gpio49", "gpio50";
@@ -1832,6 +2021,59 @@
 				pinmux {
 					pins = "gpio83", "gpio84";
 					function = "qup15";
+				};
+			};
+
+			wcd_intr_default: wcd_intr_default{
+				pinmux {
+					pins = "gpio54";
+					function = "gpio";
+				};
+
+				pinconf {
+					pins = "gpio54";
+					drive-strength = <2>; /* 2 mA */
+					bias-pull-down; /* pull down */
+					input-enable;
+				};
+			};
+
+			cdc_reset_sleep: cdc_reset_sleep {
+				pinmux {
+					pins = "gpio64";
+					function = "gpio";
+				};
+				pinconf {
+					pins = "gpio64";
+					drive-strength = <2>;
+					bias-disable;
+					output-low;
+				};
+			};
+
+			cdc_reset_active:cdc_reset_active {
+				pinmux {
+					pins = "gpio64";
+					function = "gpio";
+				};
+				pinconf {
+					pins = "gpio64";
+					drive-strength = <8>;
+					bias-pull-down;
+					output-high;
+				};
+			};
+
+			audio_slimclk:slim_clk {
+				pinmux {
+					pins = "gpio70";
+					function = "gpio";
+				};
+				pinconf {
+					pins = "gpio70";
+					drive-strength = <16>;
+					bias-pull-down;
+					output-high;
 				};
 			};
 		};
@@ -2368,6 +2610,7 @@
 			clock-names = "iface", "core";
 			iommus = <&apps_smmu 0xa0 0xf>;
 
+
 			status = "disabled";
 		};
 
@@ -2383,11 +2626,155 @@
 			status = "disabled";
 		};
 
+		slim_msm: slim@171c0000 {
+			compatible = "qcom,slim-ngd-v2.1.0";
+			reg = <0 0x171c0000 0 0x2C000>;
+			reg-names = "ctrl";
+			interrupts = <0 163 IRQ_TYPE_LEVEL_HIGH>;
+
+			qcom,apps-ch-pipes = <0x780000>;
+			qcom,ea-pc = <0x270>;
+			status = "okay";
+			dmas =	<&slimbam 3>, <&slimbam 4>,
+				<&slimbam 5>, <&slimbam 6>;
+			dma-names = "rx", "tx", "tx2", "rx2";
+
+			iommus = <&apps_smmu 0x1806 0x0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			ngd@1 {
+				reg = <1>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+	
+				wcd9340_ifd: tas-ifd {
+					compatible = "slim217,250";
+					reg  = <0 0>;
+				};
+	
+				wcd9340: codec@1{
+					pinctrl-0 = <&wcd_intr_default>;
+					pinctrl-names = "default";
+					compatible = "slim217,250";
+					reg  = <1 0>;
+					reset-gpios = <&tlmm 64 0>;
+					slim-ifc-dev  = <&wcd9340_ifd>;	
+
+					#sound-dai-cells = <1>;
+
+					interrupt-parent = <&tlmm>;
+					interrupts = <54 IRQ_TYPE_LEVEL_HIGH>;
+					interrupt-controller;
+					#interrupt-cells = <1>;
+
+					#clock-cells = <0>;
+					clock-frequency = <9600000>;
+					clock-output-names = "mclk";
+					qcom,micbias1-microvolts = <1800000>;
+					qcom,micbias2-microvolts = <1800000>;
+					qcom,micbias3-microvolts = <1800000>;
+					qcom,micbias4-microvolts = <1800000>;
+				
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					wcdpinctrl: wcd-pinctrl@42 {
+						compatible = "qcom,wcd9340-pinctrl";
+						gpio-controller;
+						#gpio-cells = <2>;
+						gpio-ranges = <&wcdpinctrl 0 0 5>;
+						reg = <0x42 0x2>;
+
+						spkr_1_wcd_en_active: spkr_1_wcd_en_active {
+							mux {
+								pins = "gpio1";
+							};
+			
+							config {
+								pins = "gpio1";
+								output-high;
+							};
+						};
+			
+						spkr_1_wcd_en_sleep: spkr_1_wcd_en_sleep {
+							mux {
+								pins = "gpio1";
+							};
+			
+							config {
+								pins = "gpio1";
+								input-enable;
+							};
+						};
+			
+						spkr_2_wcd_en_active: spkr_2_sd_n_active {
+							mux {
+								pins = "gpio2";
+							};
+			
+							config {
+								pins = "gpio2";
+								output-high;
+							};
+						};
+			
+						spkr_2_wcd_en_sleep: spkr_2_sd_n_sleep {
+							mux {
+								pins = "gpio2";
+							};
+			
+							config {
+								pins = "gpio2";
+								input-enable;
+							};
+						};
+			
+						hph_en0_wcd_active: hph_en0_wcd_active {
+							mux {
+								pins = "gpio4";
+							};
+			
+							config {
+								pins = "gpio4";
+								output-high;
+							};
+						};
+
+					};
+
+					swm: swm@c85 {
+						compatible = "qcom,soundwire-v1.3.0";
+						reg = <0xc85 0x40>;
+						interrupt-parent = <&wcd9340>;
+						interrupts = <20 IRQ_TYPE_EDGE_RISING>;
+						interrupt-names = "soundwire";
+						pinctrl-0 = <&spkr_1_wcd_en_active &spkr_2_wcd_en_active>;
+						pinctrl-names = "default";
+
+						qcom,dout-ports	= <6>;
+						qcom,din-ports	= <2>;
+						qcom,ports-sinterval-low =/bits/ 8  <0x07 0x1F 0x3F 0x7 0x1F 0x3F 0x0F 0x0F>;
+						qcom,ports-offset1 = /bits/ 8 <0x01 0x02 0x0C 0x6 0x12 0x0D 0x07 0x0A >;
+						qcom,ports-offset2 = /bits/ 8 <0x00 0x00 0x1F 0x00 0x00 0x1F 0x00 0x00>;
+
+						#sound-dai-cells = <1>;
+						clocks = <&wcd9340>;
+						clock-names = "iface";
+                                                #address-cells = <2>;
+                                                #size-cells = <0>;
+
+
+					};
+				};
+			};
+		};
+
 		usb_1_hsphy: phy@88e2000 {
 			compatible = "qcom,sdm845-qusb2-phy";
 			reg = <0 0x088e2000 0 0x400>;
 			status = "disabled";
 			#phy-cells = <0>;
+
 
 			clocks = <&gcc GCC_USB_PHY_CFG_AHB2PHY_CLK>,
 				 <&rpmhcc RPMH_CXO_CLK>;
@@ -3198,6 +3585,18 @@
 				reg = <0 0x17a40000 0 0x20000>;
 				status = "disabled";
 			};
+		};
+
+		slimbam:bamdma@17184000 {
+			compatible = "qcom,bam-v1.7.0";
+			qcom,controlled-remotely;
+			reg = <0 0x17184000 0 0x2a000>;
+			num-channels  = <31>;
+			interrupts = <0 164 IRQ_TYPE_LEVEL_HIGH>;
+			#dma-cells = <1>;
+			qcom,ee = <1>;
+			qcom,num-ees = <2>;
+			iommus = <&apps_smmu 0x1806 0x0>;
 		};
 
 		timer@17c90000 {
