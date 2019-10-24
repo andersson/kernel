@@ -481,6 +481,8 @@ static int sdm845_snd_platform_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	int ret;
 
+	printk(KERN_ERR "%s()\n", __func__);
+
 	card = kzalloc(sizeof(*card), GFP_KERNEL);
 	if (!card)
 		return -ENOMEM;
@@ -511,6 +513,8 @@ static int sdm845_snd_platform_probe(struct platform_device *pdev)
 		dev_err(dev, "Sound card registration failed\n");
 		goto register_card_fail;
 	}
+
+	printk(KERN_ERR "%s() = %d\n", __func__, ret);
 	return ret;
 
 register_card_fail:
@@ -519,6 +523,7 @@ parse_dt_fail:
 	kfree(data);
 data_alloc_fail:
 	kfree(card);
+	printk(KERN_ERR "%s() = %d\n", __func__, ret);
 	return ret;
 }
 
