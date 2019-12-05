@@ -215,7 +215,7 @@ static const struct ipa_mem ipa_mem_data[] = {
 		.canary_count	= 2,
 	},
 	[IPA_MEM_V4_FILTER] = {
-		.offset		= 0x0290,
+		.offset		= 0x0288,
 		.size		= 0x0078,
 		.canary_count	= 2,
 	},
@@ -225,7 +225,7 @@ static const struct ipa_mem ipa_mem_data[] = {
 		.canary_count	= 2,
 	},
 	[IPA_MEM_V6_FILTER] = {
-		.offset		= 0x0318,
+		.offset		= 0x0310,
 		.size		= 0x0078,
 		.canary_count	= 2,
 	},
