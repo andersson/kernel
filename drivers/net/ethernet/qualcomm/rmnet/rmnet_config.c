@@ -135,18 +135,21 @@ static int rmnet_newlink(struct net *src_net, struct net_device *dev,
 	int err = 0;
 	u16 mux_id;
 
+	printk(KERN_ERR "%s()\n", __func__);
+
 	real_dev = __dev_get_by_index(src_net, nla_get_u32(tb[IFLA_LINK]));
 	if (!real_dev || !dev)
 		return -ENODEV;
 
-	if (!data[IFLA_RMNET_MUX_ID])
-		return -EINVAL;
+//	if (!data[IFLA_RMNET_MUX_ID])
+//		return -EINVAL;
 
 	ep = kzalloc(sizeof(*ep), GFP_ATOMIC);
 	if (!ep)
 		return -ENOMEM;
 
-	mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
+//	mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
+	mux_id = 1;
 
 	err = rmnet_register_real_device(real_dev);
 	if (err)
@@ -166,9 +169,12 @@ static int rmnet_newlink(struct net *src_net, struct net_device *dev,
 
 		flags = nla_data(data[IFLA_RMNET_FLAGS]);
 		data_format = flags->flags & flags->mask;
+
+		printk(KERN_ERR "%s() IFLA_RMNET_FLAGS: %#x:%#x\n", __func__, flags->flags, flags->mask);
 	}
 
-	netdev_dbg(dev, "data format [0x%08X]\n", data_format);
+	printk(KERN_ERR "data format [0x%08X]\n", data_format);
+	data_format = 0xd;
 	port->data_format = data_format;
 
 	return 0;
@@ -270,14 +276,16 @@ static struct notifier_block rmnet_dev_notifier __read_mostly = {
 static int rmnet_rtnl_validate(struct nlattr *tb[], struct nlattr *data[],
 			       struct netlink_ext_ack *extack)
 {
-	u16 mux_id;
+//	u16 mux_id;
 
-	if (!data || !data[IFLA_RMNET_MUX_ID])
-		return -EINVAL;
-
-	mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
-	if (mux_id > (RMNET_MAX_LOGICAL_EP - 1))
-		return -ERANGE;
+//	printk(KERN_ERR "%s() has_data: %d mux_id: %d\n", __func__, !!data, data ? data[IFLA_RMNET_MUX_ID] : 0);
+//
+//	if (!data || !data[IFLA_RMNET_MUX_ID])
+//		return 0; // return -EINVAL;
+//
+//	mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
+//	if (mux_id > (RMNET_MAX_LOGICAL_EP - 1))
+//		return -ERANGE;
 
 	return 0;
 }
@@ -303,8 +311,9 @@ static int rmnet_changelink(struct net_device *dev, struct nlattr *tb[],
 
 	port = rmnet_get_port_rtnl(real_dev);
 
-	if (data[IFLA_RMNET_MUX_ID]) {
-		mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
+	if (1 /* || data[IFLA_RMNET_MUX_ID]*/) {
+		// mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
+		mux_id = 1;
 		ep = rmnet_get_endpoint(port, priv->mux_id);
 		if (!ep)
 			return -ENODEV;
@@ -480,3 +489,4 @@ static void __exit rmnet_exit(void)
 module_init(rmnet_init)
 module_exit(rmnet_exit)
 MODULE_LICENSE("GPL v2");
+MODULE_ALIAS("rtnl-link-rmnet");

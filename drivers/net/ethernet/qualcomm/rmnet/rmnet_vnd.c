@@ -276,7 +276,7 @@ u8 rmnet_vnd_get_mux(struct net_device *rmnet_dev)
 
 int rmnet_vnd_do_flow_control(struct net_device *rmnet_dev, int enable)
 {
-	netdev_dbg(rmnet_dev, "Setting VND TX queue state to %d\n", enable);
+	printk(KERN_ERR "Setting VND TX queue state to %d\n", enable);
 	/* Although we expect similar number of enable/disable
 	 * commands, optimize for the disable. That is more
 	 * latency sensitive than enable

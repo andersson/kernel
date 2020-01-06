@@ -118,6 +118,7 @@ static irqreturn_t ipa_isr(int irq, void *dev_id)
 	u32 mask;
 
 	mask = ioread32(ipa->reg_virt + IPA_REG_IRQ_STTS_OFFSET);
+	printk(KERN_ERR "%s() %#x\n", __func__, mask);
 	if (mask & interrupt->enabled)
 		return IRQ_WAKE_THREAD;
 

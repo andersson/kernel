@@ -1447,7 +1447,7 @@
 		ipa@1e40000 {
 			compatible = "qcom,sdm845-ipa";
 
-			modem-init;
+			// modem-init;
 			modem-remoteproc = <&mss_pil>;
 
 			reg = <0 0x1e40000 0 0x7000>,
@@ -1456,6 +1456,8 @@
 			reg-names = "ipa-reg",
 				    "ipa-shared",
 				    "gsi";
+
+			memory-region = <&ipa_fw_mem>;
 
 			interrupts-extended =
 					<&intc 0 311 IRQ_TYPE_EDGE_RISING>,
@@ -1477,6 +1479,8 @@
 			interconnect-names = "memory",
 					     "imem",
 					     "config";
+
+			iommus = <&apps_smmu 0x720 0x0>;
 
 			qcom,smem-states = <&ipa_smp2p_out 0>,
 					   <&ipa_smp2p_out 1>;
