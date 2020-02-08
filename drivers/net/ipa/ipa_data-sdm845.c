@@ -74,7 +74,7 @@ static const struct ipa_gsi_endpoint_data ipa_gsi_endpoint_data[] = {
 				.tx = {
 					.status_endpoint =
 						IPA_ENDPOINT_MODEM_AP_RX,
-					.delay	= true,
+					.delay	= false,
 				},
 			},
 		},
