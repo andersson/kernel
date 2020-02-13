@@ -23,7 +23,7 @@
 	};
 
 	panel {
-		compatible = "ivo,m133nwf4-r0";
+		compatible = "ivo,nv133fhm-n61";
 		power-supply = <&vlcm_3v3>;
 		no-hpd;
 
