@@ -1761,6 +1761,7 @@
 
 		ipa: ipa@1e40000 {
 			compatible = "qcom,sdm845-ipa";
+
 			reg = <0 0x1e40000 0 0x7000>,
 			      <0 0x1e47000 0 0x2000>,
 			      <0 0x1e04000 0 0x2c000>;
@@ -1786,6 +1787,10 @@
 			interconnect-names = "memory",
 					     "imem",
 					     "config";
+
+			memory-region = <&ipa_fw_mem>;
+
+			iommus = <&apps_smmu 0x720 0x0>;
 
 			qcom,smem-states = <&ipa_smp2p_out 0>,
 					   <&ipa_smp2p_out 1>;
