@@ -131,7 +131,11 @@ static int rmnet_newlink(struct net *src_net, struct net_device *dev,
 	if (!ep)
 		return -ENOMEM;
 
-	mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
+//	if (!data[IFLA_RMNET_MUX_ID])
+//		return -EINVAL;
+//
+//	mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
+	mux_id = 1;
 
 	err = rmnet_register_real_device(real_dev);
 	if (err)
@@ -159,6 +163,7 @@ static int rmnet_newlink(struct net *src_net, struct net_device *dev,
 	}
 
 	netdev_dbg(dev, "data format [0x%08X]\n", data_format);
+	data_format = 0xd;
 	port->data_format = data_format;
 
 	return 0;
@@ -260,18 +265,18 @@ static struct notifier_block rmnet_dev_notifier __read_mostly = {
 static int rmnet_rtnl_validate(struct nlattr *tb[], struct nlattr *data[],
 			       struct netlink_ext_ack *extack)
 {
-	u16 mux_id;
-
-	if (!data || !data[IFLA_RMNET_MUX_ID]) {
-		NL_SET_ERR_MSG_MOD(extack, "MUX ID not specified");
-		return -EINVAL;
-	}
-
-	mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
-	if (mux_id > (RMNET_MAX_LOGICAL_EP - 1)) {
-		NL_SET_ERR_MSG_MOD(extack, "invalid MUX ID");
-		return -ERANGE;
-	}
+//	u16 mux_id;
+//
+//	if (!data || !data[IFLA_RMNET_MUX_ID]) {
+//		NL_SET_ERR_MSG_MOD(extack, "MUX ID not specified");
+//		return -EINVAL;
+//	}
+//
+//	mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
+//	if (mux_id > (RMNET_MAX_LOGICAL_EP - 1)) {
+//		NL_SET_ERR_MSG_MOD(extack, "invalid MUX ID");
+//		return -ERANGE;
+//	}
 
 	return 0;
 }
@@ -294,8 +299,10 @@ static int rmnet_changelink(struct net_device *dev, struct nlattr *tb[],
 
 	port = rmnet_get_port_rtnl(real_dev);
 
-	if (data[IFLA_RMNET_MUX_ID]) {
-		mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
+//	if (data[IFLA_RMNET_MUX_ID]) {
+//		mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
+	if (1) {
+		mux_id = 1;
 
 		if (mux_id != priv->mux_id) {
 			struct rmnet_endpoint *ep;
