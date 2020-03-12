@@ -1707,6 +1707,7 @@
 			};
 		};
 
+#if 0
 		ipa@1e40000 {
 			compatible = "qcom,sdm845-ipa";
 
@@ -1746,6 +1747,7 @@
 			qcom,smem-state-names = "ipa-clock-enabled-valid",
 						"ipa-clock-enabled";
 		};
+#endif
 
 		tcsr_mutex_regs: syscon@1f40000 {
 			compatible = "syscon";
