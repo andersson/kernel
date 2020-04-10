@@ -18,6 +18,8 @@
 #include <linux/remoteproc.h>
 #include <linux/qcom_scm.h>
 #include <linux/soc/qcom/mdt_loader.h>
+#include <linux/iommu.h>
+#include <linux/soc/qcom/smem.h>
 
 #include "ipa.h"
 #include "ipa_clock.h"
@@ -713,6 +715,7 @@ static int ipa_probe(struct platform_device *pdev)
 	phandle phandle;
 	bool prefetch;
 	int ret;
+	struct iommu_domain *domain;
 
 	ipa_validate_build();
 
@@ -813,6 +816,12 @@ static int ipa_probe(struct platform_device *pdev)
 		goto err_modem_exit;
 
 	dev_info(dev, "IPA driver initialized");
+
+	qcom_smem_alloc(1, 497, 8192);
+
+	domain = iommu_get_domain_for_dev(&pdev->dev);
+	iommu_map(domain, 0x86000000, 0x86000000, 0x200000, IOMMU_READ | IOMMU_WRITE);
+	iommu_map(domain, 0x146bd000, 0x146bd000, 0x2000, IOMMU_READ | IOMMU_WRITE);
 
 	/* If the modem is doing early initialization, it will trigger a
 	 * call to ipa_setup() call when it has finished.  In that case
