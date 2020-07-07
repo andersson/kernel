@@ -3,6 +3,7 @@
  * Copyright (c) 2015, The Linux Foundation. All rights reserved.
  */
 
+#include <drm/drm_bridge_connector.h>
 #include "msm_kms.h"
 #include "dsi.h"
 
@@ -689,7 +690,7 @@ struct drm_bridge *msm_dsi_manager_bridge_init(u8 id)
 	bridge = &dsi_bridge->base;
 	bridge->funcs = &dsi_mgr_bridge_funcs;
 
-	ret = drm_bridge_attach(encoder, bridge, NULL, 0);
+	ret = drm_bridge_attach(encoder, bridge, NULL, DRM_BRIDGE_ATTACH_NO_CONNECTOR);
 	if (ret)
 		goto fail;
 
@@ -709,7 +710,6 @@ struct drm_connector *msm_dsi_manager_ext_bridge_init(u8 id)
 	struct drm_encoder *encoder;
 	struct drm_bridge *int_bridge, *ext_bridge;
 	struct drm_connector *connector;
-	struct list_head *connector_list;
 
 	int_bridge = msm_dsi->bridge;
 	ext_bridge = msm_dsi->external_bridge =
@@ -717,22 +717,21 @@ struct drm_connector *msm_dsi_manager_ext_bridge_init(u8 id)
 
 	encoder = msm_dsi->encoder;
 
-	/* link the internal dsi bridge to the external bridge */
-	drm_bridge_attach(encoder, ext_bridge, int_bridge, 0);
-
-	/*
-	 * we need the drm_connector created by the external bridge
-	 * driver (or someone else) to feed it to our driver's
-	 * priv->connector[] list, mainly for msm_fbdev_init()
+	/* link the internal dsi bridge to the external bridge and attach
+	 * the connector, we are supporting DRM_BRIDGE_ATTACH_NO_CONNECTOR
+	 * so always create connector
 	 */
-	connector_list = &dev->mode_config.connector_list;
+	drm_bridge_attach(encoder, ext_bridge, int_bridge, DRM_BRIDGE_ATTACH_NO_CONNECTOR);
 
-	list_for_each_entry(connector, connector_list, head) {
-		if (drm_connector_has_possible_encoder(connector, encoder))
-			return connector;
+	connector = drm_bridge_connector_init(dev, encoder);
+	if (IS_ERR(connector)) {
+		DRM_DEV_ERROR(dev->dev, "drm_bridge_connector_init failed: %ld\n",
+			      PTR_ERR(connector));
+		return ERR_PTR(-ENODEV);
 	}
 
-	return ERR_PTR(-ENODEV);
+	drm_connector_attach_encoder(connector, msm_dsi->encoder);
+	return connector;
 }
 
 void msm_dsi_manager_bridge_destroy(struct drm_bridge *bridge)

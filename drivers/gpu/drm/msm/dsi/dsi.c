@@ -219,12 +219,7 @@ int msm_dsi_modeset_init(struct msm_dsi *msm_dsi, struct drm_device *dev,
 		goto fail;
 	}
 
-	/*
-	 * check if the dsi encoder output is connected to a panel or an
-	 * external bridge. We create a connector only if we're connected to a
-	 * drm_panel device. When we're connected to an external bridge, we
-	 * assume that the drm_bridge driver will create the connector itself.
-	 */
+	/* Initialize the internal panel or external bridge */
 	ext_bridge = msm_dsi_host_get_bridge(msm_dsi->host);
 
 	if (ext_bridge)
