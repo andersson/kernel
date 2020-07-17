@@ -537,4 +537,6 @@ struct arm_smmu_device *qcom_adreno_smmu_impl_init(struct arm_smmu_device *smmu)
 void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx);
 int arm_mmu500_reset(struct arm_smmu_device *smmu);
 
+struct iommu_domain *arm_smmu_alloc_identity_domain(struct arm_smmu_device *smmu);
+
 #endif /* _ARM_SMMU_H */
