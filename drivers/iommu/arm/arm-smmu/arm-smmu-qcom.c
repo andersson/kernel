@@ -11,7 +11,13 @@
 
 struct qcom_smmu {
 	struct arm_smmu_device smmu;
+	bool bypass_broken;
 };
+
+static struct qcom_smmu *to_qcom_smmu(struct arm_smmu_device *smmu)
+{
+	return container_of(smmu, struct qcom_smmu, smmu);
+}
 
 #define QCOM_ADRENO_SMMU_GPU_SID 0
 
@@ -162,6 +168,50 @@ static const struct of_device_id qcom_smmu_client_of_match[] __maybe_unused = {
 	{ }
 };
 
+static int qcom_smmu_alloc_context_bank(struct arm_smmu_domain *smmu_domain,
+					struct arm_smmu_device *smmu,
+					struct device *dev, int start)
+{
+	struct iommu_domain *domain = &smmu_domain->domain;
+	struct qcom_smmu *qsmmu = to_qcom_smmu(smmu);
+
+	/* Keep identity domains as bypass, unless bypass is broken */
+	if (domain->type == IOMMU_DOMAIN_IDENTITY && !qsmmu->bypass_broken)
+		return ARM_SMMU_CBNDX_BYPASS;
+
+	/*
+	 * The identity domain to emulate bypass is the only domain without a
+	 * dev, use the last context bank for this to avoid collisions with
+	 * active contexts during initialization.
+	 */
+	if (!dev)
+		start = smmu->num_context_banks - 1;
+
+	return __arm_smmu_alloc_bitmap(smmu->context_map, start, smmu->num_context_banks);
+}
+
+static int qcom_smmu_cfg_probe(struct arm_smmu_device *smmu)
+{
+	unsigned int last_s2cr = ARM_SMMU_GR0_S2CR(smmu->num_mapping_groups - 1);
+	struct qcom_smmu *qsmmu = to_qcom_smmu(smmu);
+	u32 reg;
+
+	/*
+	 * With some firmware writes to S2CR of type FAULT are ignored, and
+	 * writing BYPASS will end up as FAULT in the register. Perform a write
+	 * to S2CR to detect if this is the case with the current firmware.
+	 */
+	reg = FIELD_PREP(ARM_SMMU_S2CR_TYPE, S2CR_TYPE_BYPASS) |
+	      FIELD_PREP(ARM_SMMU_S2CR_CBNDX, 0xff) |
+	      FIELD_PREP(ARM_SMMU_S2CR_PRIVCFG, S2CR_PRIVCFG_DEFAULT);
+	arm_smmu_gr0_write(smmu, last_s2cr, reg);
+	reg = arm_smmu_gr0_read(smmu, last_s2cr);
+	if (FIELD_GET(ARM_SMMU_S2CR_TYPE, reg) != S2CR_TYPE_BYPASS)
+		qsmmu->bypass_broken = true;
+
+	return 0;
+}
+
 static int qcom_smmu_def_domain_type(struct device *dev)
 {
 	const struct of_device_id *match =
@@ -200,6 +250,8 @@ static int qcom_smmu500_reset(struct arm_smmu_device *smmu)
 }
 
 static const struct arm_smmu_impl qcom_smmu_impl = {
+	.alloc_context_bank = qcom_smmu_alloc_context_bank,
+	.cfg_probe = qcom_smmu_cfg_probe,
 	.def_domain_type = qcom_smmu_def_domain_type,
 	.reset = qcom_smmu500_reset,
 };
