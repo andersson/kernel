@@ -85,11 +85,6 @@ static inline void arm_smmu_rpm_put(struct arm_smmu_device *smmu)
 		pm_runtime_put_autosuspend(smmu->dev);
 }
 
-static struct arm_smmu_domain *to_smmu_domain(struct iommu_domain *dom)
-{
-	return container_of(dom, struct arm_smmu_domain, domain);
-}
-
 static struct platform_driver arm_smmu_driver;
 static struct iommu_ops arm_smmu_ops;
 
@@ -2187,6 +2182,12 @@ static int arm_smmu_device_probe(struct platform_device *pdev)
 	err = arm_smmu_device_cfg_probe(smmu);
 	if (err)
 		return err;
+
+	if (smmu->impl->inherit_mappings) {
+		err = smmu->impl->inherit_mappings(smmu);
+		if (err)
+			return err;
+	}
 
 	if (smmu->version == ARM_SMMU_V2) {
 		if (smmu->num_context_banks > smmu->num_context_irqs) {
