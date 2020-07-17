@@ -12,6 +12,7 @@
 struct qcom_smmu {
 	struct arm_smmu_device smmu;
 	bool bypass_broken;
+	struct iommu_domain *identity;
 };
 
 static struct qcom_smmu *to_qcom_smmu(struct arm_smmu_device *smmu)
@@ -228,6 +229,37 @@ static int qcom_smmu_cfg_probe(struct arm_smmu_device *smmu)
 	return 0;
 }
 
+static int qcom_smmu_inherit_mappings(struct arm_smmu_device *smmu)
+{
+	struct qcom_smmu *qsmmu = to_qcom_smmu(smmu);
+	int cbndx;
+	u32 smr;
+	int i;
+
+	qsmmu->identity = arm_smmu_alloc_identity_domain(smmu);
+	if (IS_ERR(qsmmu->identity))
+		return PTR_ERR(qsmmu->identity);
+
+	cbndx = to_smmu_domain(qsmmu->identity)->cfg.cbndx;
+
+	for (i = 0; i < smmu->num_mapping_groups; i++) {
+		smr = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_SMR(i));
+
+		if (FIELD_GET(ARM_SMMU_SMR_VALID, smr)) {
+			smmu->smrs[i].id = FIELD_GET(ARM_SMMU_SMR_ID, smr);
+			smmu->smrs[i].mask = FIELD_GET(ARM_SMMU_SMR_MASK, smr);
+			smmu->smrs[i].valid = true;
+
+			smmu->s2crs[i].type = S2CR_TYPE_TRANS;
+			smmu->s2crs[i].privcfg = S2CR_PRIVCFG_DEFAULT;
+			smmu->s2crs[i].cbndx = cbndx;
+			smmu->s2crs[i].count++;
+		}
+	}
+
+	return 0;
+}
+
 static int qcom_smmu_def_domain_type(struct device *dev)
 {
 	const struct of_device_id *match =
@@ -270,6 +302,7 @@ static const struct arm_smmu_impl qcom_smmu_impl = {
 	.cfg_probe = qcom_smmu_cfg_probe,
 	.def_domain_type = qcom_smmu_def_domain_type,
 	.reset = qcom_smmu500_reset,
+	.inherit_mappings = qcom_smmu_inherit_mappings,
 };
 
 static const struct arm_smmu_impl qcom_adreno_smmu_impl = {
