@@ -311,7 +311,7 @@ static int ti_sn_bridge_connector_init(struct drm_bridge *bridge)
 static int ti_sn_bridge_attach(struct drm_bridge *bridge,
 			       enum drm_bridge_attach_flags flags)
 {
-	int ret, val;
+	int ret = 0, val;
 	struct ti_sn_bridge *pdata = bridge_to_ti_sn_bridge(bridge);
 	struct mipi_dsi_host *host;
 	struct mipi_dsi_device *dsi;
@@ -320,14 +320,11 @@ static int ti_sn_bridge_attach(struct drm_bridge *bridge,
 						   .node = NULL,
 						 };
 
-	if (flags & DRM_BRIDGE_ATTACH_NO_CONNECTOR) {
-		DRM_ERROR("Fix display driver to make connector optional!");
-		return -EINVAL;
+	if (!(flags & DRM_BRIDGE_ATTACH_NO_CONNECTOR)) {
+		ret = ti_sn_bridge_connector_init(bridge);
+		if (ret < 0)
+			return ret;
 	}
-
-	ret = ti_sn_bridge_connector_init(bridge);
-	if (ret < 0)
-		return ret;
 
 	/*
 	 * TODO: ideally finding host resource and dsi dev registration needs
