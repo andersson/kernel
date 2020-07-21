@@ -288,6 +288,26 @@ static int ti_sn_bridge_parse_regulators(struct ti_sn_bridge *pdata)
 				       pdata->supplies);
 }
 
+static int ti_sn_bridge_connector_init(struct drm_bridge *bridge)
+{
+	struct ti_sn_bridge *pdata = bridge_to_ti_sn_bridge(bridge);
+	int ret;
+
+	ret = drm_connector_init(bridge->dev, &pdata->connector,
+				 &ti_sn_bridge_connector_funcs,
+				 DRM_MODE_CONNECTOR_eDP);
+	if (ret) {
+		DRM_ERROR("Failed to initialize connector with drm\n");
+		return ret;
+	}
+
+	drm_connector_helper_add(&pdata->connector,
+				 &ti_sn_bridge_connector_helper_funcs);
+	drm_connector_attach_encoder(&pdata->connector, bridge->encoder);
+
+	return 0;
+}
+
 static int ti_sn_bridge_attach(struct drm_bridge *bridge,
 			       enum drm_bridge_attach_flags flags)
 {
@@ -301,21 +321,13 @@ static int ti_sn_bridge_attach(struct drm_bridge *bridge,
 						 };
 
 	if (flags & DRM_BRIDGE_ATTACH_NO_CONNECTOR) {
-		DRM_ERROR("Fix bridge driver to make connector optional!");
+		DRM_ERROR("Fix display driver to make connector optional!");
 		return -EINVAL;
 	}
 
-	ret = drm_connector_init(bridge->dev, &pdata->connector,
-				 &ti_sn_bridge_connector_funcs,
-				 DRM_MODE_CONNECTOR_eDP);
-	if (ret) {
-		DRM_ERROR("Failed to initialize connector with drm\n");
+	ret = ti_sn_bridge_connector_init(bridge);
+	if (ret < 0)
 		return ret;
-	}
-
-	drm_connector_helper_add(&pdata->connector,
-				 &ti_sn_bridge_connector_helper_funcs);
-	drm_connector_attach_encoder(&pdata->connector, bridge->encoder);
 
 	/*
 	 * TODO: ideally finding host resource and dsi dev registration needs
