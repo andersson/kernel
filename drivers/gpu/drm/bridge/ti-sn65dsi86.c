@@ -807,12 +807,33 @@ static void ti_sn_bridge_post_disable(struct drm_bridge *bridge)
 	pm_runtime_put_sync(pdata->dev);
 }
 
+static enum drm_mode_status
+ti_sn_bridge_mode_valid(struct drm_bridge *bridge,
+				  const struct drm_display_mode *mode)
+{
+	/* maximum supported resolution is 4K at 60 fps */
+	if (mode->clock > 594000)
+		return MODE_CLOCK_HIGH;
+
+	return MODE_OK;
+}
+
+static int ti_sn_bridge_get_modes(struct drm_bridge *bridge,
+				  struct drm_connector *connector)
+{
+	struct ti_sn_bridge *pdata = connector_to_ti_sn_bridge(connector);
+
+	return drm_panel_get_modes(pdata->panel, connector);
+}
+
 static const struct drm_bridge_funcs ti_sn_bridge_funcs = {
 	.attach = ti_sn_bridge_attach,
 	.pre_enable = ti_sn_bridge_pre_enable,
 	.enable = ti_sn_bridge_enable,
 	.disable = ti_sn_bridge_disable,
 	.post_disable = ti_sn_bridge_post_disable,
+	.mode_valid = ti_sn_bridge_mode_valid,
+	.get_modes = ti_sn_bridge_get_modes,
 };
 
 static struct ti_sn_bridge *aux_to_ti_sn_bridge(struct drm_dp_aux *aux)
