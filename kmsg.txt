@@ -1,0 +1,788 @@
+[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x517f803c]
+[    0.000000] Linux version 5.8.0-rc4-IPA-Vinod-00020-gcd132e68cf79 (bjorn@builder) (aarch64-linux-gnu-gcc (GCC) 10.1.0, GNU ld (GNU Binutils) 2.34) #418 SMP PREEMPT Tue Jul 21 21:10:46 PDT 2020
+[    0.000000] Machine model: Lenovo Yoga C630
+[    0.000000] efi: EFI v2.60 by American Megatrends
+[    0.000000] efi: ACPI 2.0=0xffffd000 ESRT=0xdc65a498 SMBIOS=0xffe09000 MEMATTR=0xdc37e018 TPMEventLog=0xbb3f8018 RNG=0xe291bc18 MEMRESERVE=0xbb3fcf18 
+[    0.000000] efi: seeding entropy pool
+[    0.000000] [Firmware Bug]: TPM Final Events table missing or invalid
+[    0.000000] esrt: Reserving ESRT space from 0x00000000dc65a498 to 0x00000000dc65a4d0.
+[    0.000000] cma: Reserved 32 MiB at 0x00000000df800000
+[    0.000000] NUMA: No NUMA configuration found
+[    0.000000] NUMA: Faking a node at [mem 0x0000000080000000-0x000000027c79ffff]
+[    0.000000] NUMA: NODE_DATA [mem 0x27b8d1100-0x27b8d2fff]
+[    0.000000] Zone ranges:
+[    0.000000]   DMA      [mem 0x0000000080000000-0x00000000bfffffff]
+[    0.000000]   DMA32    [mem 0x00000000c0000000-0x00000000ffffffff]
+[    0.000000]   Normal   [mem 0x0000000100000000-0x000000027c79ffff]
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x0000000080000000-0x00000000803fffff]
+[    0.000000]   node   0: [mem 0x0000000080400000-0x0000000080d5ffff]
+[    0.000000]   node   0: [mem 0x0000000081ac0000-0x00000000856fffff]
+[    0.000000]   node   0: [mem 0x0000000085d00000-0x0000000085dfffff]
+[    0.000000]   node   0: [mem 0x0000000085f00000-0x0000000085f0ffff]
+[    0.000000]   node   0: [mem 0x0000000085f10000-0x0000000085fbffff]
+[    0.000000]   node   0: [mem 0x000000008c417000-0x000000008c4fffff]
+[    0.000000]   node   0: [mem 0x0000000097c00000-0x00000000994fffff]
+[    0.000000]   node   0: [mem 0x0000000099500000-0x000000009ffcffff]
+[    0.000000]   node   0: [mem 0x000000009ffd0000-0x000000009ffd9fff]
+[    0.000000]   node   0: [mem 0x000000009ffdd000-0x000000009fffffff]
+[    0.000000]   node   0: [mem 0x00000000a0000000-0x00000000e1b39fff]
+[    0.000000]   node   0: [mem 0x00000000e1b3a000-0x00000000ffe59fff]
+[    0.000000]   node   0: [mem 0x00000000ffe5a000-0x000000027c79ffff]
+[    0.000000] Zeroed struct page in unavailable ranges: 598 pages
+[    0.000000] Initmem setup node 0 [mem 0x0000000080000000-0x000000027c79ffff]
+[    0.000000] On node 0 totalpages: 2004966
+[    0.000000]   DMA zone: 2882 pages used for memmap
+[    0.000000]   DMA zone: 0 pages reserved
+[    0.000000]   DMA zone: 184390 pages, LIFO batch:63
+[    0.000000]   DMA32 zone: 4096 pages used for memmap
+[    0.000000]   DMA32 zone: 262144 pages, LIFO batch:63
+[    0.000000]   Normal zone: 24351 pages used for memmap
+[    0.000000]   Normal zone: 1558432 pages, LIFO batch:63
+[    0.000000] psci: probing for conduit method from DT.
+[    0.000000] psci: PSCIv1.1 detected in firmware.
+[    0.000000] psci: Using standard PSCI v0.2 function IDs
+[    0.000000] psci: MIGRATE_INFO_TYPE not supported.
+[    0.000000] psci: SMC Calling Convention v1.1
+[    0.000000] psci: OSI mode supported.
+[    0.000000] percpu: Embedded 23 pages/cpu s53912 r8192 d32104 u94208
+[    0.000000] pcpu-alloc: s53912 r8192 d32104 u94208 alloc=23*4096
+[    0.000000] pcpu-alloc: [0] 0 [0] 1 [0] 2 [0] 3 [0] 4 [0] 5 [0] 6 [0] 7 
+[    0.000000] Detected VIPT I-cache on CPU0
+[    0.000000] CPU features: detected: GIC system register CPU interface
+[    0.000000] CPU features: kernel page table isolation forced ON by KASLR
+[    0.000000] CPU features: detected: Kernel page table isolation (KPTI)
+[    0.000000] CPU features: detected: Hardware dirty bit management
+[    0.000000] Speculative Store Bypass Disable mitigation not required
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 1973637
+[    0.000000] Policy zone: Normal
+[    0.000000] Kernel command line: BOOT_IMAGE=/boot/vmlinux-5.8.0-rc4-IPA-Vinod-00020-gcd132e68cf79 efi=novamap root=/dev/sda5 rootwait rw clk_ignore_unused pd_ignore_unused
+[    0.000000] Dentry cache hash table entries: 1048576 (order: 11, 8388608 bytes, linear)
+[    0.000000] Inode-cache hash table entries: 524288 (order: 10, 4194304 bytes, linear)
+[    0.000000] mem auto-init: stack:off, heap alloc:off, heap free:off
+[    0.000000] software IO TLB: mapped [mem 0xbbfff000-0xbffff000] (64MB)
+[    0.000000] Memory: 7194336K/8019864K available (13948K kernel code, 2178K rwdata, 7468K rodata, 5568K init, 481K bss, 792760K reserved, 32768K cma-reserved)
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=8, Nodes=1
+[    0.000000] rcu: Preemptible hierarchical RCU implementation.
+[    0.000000] rcu: 	RCU event tracing is enabled.
+[    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=256 to nr_cpu_ids=8.
+[    0.000000] 	Trampoline variant of Tasks RCU enabled.
+[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=8
+[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[    0.000000] GICv3: 768 SPIs implemented
+[    0.000000] GICv3: 0 Extended SPIs implemented
+[    0.000000] GICv3: Distributor has no Range Selector support
+[    0.000000] GICv3: 16 PPIs implemented
+[    0.000000] GICv3: CPU0: found redistributor 0 region 0:0x0000000017a60000
+[    0.000000] ITS: No ITS available, not enabling LPIs
+[    0.000000] random: get_random_bytes called from start_kernel+0x314/0x4e4 with crng_init=0
+[    0.000000] arch_timer: cp15 and mmio timer(s) running at 19.20MHz (virt/virt).
+[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x46d987e47, max_idle_ns: 440795202767 ns
+[    0.000004] sched_clock: 56 bits at 19MHz, resolution 52ns, wraps every 4398046511078ns
+[    0.000300] Console: colour dummy device 80x25
+[    0.000701] printk: console [tty0] enabled
+[    0.000787] Calibrating delay loop (skipped), value calculated using timer frequency.. 38.40 BogoMIPS (lpj=76800)
+[    0.000803] pid_max: default: 32768 minimum: 301
+[    0.000879] LSM: Security Framework initializing
+[    0.000948] Mount-cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.000973] Mountpoint-cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.002377] rcu: Hierarchical SRCU implementation.
+[    0.005842] Remapping and enabling EFI services.
+[    0.006459] smp: Bringing up secondary CPUs ...
+[    0.007993] Detected VIPT I-cache on CPU1
+[    0.008042] GICv3: CPU1: found redistributor 100 region 0:0x0000000017a80000
+[    0.008100] CPU1: Booted secondary processor 0x0000000100 [0x517f803c]
+[    0.009585] Detected VIPT I-cache on CPU2
+[    0.009615] GICv3: CPU2: found redistributor 200 region 0:0x0000000017aa0000
+[    0.009663] CPU2: Booted secondary processor 0x0000000200 [0x517f803c]
+[    0.011258] Detected VIPT I-cache on CPU3
+[    0.011283] GICv3: CPU3: found redistributor 300 region 0:0x0000000017ac0000
+[    0.011326] CPU3: Booted secondary processor 0x0000000300 [0x517f803c]
+[    0.013553] Detected VIPT I-cache on CPU4
+[    0.013580] GICv3: CPU4: found redistributor 400 region 0:0x0000000017ae0000
+[    0.013624] CPU4: Booted secondary processor 0x0000000400 [0x516f802d]
+[    0.015603] Detected VIPT I-cache on CPU5
+[    0.015633] GICv3: CPU5: found redistributor 500 region 0:0x0000000017b00000
+[    0.015678] CPU5: Booted secondary processor 0x0000000500 [0x516f802d]
+[    0.017814] Detected VIPT I-cache on CPU6
+[    0.017845] GICv3: CPU6: found redistributor 600 region 0:0x0000000017b20000
+[    0.017888] CPU6: Booted secondary processor 0x0000000600 [0x516f802d]
+[    0.020193] Detected VIPT I-cache on CPU7
+[    0.020226] GICv3: CPU7: found redistributor 700 region 0:0x0000000017b40000
+[    0.020270] CPU7: Booted secondary processor 0x0000000700 [0x516f802d]
+[    0.020347] smp: Brought up 1 node, 8 CPUs
+[    0.020462] SMP: Total of 8 processors activated.
+[    0.020471] CPU features: detected: Privileged Access Never
+[    0.020478] CPU features: detected: LSE atomic instructions
+[    0.020485] CPU features: detected: User Access Override
+[    0.020493] CPU features: detected: 32-bit EL0 Support
+[    0.020500] CPU features: detected: Common not Private translations
+[    0.020508] CPU features: detected: RAS Extension Support
+[    0.020515] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
+[    0.020525] CPU features: detected: CRC32 instructions
+[    0.020532] CPU features: detected: 32-bit EL1 Support
+[    0.043508] CPU: All CPU(s) started at EL1
+[    0.043552] alternatives: patching kernel code
+[    0.047602] devtmpfs: initialized
+[    0.056588] KASLR enabled
+[    0.056961] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[    0.056984] futex hash table entries: 2048 (order: 5, 131072 bytes, linear)
+[    0.057650] pinctrl core: initialized pinctrl subsystem
+[    0.058906] thermal_sys: Registered thermal governor 'step_wise'
+[    0.058909] thermal_sys: Registered thermal governor 'power_allocator'
+[    0.061068] SMBIOS 3.0 present.
+[    0.061093] DMI: LENOVO 81JL/LNVNB161216, BIOS 9UCN33WW(V2.06) 06/ 4/2019
+[    0.061552] NET: Registered protocol family 16
+[    0.062474] DMA: preallocated 1024 KiB GFP_KERNEL pool for atomic allocations
+[    0.062639] DMA: preallocated 1024 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[    0.062933] DMA: preallocated 1024 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+[    0.062978] audit: initializing netlink subsys (disabled)
+[    0.063097] audit: type=2000 audit(0.060:1): state=initialized audit_enabled=0 res=1
+[    0.064334] cpuidle: using governor menu
+[    0.064503] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[    0.064702] ASID allocator initialised with 32768 entries
+[    0.066190] Serial: AMBA PL011 UART driver
+[    0.091790] HugeTLB registered 1.00 GiB page size, pre-allocated 0 pages
+[    0.091806] HugeTLB registered 32.0 MiB page size, pre-allocated 0 pages
+[    0.091815] HugeTLB registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.091824] HugeTLB registered 64.0 KiB page size, pre-allocated 0 pages
+[    0.092940] cryptd: max_cpu_qlen set to 1000
+[    0.094975] ACPI: Interpreter disabled.
+[    0.134102] iommu: Default domain type: Translated 
+[    0.134336] vgaarb: loaded
+[    0.134560] SCSI subsystem initialized
+[    0.134693] libata version 3.00 loaded.
+[    0.134841] usbcore: registered new interface driver usbfs
+[    0.134874] usbcore: registered new interface driver hub
+[    0.134940] usbcore: registered new device driver usb
+[    0.135509] pps_core: LinuxPPS API ver. 1 registered
+[    0.135518] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.135534] PTP clock support registered
+[    0.135634] EDAC MC: Ver: 3.0.0
+[    0.136290] qcom_scm: convention: smc arm 64
+[    0.136610] Registered efivars operations
+[    0.138551] FPGA manager framework
+[    0.138623] Advanced Linux Sound Architecture Driver Initialized.
+[    0.139176] clocksource: Switched to clocksource arch_sys_counter
+[    0.139332] VFS: Disk quotas dquot_6.6.0
+[    0.139348] cpu cpu0: _allocate_opp_table: Error finding interconnect paths: -517
+[    0.139380] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.139512] pnp: PnP ACPI: disabled
+[    0.140201] energy_model: pd0: hertz/watts ratio non-monotonically decreasing: em_cap_state 1 >= em_cap_state0
+[    0.140217] energy_model: pd0: hertz/watts ratio non-monotonically decreasing: em_cap_state 3 >= em_cap_state2
+[    0.140230] energy_model: pd0: hertz/watts ratio non-monotonically decreasing: em_cap_state 5 >= em_cap_state4
+[    0.140822] cpu cpu4: _allocate_opp_table: Error finding interconnect paths: -517
+[    0.143473] NET: Registered protocol family 2
+[    0.143630] tcp_listen_portaddr_hash hash table entries: 4096 (order: 4, 65536 bytes, linear)
+[    0.143659] TCP established hash table entries: 65536 (order: 7, 524288 bytes, linear)
+[    0.143760] TCP bind hash table entries: 65536 (order: 8, 1048576 bytes, linear)
+[    0.143982] TCP: Hash tables configured (established 65536 bind 65536)
+[    0.144034] UDP hash table entries: 4096 (order: 5, 131072 bytes, linear)
+[    0.144081] UDP-Lite hash table entries: 4096 (order: 5, 131072 bytes, linear)
+[    0.144195] NET: Registered protocol family 1
+[    0.144392] RPC: Registered named UNIX socket transport module.
+[    0.144396] RPC: Registered udp transport module.
+[    0.144399] RPC: Registered tcp transport module.
+[    0.144401] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[    0.144409] PCI: CLS 0 bytes, default 64
+[    0.144482] Unpacking initramfs...
+[    0.154706] Freeing initrd memory: 3956K
+[    0.155449] hw perfevents: enabled with armv8_pmuv3 PMU driver, 7 counters available
+[    0.155664] kvm [1]: HYP mode not available
+[    0.157522] Initialise system trusted keyrings
+[    0.157581] workingset: timestamp_bits=44 max_order=21 bucket_order=0
+[    0.159422] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[    0.159666] NFS: Registering the id_resolver key type
+[    0.159676] Key type id_resolver registered
+[    0.159679] Key type id_legacy registered
+[    0.159685] nfs4filelayout_init: NFSv4 File Layout Driver Registering...
+[    0.159746] 9p: Installing v9fs 9p2000 file system support
+[    0.169565] Key type asymmetric registered
+[    0.169570] Asymmetric key parser 'x509' registered
+[    0.169586] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 245)
+[    0.169592] io scheduler mq-deadline registered
+[    0.169595] io scheduler kyber registered
+[    0.172926] efifb: probing for efifb
+[    0.172955] efifb: framebuffer at 0x80400000, using 8100k, total 8100k
+[    0.172958] efifb: mode is 1920x1080x32, linelength=7680, pages=1
+[    0.172960] efifb: scrolling: redraw
+[    0.172964] efifb: Truecolor: size=8:8:8:8, shift=24:16:8:0
+[    0.179211] Console: switching to colour frame buffer device 240x67
+[    0.184960] fb0: EFI VGA frame buffer device
+[    0.185174] EINJ: ACPI disabled.
+[    0.189451] smps2: supplied by regulator-dummy
+[    0.189574] smps3: supplied by regulator-dummy
+[    0.189600] smps3: Setting 1352000-1352000uV
+[    0.189743] smps4: supplied by regulator-dummy
+[    0.189775] smps4: Setting 1800000-1800000uV
+[    0.189907] smps5: supplied by regulator-dummy
+[    0.189946] smps5: Setting 2040000-2040000uV
+[    0.190076] smps7: supplied by regulator-dummy
+[    0.190105] smps7: Setting 1028000-1028000uV
+[    0.190233] ldo1: supplied by regulator-dummy
+[    0.190262] ldo1: Setting 880000-880000uV
+[    0.190355] ldo2: supplied by smps3
+[    0.190387] ldo2: Setting 1200000-1200000uV
+[    0.190625] ldo3: supplied by regulator-dummy
+[    0.190691] ldo5: supplied by regulator-dummy
+[    0.190717] ldo5: Setting 800000-800000uV
+[    0.190809] ldo6: supplied by regulator-dummy
+[    0.190843] ldo6: Setting 1800000-1800000uV
+[    0.190931] ldo7: supplied by smps5
+[    0.190957] ldo7: Setting 1800000-1800000uV
+[    0.191042] ldo8: supplied by smps3
+[    0.191104] ldo9: supplied by regulator-dummy
+[    0.191189] ldo10: supplied by regulator-dummy
+[    0.191263] ldo11: supplied by regulator-dummy
+[    0.191332] ldo12: supplied by smps5
+[    0.191366] ldo12: Setting 1800000-1800000uV
+[    0.191465] ldo13: supplied by regulator-dummy
+[    0.191533] ldo14: supplied by smps5
+[    0.191561] ldo14: Setting 1880000-1880000uV
+[    0.191847] ldo15: supplied by smps5
+[    0.191918] ldo16: supplied by regulator-dummy
+[    0.191979] ldo17: supplied by smps3
+[    0.192002] ldo17: Setting 1304000-1304000uV
+[    0.192098] ldo18: supplied by regulator-dummy
+[    0.192176] ldo19: supplied by regulator-dummy
+[    0.192743] ldo19: Setting 3100000-3108000uV
+[    0.193375] ldo20: supplied by regulator-dummy
+[    0.193928] ldo20: Setting 2960000-2960000uV
+[    0.194536] ldo21: supplied by regulator-dummy
+[    0.195124] ldo22: supplied by regulator-dummy
+[    0.195730] ldo23: supplied by regulator-dummy
+[    0.196295] ldo24: supplied by regulator-dummy
+[    0.196815] ldo24: Setting 3075000-3083000uV
+[    0.197395] ldo25: supplied by regulator-dummy
+[    0.197901] ldo25: Setting 3104000-3112000uV
+[    0.198489] ldo26: supplied by regulator-dummy
+[    0.198990] ldo26: Setting 1200000-1208000uV
+[    0.199570] ldo28: supplied by regulator-dummy
+[    0.200116] lvs1: supplied by regulator-dummy
+[    0.200647] lvs2: supplied by regulator-dummy
+[    0.202794] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[    0.204158] SuperH (H)SCI(F) driver initialized
+[    0.204801] msm_serial: driver initialized
+[    0.205878] arm-smmu 5040000.iommu: probing hardware configuration...
+[    0.206588] arm-smmu 5040000.iommu: SMMUv2 with:
+[    0.207322] arm-smmu 5040000.iommu: 	stage 1 translation
+[    0.207793] arm-smmu 5040000.iommu: 	address translation ops
+[    0.208259] arm-smmu 5040000.iommu: 	non-coherent table walk
+[    0.208718] arm-smmu 5040000.iommu: 	(IDR0.CTTW overridden by FW configuration)
+[    0.209180] arm-smmu 5040000.iommu: 	stream matching with 5 register groups
+[    0.209750] arm-smmu 5040000.iommu: 	5 context banks (0 stage-2 only)
+[    0.210219] arm-smmu 5040000.iommu: 	Supported page sizes: 0x63315000
+[    0.210675] arm-smmu 5040000.iommu: 	Stage-1: 48-bit VA -> 36-bit IPA
+[    0.212471] arm-smmu 15000000.iommu: probing hardware configuration...
+[    0.212940] arm-smmu 15000000.iommu: SMMUv2 with:
+[    0.213514] arm-smmu 15000000.iommu: 	stage 1 translation
+[    0.213979] arm-smmu 15000000.iommu: 	non-coherent table walk
+[    0.214443] arm-smmu 15000000.iommu: 	(IDR0.CTTW overridden by FW configuration)
+[    0.215144] arm-smmu 15000000.iommu: 	stream matching with 76 register groups
+[    0.215864] arm-smmu 15000000.iommu: 	45 context banks (0 stage-2 only)
+[    0.216343] arm-smmu 15000000.iommu: 	Supported page sizes: 0x61311000
+[    0.216818] arm-smmu 15000000.iommu: 	Stage-1: 48-bit VA -> 48-bit IPA
+[    0.222561] loop: module loaded
+[    0.223475] megasas: 07.714.04.00-rc1
+[    0.224096] ufshcd-qcom 1d84000.ufshc: Adding to iommu group 0
+[    0.224668] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x100
+[    0.225422] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vdd-hba-supply regulator, assuming enabled
+[    0.226070] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq-supply regulator, assuming enabled
+[    0.226602] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq2-supply regulator, assuming enabled
+[    0.227622] ufshcd-qcom 1d84000.ufshc: ufs_qcom_init: required phy device. hasn't probed yet. err = -517
+[    0.228427] ufshcd-qcom 1d84000.ufshc: ufshcd_variant_hba_init: variant qcom init failed err -517
+[    0.229283] ufshcd-qcom 1d84000.ufshc: Initialization failed
+[    0.239235] ufshcd-qcom 1d84000.ufshc: ufshcd_pltfrm_init() failed -517
+[    0.241052] spmi spmi-0: PMIC arbiter version v5 (0x50000000)
+[    0.246538] libphy: Fixed MDIO Bus: probed
+[    0.247561] tun: Universal TUN/TAP device driver, 1.6
+[    0.248697] thunder_xcv, ver 1.0
+[    0.249553] thunder_bgx, ver 1.0
+[    0.250391] nicpf, ver 1.0
+[    0.251587] hclge is initializing
+[    0.252175] hns3: Hisilicon Ethernet Network Driver for Hip08 Family - version
+[    0.252748] hns3: Copyright (c) 2017 Huawei Corporation.
+[    0.253339] e1000: Intel(R) PRO/1000 Network Driver - version 7.3.21-k8-NAPI
+[    0.253931] e1000: Copyright (c) 1999-2006 Intel Corporation.
+[    0.254672] e1000e: Intel(R) PRO/1000 Network Driver - 3.2.6-k
+[    0.255414] e1000e: Copyright(c) 1999 - 2015 Intel Corporation.
+[    0.256172] igb: Intel(R) Gigabit Ethernet Network Driver - version 5.6.0-k
+[    0.256933] igb: Copyright (c) 2007-2014 Intel Corporation.
+[    0.257707] igbvf: Intel(R) Gigabit Virtual Function Network Driver - version 2.4.0-k
+[    0.258489] igbvf: Copyright (c) 2009 - 2012 Intel Corporation.
+[    0.259404] sky2: driver version 1.30
+[    0.260661] VFIO - User Level meta-driver version: 0.3
+[    0.263509] dwc3 a600000.dwc3: Adding to iommu group 1
+[    0.264252] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x740
+[    0.266982] dwc3 a800000.dwc3: Adding to iommu group 2
+[    0.267738] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x760
+[    0.268989] ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+[    0.269845] ehci-pci: EHCI PCI platform driver
+[    0.270708] ehci-platform: EHCI generic platform driver
+[    0.271633] ehci-orion: EHCI orion driver
+[    0.272522] ehci-exynos: EHCI Exynos driver
+[    0.273414] ohci_hcd: USB 1.1 'Open' Host Controller (OHCI) Driver
+[    0.274294] ohci-pci: OHCI PCI platform driver
+[    0.275164] ohci-platform: OHCI generic platform driver
+[    0.276078] ohci-exynos: OHCI Exynos driver
+[    0.277116] usbcore: registered new interface driver usb-storage
+[    0.278926] i2c /dev entries driver
+[    0.283187] cpu cpu0: failed to get clock: -2
+[    0.283905] cpufreq-dt: probe of cpufreq-dt failed with error -2
+[    0.285452] sdhci: Secure Digital Host Controller Interface driver
+[    0.286175] sdhci: Copyright(c) Pierre Ossman
+[    0.287205] Synopsys Designware Multimedia Card Interface Driver
+[    0.288421] sdhci-pltfm: SDHCI platform and OF driver helper
+[    0.290293] ledtrig-cpu: registered to indicate activity on CPUs
+[    0.291516] hid: raw HID events driver (C) Jiri Kosina
+[    0.292385] usbcore: registered new interface driver usbhid
+[    0.293133] usbhid: USB HID core driver
+[    0.295610] NET: Registered protocol family 17
+[    0.296589] 9pnet: Installing 9P2000 support
+[    0.297337] Key type dns_resolver registered
+[    0.298565] registered taskstats version 1
+[    0.299482] Loading compiled-in X.509 certificates
+[    0.321597] SW_EDP_1P2: supplied by ldo2
+[    0.322843] qcom-qmp-phy 1d87000.phy: Registered Qcom-QMP phy
+[    0.324956] qcom-qmp-phy 88e9000.phy: Registered Qcom-QMP phy
+[    0.328418] qcom-qmp-phy 88eb000.phy: Registered Qcom-QMP phy
+[    0.329845] bam-dma-engine 17184000.dma: Adding to iommu group 3
+[    0.330669] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x1806
+[    0.332204] geni_se_qup 8c0000.geniqup: Adding to iommu group 4
+[    0.332988] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x0
+[    0.335303] 898000.serial: ttyHS0 at MMIO 0x898000 (irq = 137, base_baud = 0) is a MSM
+[    0.336540] serial serial0: tty port ttyHS0 registered
+[    0.337916] geni_se_qup ac0000.geniqup: Adding to iommu group 5
+[    0.338710] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x6c0
+[    0.341700] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vdd-hba-supply regulator, assuming enabled
+[    0.342798] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq-supply regulator, assuming enabled
+[    0.343890] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq2-supply regulator, assuming enabled
+[    0.347049] scsi host0: ufshcd
+[    0.357307] PM: genpd: Not disabling unused power domains
+[    0.359047] clk: Not disabling unused clocks
+[    0.360164] ALSA device list:
+[    0.361506]   No soundcards found.
+[    0.374245] ufshcd-qcom 1d84000.ufshc: ufshcd_print_pwr_info:[RX, TX]: gear=[1, 1], lane[1, 1], pwr[SLOWAUTO_MODE, SLOWAUTO_MODE], rate = 0
+[    0.461154] ufshcd-qcom 1d84000.ufshc: ufshcd_print_pwr_info:[RX, TX]: gear=[3, 3], lane[2, 2], pwr[FAST MODE, FAST MODE], rate = 2
+[    0.480664] ufshcd-qcom 1d84000.ufshc: ufshcd_find_max_sup_active_icc_level: Regulator capability was not set, actvIccLevel=0
+[    0.500284] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    0.514936] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    0.529405] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    0.541274] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag_retry: query attribute, opcode 6, idn 14, failed with error 253 after 3 retires
+[    0.553336] ufshcd-qcom 1d84000.ufshc: ufshcd_wb_ctrl write booster enable failed 253
+[    0.562109] ufshcd-qcom 1d84000.ufshc: ufshcd_wb_config: Enable WB failed: 253
+[    0.569994] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 16 failed, err = 253
+[    0.576684] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 16 failed, err = 253
+[    0.583884] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 16 failed, err = 253
+[    0.591350] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag_retry: query attribute, opcode 6, idn 16, failed with error 253 after 3 retires
+[    0.598934] ufshcd-qcom 1d84000.ufshc: ufshcd_wb_config: En WB flush during H8: failed: 253
+[    0.606101] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 15 failed, err = 253
+[    0.612243] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 15 failed, err = 253
+[    0.618789] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 15 failed, err = 253
+[    0.624903] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag_retry: query attribute, opcode 6, idn 15, failed with error 253 after 3 retires
+[    0.631143] ufshcd-qcom 1d84000.ufshc: ufshcd_wb_buf_flush_enable WB - buf flush enable failed 253
+[    0.637529] scsi 0:0:0:49488: Well-known LUN    SKhynix  H28S8Q302CMR     A102 PQ: 0 ANSI: 6
+[    0.645762] scsi 0:0:0:49476: Well-known LUN    SKhynix  H28S8Q302CMR     A102 PQ: 0 ANSI: 6
+[    0.654185] scsi 0:0:0:49456: Well-known LUN    SKhynix  H28S8Q302CMR     A102 PQ: 0 ANSI: 6
+[    0.660095] scsi 0:0:0:0: Direct-Access     SKhynix  H28S8Q302CMR     A102 PQ: 0 ANSI: 6
+[    0.668078] scsi 0:0:0:1: Direct-Access     SKhynix  H28S8Q302CMR     A102 PQ: 0 ANSI: 6
+[    0.673699] sd 0:0:0:0: [sda] 29765632 4096-byte logical blocks: (122 GB/114 GiB)
+[    0.675331] scsi 0:0:0:2: Direct-Access     SKhynix  H28S8Q302CMR     A102 PQ: 0 ANSI: 6
+[    0.684180] sd 0:0:0:0: [sda] Write Protect is off
+[    0.686455] scsi 0:0:0:3: Direct-Access     SKhynix  H28S8Q302CMR     A102 PQ: 0 ANSI: 6
+[    0.689614] sd 0:0:0:0: [sda] Mode Sense: 00 32 00 10
+[    0.695114] sd 0:0:0:2: [sdc] 1024 4096-byte logical blocks: (4.19 MB/4.00 MiB)
+[    0.695145] sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    0.696406] sd 0:0:0:1: [sdb] 1024 4096-byte logical blocks: (4.19 MB/4.00 MiB)
+[    0.696961] scsi 0:0:0:4: Direct-Access     SKhynix  H28S8Q302CMR     A102 PQ: 0 ANSI: 6
+[    0.697385] sd 0:0:0:1: [sdb] Write Protect is off
+[    0.697391] sd 0:0:0:1: [sdb] Mode Sense: 00 32 00 10
+[    0.698178] sd 0:0:0:3: [sdd] 32768 4096-byte logical blocks: (134 MB/128 MiB)
+[    0.698435] sd 0:0:0:3: [sdd] Write Protect is off
+[    0.698439] sd 0:0:0:3: [sdd] Mode Sense: 00 32 00 10
+[    0.698806] scsi 0:0:0:5: Direct-Access     SKhynix  H28S8Q302CMR     A102 PQ: 0 ANSI: 6
+[    0.698906] sd 0:0:0:3: [sdd] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    0.699140] sd 0:0:0:3: [sdd] Optimal transfer size 786432 bytes
+[    0.699363] sd 0:0:0:1: [sdb] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    0.699650] sd 0:0:0:2: [sdc] Write Protect is off
+[    0.699655] sd 0:0:0:2: [sdc] Mode Sense: 00 32 00 10
+[    0.700090] sd 0:0:0:2: [sdc] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    0.700390] sd 0:0:0:2: [sdc] Optimal transfer size 786432 bytes
+[    0.703161] sd 0:0:0:0: [sda] Optimal transfer size 786432 bytes
+[    0.704708] sd 0:0:0:1: [sdb] Optimal transfer size 786432 bytes
+[    0.705638] sd 0:0:0:5: [sdf] 393216 4096-byte logical blocks: (1.61 GB/1.50 GiB)
+[    0.705843] sd 0:0:0:5: [sdf] Write Protect is off
+[    0.705847] sd 0:0:0:5: [sdf] Mode Sense: 00 32 00 10
+[    0.706240] sd 0:0:0:5: [sdf] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    0.706425] sd 0:0:0:5: [sdf] Optimal transfer size 786432 bytes
+[    0.708254] sd 0:0:0:4: [sde] 1048576 4096-byte logical blocks: (4.29 GB/4.00 GiB)
+[    0.708977]  sdd: sdd2 sdd3
+[    0.712503] sd 0:0:0:4: [sde] Write Protect is off
+[    0.771694] sd 0:0:0:4: [sde] Mode Sense: 00 32 00 10
+[    0.772088] random: fast init done
+[    0.779698] sd 0:0:0:4: [sde] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    0.781020] sd 0:0:0:3: [sdd] Attached SCSI disk
+[    0.781345] sd 0:0:0:4: [sde] Optimal transfer size 786432 bytes
+[    0.781475]  sdc: sdc1 sdc2
+[    0.781607]  sdf: sdf2 sdf3 sdf4 sdf5
+[    0.782888]  sdb: sdb1 sdb2
+[    0.783480] sd 0:0:0:2: [sdc] Attached SCSI disk
+[    0.783508]  sda: sda1 sda2 sda3 sda4 sda5
+[    0.784684] sd 0:0:0:0: [sda] Attached SCSI disk
+[    0.784687] sd 0:0:0:1: [sdb] Attached SCSI disk
+[    0.784827] sd 0:0:0:5: [sdf] Attached SCSI disk
+[    0.808434]  sde: sde1 sde2 sde3 sde4 sde5 sde6 sde7 sde8 sde9 sde10 sde11 sde12 sde13 sde14 sde15 sde16 sde17 sde18 sde19 sde20 sde21 sde22 sde23 sde24 sde25 sde26 sde27
+[    0.813121] sd 0:0:0:4: [sde] Attached SCSI disk
+[    0.817169] Freeing unused kernel memory: 5568K
+[    0.843805] Run /init as init process
+[    0.847452]   with arguments:
+[    0.847453]     /init
+[    0.847455]   with environment:
+[    0.847457]     HOME=/
+[    0.847458]     TERM=linux
+[    0.847460]     BOOT_IMAGE=/boot/vmlinux-5.8.0-rc4-IPA-Vinod-00020-gcd132e68cf79
+[    0.876212] random: systemd-tmpfile: uninitialized urandom read (16 bytes read)
+[    0.889211] random: systemd-udevd: uninitialized urandom read (16 bytes read)
+[    0.889357] random: systemd-udevd: uninitialized urandom read (16 bytes read)
+[    1.144934] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    1.148637] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    1.152134] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    1.155577] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag_retry: query attribute, opcode 6, idn 14, failed with error 253 after 3 retires
+[    1.159038] ufshcd-qcom 1d84000.ufshc: ufshcd_wb_ctrl write booster enable failed 253
+[    1.259085] EXT4-fs (sda5): mounted filesystem with ordered data mode. Opts: (null)
+[    1.370639] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    1.376568] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    1.387537] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    1.395671] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag_retry: query attribute, opcode 6, idn 14, failed with error 253 after 3 retires
+[    1.403929] ufshcd-qcom 1d84000.ufshc: ufshcd_wb_ctrl write booster enable failed 253
+[    1.499506] systemd[1]: System time before build time, advancing clock.
+[    1.537077] NET: Registered protocol family 10
+[    1.543715] Segment Routing with IPv6
+[    1.559877] efivars: get_next_variable: status=8000000000000003
+[    1.568950] systemd[1]: systemd 245.5-2-arch running in system mode. (+PAM +AUDIT -SELINUX -IMA -APPARMOR +SMACK -SYSVINIT +UTMP +LIBCRYPTSETUP +GCRYPT +GNUTLS +ACL +XZ +LZ4 +SECCOMP +BLKID +ELFUTILS +KMOD +IDN2 -IDN +PCRE2 default-hierarchy=hybrid)
+[    1.580597] systemd[1]: Detected architecture arm64.
+[    1.614323] systemd[1]: Set hostname to <yoga2>.
+[    1.974101] systemd[1]: Configuration file /usr/lib/systemd/system/qrtr-ns.service is marked executable. Please remove executable permission bits. Proceeding anyway.
+[    1.989726] systemd[1]: system-getty.slice: unit configures an IP firewall, but the local system does not support BPF/cgroup firewalling.
+[    1.995041] systemd[1]: (This warning is only shown for the first unit using IP firewalling.)
+[    2.002108] systemd[1]: Created slice system-getty.slice.
+[    2.012654] systemd[1]: Created slice system-modprobe.slice.
+[    2.019114] systemd[1]: Created slice User and Session Slice.
+[    2.024398] systemd[1]: Started Dispatch Password Requests to Console Directory Watch.
+[    2.030318] systemd[1]: Started Forward Password Requests to Wall Directory Watch.
+[    2.035597] systemd[1]: Condition check resulted in Arbitrary Executable File Formats File System Automount Point being skipped.
+[    2.037339] systemd[1]: Reached target Local Encrypted Volumes.
+[    2.041262] systemd[1]: Reached target Paths.
+[    2.045310] systemd[1]: Reached target Remote File Systems.
+[    2.049304] systemd[1]: Reached target Slices.
+[    2.053886] systemd[1]: Reached target Swap.
+[    2.058150] systemd[1]: Listening on Device-mapper event daemon FIFOs.
+[    2.061323] systemd[1]: Listening on LVM2 metadata daemon socket.
+[    2.065408] systemd[1]: Listening on LVM2 poll daemon socket.
+[    2.070650] systemd[1]: Listening on Process Core Dump Socket.
+[    2.073508] systemd[1]: Listening on initctl Compatibility Named Pipe.
+[    2.077123] systemd[1]: Listening on Journal Audit Socket.
+[    2.079870] systemd[1]: Listening on Journal Socket (/dev/log).
+[    2.083215] systemd[1]: Listening on Journal Socket.
+[    2.087104] systemd[1]: Listening on Network Service Netlink Socket.
+[    2.090041] systemd[1]: Listening on udev Control Socket.
+[    2.092939] systemd[1]: Listening on udev Kernel Socket.
+[    2.097529] systemd[1]: Mounting Huge Pages File System...
+[    2.102988] systemd[1]: Mounting POSIX Message Queue File System...
+[    2.107578] systemd[1]: Mounting Kernel Debug File System...
+[    2.111108] systemd[1]: Condition check resulted in Kernel Trace File System being skipped.
+[    2.116162] systemd[1]: Mounting Temporary Directory (/tmp)...
+[    2.120564] systemd[1]: Starting Create list of static device nodes for the current kernel...
+[    2.124156] systemd[1]: Starting Monitoring of LVM2 mirrors, snapshots etc. using dmeventd or progress polling...
+[    2.128182] systemd[1]: Starting Load Kernel Module drm...
+[    2.132122] systemd[1]: Condition check resulted in Set Up Additional Binary Formats being skipped.
+[    2.136760] systemd[1]: Starting Load Kernel Modules...
+[    2.140489] systemd[1]: Starting Remount Root and Kernel File Systems...
+[    2.144393] systemd[1]: Starting udev Coldplug all Devices...
+[    2.148778] systemd[1]: Mounted Huge Pages File System.
+[    2.151849] systemd[1]: Mounted POSIX Message Queue File System.
+[    2.155608] systemd[1]: Mounted Kernel Debug File System.
+[    2.159132] systemd[1]: Mounted Temporary Directory (/tmp).
+[    2.162510] systemd[1]: Finished Create list of static device nodes for the current kernel.
+[    2.166146] systemd[1]: modprobe@drm.service: Succeeded.
+[    2.168230] systemd[1]: Finished Load Kernel Module drm.
+[    2.171285] systemd[1]: Finished Load Kernel Modules.
+[    2.174616] systemd[1]: Finished Remount Root and Kernel File Systems.
+[    2.177548] systemd[1]: Condition check resulted in FUSE Control File System being skipped.
+[    2.180571] systemd[1]: Mounting Kernel Configuration File System...
+[    2.184408] systemd[1]: Started LVM2 metadata daemon.
+[    2.187793] systemd[1]: Condition check resulted in First Boot Wizard being skipped.
+[    2.190574] systemd[1]: Condition check resulted in Rebuild Hardware Database being skipped.
+[    2.194479] systemd[1]: Starting Load/Save Random Seed...
+[    2.198734] systemd[1]: Starting Apply Kernel Variables...
+[    2.200975] systemd[1]: Condition check resulted in Create System Users being skipped.
+[    2.203863] systemd[1]: Starting Create Static Device Nodes in /dev...
+[    2.208167] systemd[1]: Mounted Kernel Configuration File System.
+[    2.213464] systemd[1]: Finished Apply Kernel Variables.
+[    2.223720] systemd[1]: Finished Create Static Device Nodes in /dev.
+[    2.228078] systemd[1]: Started Entropy Daemon based on the HAVEGE algorithm.
+[    2.232525] systemd[1]: Starting Journal Service...
+[    2.236736] systemd[1]: Starting udev Kernel Device Manager...
+[    2.263968] systemd[1]: Finished udev Coldplug all Devices.
+[    2.423354] systemd[1]: Started Journal Service.
+[    2.426337] audit: type=1130 audit(1587772414.923:2): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-journald comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[    2.434063] audit: type=1130 audit(1587772414.931:3): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-udevd comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[    2.446560] systemd-journald[262]: Received client request to flush runtime journal.
+[    2.450907] systemd-journald[262]: File /var/log/journal/39fb4b5fa79e4ed89630833bff4f3271/system.journal corrupted or uncleanly shut down, renaming and replacing.
+[    2.476213] random: crng init done
+[    2.477605] random: 7 urandom warning(s) missed due to ratelimiting
+[    2.486770] audit: type=1130 audit(1587772414.983:4): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-random-seed comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[    2.508921] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    2.514280] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    2.519311] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    2.524306] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag_retry: query attribute, opcode 6, idn 14, failed with error 253 after 3 retires
+[    2.529248] ufshcd-qcom 1d84000.ufshc: ufshcd_wb_ctrl write booster enable failed 253
+[    2.567692] qcom_q6v5_pas remoteproc-adsp: supply cx not found, using dummy regulator
+[    2.577974] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x1806
+[    2.577984] qcom,slim-ngd-ctrl 171c0000.slim: Adding to iommu group 3
+[    2.577995] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x1806
+[    2.593355] qcom_q6v5_pas remoteproc-adsp: supply px not found, using dummy regulator
+[    2.598785] audit: type=1130 audit(1587772415.095:5): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-journal-flush comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[    2.598869] NET: Registered protocol family 42
+[    2.599886] failed to send lookup registration: -19
+[    2.599949] remoteproc remoteproc0: remoteproc-adsp is available
+[    2.600584] qcom_q6v5_pas remoteproc-cdsp: supply cx not found, using dummy regulator
+[    2.622039] cfg80211: Loading compiled-in X.509 certificates for regulatory database
+[    2.622321] qcom_q6v5_pas remoteproc-cdsp: supply px not found, using dummy regulator
+[    2.622414] qcom-q6v5-mss 4080000.remoteproc: failed to acquire pdc reset
+[    2.622506] remoteproc remoteproc2: releasing 4080000.remoteproc
+[    2.632491] cfg80211: Loaded X.509 cert 'sforshee: 00b28ddf47aef9cea7'
+[    2.638455] remoteproc remoteproc1: remoteproc-cdsp is available
+[    2.639042] qcom-qusb2-phy 88e2000.phy: Registered Qcom-QUSB2 phy
+[    2.643657] platform regulatory.0: Direct firmware load for regulatory.db failed with error -2
+[    2.643661] platform regulatory.0: Falling back to sysfs fallback for: regulatory.db
+[    2.651420] qcom-q6v5-mss 4080000.remoteproc: failed to acquire pdc reset
+[    2.654903] qcom-qusb2-phy 88e3000.phy: Registered Qcom-QUSB2 phy
+[    2.663537] remoteproc remoteproc2: releasing 4080000.remoteproc
+[    2.665356] mc: Linux media interface: v0.10
+[    2.671880] remoteproc remoteproc1: powering up remoteproc-cdsp
+[    2.677280] remoteproc remoteproc0: powering up remoteproc-adsp
+[    2.678310] remoteproc remoteproc1: Booting fw image qcom/LENOVO/81JL/qccdsp850.mbn, size 2713108
+[    2.683414] remoteproc remoteproc0: Booting fw image qcom/LENOVO/81JL/qcadsp850.mbn, size 10420464
+[    2.692137] videodev: Linux video capture interface: v2.00
+[    2.697056] xhci-hcd xhci-hcd.0.auto: xHCI Host Controller
+[    2.706346] xhci-hcd xhci-hcd.0.auto: new USB bus registered, assigned bus number 1
+[    2.706558] xhci-hcd xhci-hcd.0.auto: hcc params 0x0230fe65 hci version 0x110 quirks 0x0000000002010010
+[    2.713361] xhci-hcd xhci-hcd.0.auto: irq 132, io mem 0x0a600000
+[    2.716549] hub 1-0:1.0: USB hub found
+[    2.722736] hub 1-0:1.0: 1 port detected
+[    2.727824] Bluetooth: Core ver 2.22
+[    2.730139] xhci-hcd xhci-hcd.0.auto: xHCI Host Controller
+[    2.731226] audit: type=1130 audit(1587772415.219:6): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-networkd comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[    2.745330] xhci-hcd xhci-hcd.0.auto: new USB bus registered, assigned bus number 2
+[    2.751101] xhci-hcd xhci-hcd.0.auto: Host supports USB 3.0 SuperSpeed
+[    2.751331] usb usb2: We don't know the algorithms for LPM for this host, disabling LPM.
+[    2.753265] ath10k_snoc 18800000.wifi: Adding to iommu group 6
+[    2.756182] NET: Registered protocol family 31
+[    2.756185] Bluetooth: HCI device and connection manager initialized
+[    2.756202] Bluetooth: HCI socket layer initialized
+[    2.756209] Bluetooth: L2CAP socket layer initialized
+[    2.756221] Bluetooth: SCO socket layer initialized
+[    2.757337] adreno 5000000.gpu: Adding to iommu group 7
+[    2.758329] msm ae00000.mdss: Adding to iommu group 8
+[    2.758421] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x880
+[    2.758424] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0xc80
+[    2.766693] qcom-venus aa00000.video-codec: Adding to iommu group 9
+[    2.767480] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    2.767680] hub 2-0:1.0: USB hub found
+[    2.767705] hub 2-0:1.0: 1 port detected
+[    2.774085] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x10a0
+[    2.781175] msm ae00000.mdss: bound ae01000.mdp (ops dpu_ops [msm])
+[    2.784927] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x10b0
+[    2.785824] xhci-hcd xhci-hcd.1.auto: xHCI Host Controller
+[    2.785844] xhci-hcd xhci-hcd.1.auto: new USB bus registered, assigned bus number 3
+[    2.786033] xhci-hcd xhci-hcd.1.auto: hcc params 0x0230fe65 hci version 0x110 quirks 0x0000000002010010
+[    2.786102] xhci-hcd xhci-hcd.1.auto: irq 133, io mem 0x0a800000
+[    2.786656] hub 3-0:1.0: USB hub found
+[    2.786678] hub 3-0:1.0: 1 port detected
+[    2.786913] xhci-hcd xhci-hcd.1.auto: xHCI Host Controller
+[    2.786923] xhci-hcd xhci-hcd.1.auto: new USB bus registered, assigned bus number 4
+[    2.786932] xhci-hcd xhci-hcd.1.auto: Host supports USB 3.0 SuperSpeed
+[    2.786972] usb usb4: We don't know the algorithms for LPM for this host, disabling LPM.
+[    2.787320] hub 4-0:1.0: USB hub found
+[    2.787338] hub 4-0:1.0: 1 port detected
+[    2.789416] msm_dsi ae94000.dsi: supply gdsc not found, using dummy regulator
+[    2.790307] msm_dsi_manager_register: failed to register mipi dsi host for DSI 0
+[    2.790594] remoteproc remoteproc2: 4080000.remoteproc is available
+[    2.794919] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x40
+[    2.795014] qcom-venus aa00000.video-codec: non legacy binding
+[    2.801161] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    2.803307] Bluetooth: HCI UART driver ver 2.3
+[    2.814597] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    2.827591] Bluetooth: HCI UART protocol H4 registered
+[    2.833062] i2c_hid 3-0015: supply vdd not found, using dummy regulator
+[    2.833484] Bluetooth: HCI UART protocol LL registered
+[    2.834349] i2c_hid 3-0015: supply vddl not found, using dummy regulator
+[    2.842004] Bluetooth: HCI UART protocol Broadcom registered
+[    2.854980] msm ae00000.mdss: bound ae01000.mdp (ops dpu_ops [msm])
+[    2.857513] Bluetooth: HCI UART protocol QCA registered
+[    2.861652] input: hid-over-i2c 04F3:30BC Mouse as /devices/platform/soc@0/8c0000.geniqup/88c000.i2c/i2c-3/3-0015/0018:04F3:30BC.0001/input/input0
+[    2.865674] msm_dsi ae94000.dsi: supply gdsc not found, using dummy regulator
+[    2.869988] input: hid-over-i2c 04F3:30BC Touchpad as /devices/platform/soc@0/8c0000.geniqup/88c000.i2c/i2c-3/3-0015/0018:04F3:30BC.0001/input/input2
+[    2.873723] msm ae00000.mdss: bound ae94000.dsi (ops dsi_ops [msm])
+[    2.877509] hid-generic 0018:04F3:30BC.0001: input,hidraw0: I2C HID v1.00 Mouse [hid-over-i2c 04F3:30BC] on 3-0015
+[    2.881049] remoteproc remoteproc1: remote processor remoteproc-cdsp is now up
+[    2.884733] i2c_hid 3-002c: there is not valid maps for state default
+[    2.889050] adreno 5000000.gpu: supply vdd not found, using dummy regulator
+[    2.891963] i2c_hid 3-002c: supply vdd not found, using dummy regulator
+[    2.895622] adreno 5000000.gpu: supply vddcx not found, using dummy regulator
+[    2.896431] i2c_hid 3-002c: supply vddl not found, using dummy regulator
+[    2.901269] platform 506a000.gmu: Adding to iommu group 10
+[    2.901851] i2c_hid 5-0010: there is not valid maps for state default
+[    2.906296] msm ae00000.mdss: bound 5000000.gpu (ops a3xx_ops [msm])
+[    2.906436] msm_dpu ae01000.mdp: [drm:msm_ioremap [msm]] *ERROR* failed to get memory resource: vbif_nrt
+[    2.907869] i2c_hid 5-0010: supply vdd not found, using dummy regulator
+[    2.911943] msm_dpu ae01000.mdp: [drm:msm_ioremap [msm]] *ERROR* failed to get memory resource: regdma
+[    2.912879] i2c_hid 5-0010: supply vddl not found, using dummy regulator
+[    2.917040] [drm:dpu_kms_hw_init:878] dpu hardware revision:0x40000000
+[    2.944276] input: hid-over-i2c 04F3:2802 Touchscreen as /devices/platform/soc@0/8c0000.geniqup/894000.i2c/i2c-5/5-0010/0018:04F3:2802.0002/input/input3
+[    2.947066] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x880
+[    2.948377] input: hid-over-i2c 04F3:2802 as /devices/platform/soc@0/8c0000.geniqup/894000.i2c/i2c-5/5-0010/0018:04F3:2802.0002/input/input4
+[    2.951878] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0xc80
+[    2.954719] [drm] Supports vblank timestamp caching Rev 2 (21.10.2013).
+[    2.955570] input: hid-over-i2c 04F3:2802 as /devices/platform/soc@0/8c0000.geniqup/894000.i2c/i2c-5/5-0010/0018:04F3:2802.0002/input/input5
+[    2.960301] qcom-venus aa00000.video-codec: invalid firmware metadata
+[    2.960508] input: hid-over-i2c 04F3:2802 as /devices/platform/soc@0/8c0000.geniqup/894000.i2c/i2c-5/5-0010/0018:04F3:2802.0002/input/input6
+[    2.960737] [drm] Initialized msm 1.6.0 20130625 for ae00000.mdss on minor 0
+[    2.965031] msm ae00000.mdss: [drm:adreno_request_fw [msm]] loaded qcom/a630_sqe.fw from new location
+[    2.965148] qcom-venus aa00000.video-codec: fail to load video firmware
+[    2.965723] remoteproc remoteproc0: remote processor remoteproc-adsp is now up
+[    2.967137] qcom-venus: probe of aa00000.video-codec failed with error -22
+[    2.968567] hid-generic 0018:04F3:2802.0002: input,hidraw1: I2C HID v1.00 Device [hid-over-i2c 04F3:2802] on 5-0010
+[    2.968796] i2c_hid 11-005c: there is not valid maps for state default
+[    2.968986] i2c_hid 11-005c: supply vdd not found, using dummy regulator
+[    2.969051] i2c_hid 11-005c: supply vddl not found, using dummy regulator
+[    2.971352] msm ae00000.mdss: [drm:adreno_request_fw [msm]] loaded qcom/a630_gmu.bin from new location
+[    2.978584] Bluetooth: hci0: setting up wcn399x
+[    3.013618] checking generic (80400000 7e9000) vs hw (0 ffffffffffffffff)
+[    3.013625] fb0: switching to msm from EFI VGA
+[    3.013995] input: hid-over-i2c 6243:0001 Keyboard as /devices/platform/soc@0/ac0000.geniqup/a8c000.i2c/i2c-11/11-005c/0018:6243:0001.0003/input/input9
+[    3.020041] Console: switching to colour dummy device 80x25
+[    3.020171] msm ae00000.mdss: [drm] Cannot find any crtc or sizes
+[    3.020626] input: hid-over-i2c 6243:0001 Consumer Control as /devices/platform/soc@0/ac0000.geniqup/a8c000.i2c/i2c-11/11-005c/0018:6243:0001.0003/input/input10
+[    3.020710] input: hid-over-i2c 6243:0001 Wireless Radio Control as /devices/platform/soc@0/ac0000.geniqup/a8c000.i2c/i2c-11/11-005c/0018:6243:0001.0003/input/input12
+[    3.020790] input: hid-over-i2c 6243:0001 as /devices/platform/soc@0/ac0000.geniqup/a8c000.i2c/i2c-11/11-005c/0018:6243:0001.0003/input/input13
+[    3.020879] hid-generic 0018:6243:0001.0003: input,hidraw2: I2C HID v1.00 Keyboard [hid-over-i2c 6243:0001] on 11-005c
+[    3.022272] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    3.030076] qcom,slim-ngd-ctrl 171c0000.slim: SLIM SAT: Rcvd master capability
+[    3.030306] qcom,slim-ngd-ctrl 171c0000.slim: SLIM controller Registered
+[    3.035416] wcd934x-slim 217:250:1:0: there is not valid maps for state default
+[    3.044534] audit: type=1130 audit(1587772415.543:7): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=lvm2-monitor comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[    3.079203] input: hid-over-i2c 04F3:30BC Mouse as /devices/platform/soc@0/8c0000.geniqup/88c000.i2c/i2c-3/3-0015/0018:04F3:30BC.0001/input/input14
+[    3.079457] input: hid-over-i2c 04F3:30BC Touchpad as /devices/platform/soc@0/8c0000.geniqup/88c000.i2c/i2c-3/3-0015/0018:04F3:30BC.0001/input/input16
+[    3.079833] hid-multitouch 0018:04F3:30BC.0001: input,hidraw0: I2C HID v1.00 Mouse [hid-over-i2c 04F3:30BC] on 3-0015
+[    3.083323] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    3.092044] wcd934x-slim 217:250:1:0: WCD934x chip id major 0x108, minor 0x1
+[    3.100747] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    3.104010] qcom-soundwire wcd934x-soundwire.4.auto: DMA mask not set
+[    3.109189] wcd934x-gpio wcd934x-gpio.3.auto: DMA mask not set
+[    3.111435] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    3.115686] audit: type=1130 audit(1587772415.615:8): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-backlight@backlight:sn65dsi86 comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[    3.119807] qcom-soundwire wcd934x-soundwire.4.auto: Qualcomm Soundwire controller v1.3.0 Registered
+[    3.123158] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    3.123213] usb 3-1: new high-speed USB device number 2 using xhci-hcd
+[    3.125489] audit: type=1130 audit(1587772415.623:9): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-rfkill comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[    3.127550] qcom-soundwire wcd934x-soundwire.4.auto: CMD error, fifo status 0x3e00012f
+[    3.128131] audit: type=1130 audit(1587772415.627:10): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-tmpfiles-setup comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[    3.128885] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    3.142365] Bluetooth: hci0: QCA Product ID   :0x0000000a
+[    3.142382] Bluetooth: hci0: QCA SOC Version  :0x40010214
+[    3.142384] Bluetooth: hci0: QCA ROM Version  :0x00000201
+[    3.142387] Bluetooth: hci0: QCA Patch Version:0x00000001
+[    3.180028] Bluetooth: hci0: QCA controller version 0x02140201
+[    3.180061] Bluetooth: hci0: QCA Downloading qca/crbtfw21.tlv
+[    3.205097] input: hid-over-i2c 04F3:2802 as /devices/platform/soc@0/8c0000.geniqup/894000.i2c/i2c-5/5-0010/0018:04F3:2802.0002/input/input17
+[    3.205683] input: hid-over-i2c 04F3:2802 UNKNOWN as /devices/platform/soc@0/8c0000.geniqup/894000.i2c/i2c-5/5-0010/0018:04F3:2802.0002/input/input18
+[    3.206123] input: hid-over-i2c 04F3:2802 UNKNOWN as /devices/platform/soc@0/8c0000.geniqup/894000.i2c/i2c-5/5-0010/0018:04F3:2802.0002/input/input19
+[    3.206570] input: hid-over-i2c 04F3:2802 as /devices/platform/soc@0/8c0000.geniqup/894000.i2c/i2c-5/5-0010/0018:04F3:2802.0002/input/input20
+[    3.207056] hid-multitouch 0018:04F3:2802.0002: input,hidraw1: I2C HID v1.00 Device [hid-over-i2c 04F3:2802] on 5-0010
+[    3.213551] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    3.331663] hub 3-1:1.0: USB hub found
+[    3.332278] hub 3-1:1.0: 3 ports detected
+[    3.339816] remoteproc remoteproc2: powering up 4080000.remoteproc
+[    3.344370] remoteproc remoteproc2: Booting fw image qcom/LENOVO/81JL/qcdsp1v2850.mbn, size 242400
+[    3.351454] qcom,apr remoteproc-adsp:glink-edge.apr_audio_svc.-1.-1: Adding APR dev: aprsvc:apr-service:4:3
+[    3.351602] qcom,apr remoteproc-adsp:glink-edge.apr_audio_svc.-1.-1: Adding APR dev: aprsvc:apr-service:4:4
+[    3.353459] qcom,apr remoteproc-adsp:glink-edge.apr_audio_svc.-1.-1: Adding APR dev: aprsvc:apr-service:4:7
+[    3.353578] qcom,apr remoteproc-adsp:glink-edge.apr_audio_svc.-1.-1: Adding APR dev: aprsvc:apr-service:4:8
+[    3.353762] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    3.361836] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    3.361905] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    3.361953] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag: Sending flag query for idn 14 failed, err = 253
+[    3.361968] ufshcd-qcom 1d84000.ufshc: ufshcd_query_flag_retry: query attribute, opcode 6, idn 14, failed with error 253 after 3 retires
+[    3.361982] ufshcd-qcom 1d84000.ufshc: ufshcd_wb_ctrl write booster enable failed 253
+[    3.365652] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    3.368386] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    3.369577] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    3.378036] msm-snd-sdm845 soc@0:sound: MultiMedia1: error getting cpu dai name
+[    3.385744] q6asm-dai remoteproc-adsp:glink-edge:apr:apr-service@7:dais: Adding to iommu group 11
+[    3.385859] arm-smmu 15000000.iommu: arm_smmu_attach_dev() 0x1821
+[    3.387667] debugfs: Directory 'remoteproc-adsp:glink-edge:apr:' with parent 'Lenovo-YOGA-C630-13Q50' already present!
+[    3.394752] wcd934x-codec wcd934x-codec.2.auto: WCD934X Minor:0x1 Version:0x411
+[    3.394776] wcd934x-codec wcd934x-codec.2.auto: qcom,micbias1-microvolt value not found, using default
+[    3.394781] wcd934x-codec wcd934x-codec.2.auto: qcom,micbias2-microvolt value not found, using default
+[    3.394785] wcd934x-codec wcd934x-codec.2.auto: qcom,micbias3-microvolt value not found, using default
+[    3.394789] wcd934x-codec wcd934x-codec.2.auto: qcom,micbias4-microvolt value not found, using default
+[    3.399778] usb 4-1: new SuperSpeed Gen 1 USB device number 2 using xhci-hcd
+[    3.400631] debugfs: Directory 'remoteproc-adsp:glink-edge:apr:' with parent 'Lenovo-YOGA-C630-13Q50' already present!
+[    3.402643] msm-snd-sdm845 soc@0:sound: snd-soc-dummy-dai <-> MultiMedia1 mapping ok
+[    3.402926] msm-snd-sdm845 soc@0:sound: snd-soc-dummy-dai <-> MultiMedia2 mapping ok
+[    3.402952] msm-snd-sdm845 soc@0:sound: multicodec <-> SLIMBUS_0_RX mapping ok
+[    3.402962] msm-snd-sdm845 soc@0:sound: wcd934x_tx1 <-> SLIMBUS_0_TX mapping ok
+[    3.448426] hub 4-1:1.0: USB hub found
+[    3.448895] hub 4-1:1.0: 2 ports detected
+[    3.501141] Bluetooth: BNEP (Ethernet Emulation) ver 1.3
+[    3.501169] Bluetooth: BNEP socket layer initialized
+[    3.611586] qcom-q6v5-mss 4080000.remoteproc: MBA booted, loading mpss
+[    3.654882] wcd934x-codec wcd934x-codec.2.auto: ASoC: mux RX INT0 MIX2 INP has no paths
+[    3.655880] wcd934x-codec wcd934x-codec.2.auto: ASoC: mux RX INT1 MIX2 INP has no paths
+[    3.656204] wcd934x-codec wcd934x-codec.2.auto: ASoC: mux RX INT2 MIX2 INP has no paths
+[    3.656416] wcd934x-codec wcd934x-codec.2.auto: ASoC: mux RX INT3 MIX2 INP has no paths
+[    3.656623] wcd934x-codec wcd934x-codec.2.auto: ASoC: mux RX INT4 MIX2 INP has no paths
+[    3.656870] wcd934x-codec wcd934x-codec.2.auto: ASoC: mux RX INT7 MIX2 INP has no paths
+[    3.666293] wcd934x-codec wcd934x-codec.2.auto: ASoC: mux CDC_IF TX9 MUX has no paths
+[    3.666319] wcd934x-codec wcd934x-codec.2.auto: ASoC: mux CDC_IF TX10 MUX has no paths
+[    3.666326] wcd934x-codec wcd934x-codec.2.auto: ASoC: mux CDC_IF TX11 MUX has no paths
+[    3.666332] wcd934x-codec wcd934x-codec.2.auto: ASoC: mux CDC_IF TX11 INP1 MUX has no paths
+[    3.666339] wcd934x-codec wcd934x-codec.2.auto: ASoC: mux CDC_IF TX13 MUX has no paths
+[    3.666345] wcd934x-codec wcd934x-codec.2.auto: ASoC: mux CDC_IF TX13 INP1 MUX has no paths
+[    3.683807] input: Lenovo-YOGA-C630-13Q50 Headset Jack as /devices/platform/soc@0/soc@0:sound/sound/card0/input23
+[    3.715569] usb 3-1.3: new high-speed USB device number 3 using xhci-hcd
+[    3.928269] usb 4-1.1: new SuperSpeed Gen 1 USB device number 3 using xhci-hcd
+[    3.953697] uvcvideo: Found UVC 1.00 device Integrated Camera (5986:2115)
+[    3.995977] Bluetooth: hci0: QCA Downloading qca/crnv21.bin
+[    4.023758] uvcvideo 3-1.3:1.0: Entity type for entity Extension 4 was not initialized!
+[    4.023836] uvcvideo 3-1.3:1.0: Entity type for entity Extension 3 was not initialized!
+[    4.023889] uvcvideo 3-1.3:1.0: Entity type for entity Processing 2 was not initialized!
+[    4.023941] uvcvideo 3-1.3:1.0: Entity type for entity Camera 1 was not initialized!
+[    4.025783] input: Integrated Camera: Integrated C as /devices/platform/soc@0/a8f8800.usb/a800000.dwc3/xhci-hcd.1.auto/usb3/3-1/3-1.3/3-1.3:1.0/input/input24
+[    4.034107] usbcore: registered new interface driver uvcvideo
+[    4.034145] USB Video Class driver (1.1.1)
+[    4.044338] Bluetooth: hci0: QCA setup on UART is completed
+[    4.191534] NET: Registered protocol family 38
+[    4.430171] ax88179_178a 4-1.1:1.0 eth0: register 'ax88179_178a' at usb-xhci-hcd.1.auto-1.1, ASIX AX88179 USB 3.0 Gigabit Ethernet, 00:0e:c6:b0:51:7d
+[    4.435473] usbcore: registered new interface driver ax88179_178a
+[    5.267667] remoteproc remoteproc2: remote processor 4080000.remoteproc is now up
+[    6.445466] ath10k_snoc 18800000.wifi: qmi chip_id 0x30214 chip_family 0x4001 board_id 0xff soc_id 0x40030001
+[    6.445567] ath10k_snoc 18800000.wifi: qmi fw_version 0x2009856b fw_build_timestamp 2018-07-19 12:28 fw_build_id QC_IMAGE_VERSION_STRING=WLAN.HL.2.0-01387-QCAHLSWMTPLZ-1
+[    7.907346] ax88179_178a 4-1.1:1.0 eth0: ax88179 - Link status is: 1
+[    7.919245] IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready
+[    8.138758] kauditd_printk_skb: 15 callbacks suppressed
+[    8.138763] audit: type=1131 audit(1595391283.539:26): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-rfkill comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[   15.628602] audit: type=1101 audit(1595391291.031:27): pid=409 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_tally2,pam_access,pam_unix,pam_permit,pam_time acct="bjorn" exe="/usr/bin/sshd" hostname=192.168.86.31 addr=192.168.86.31 terminal=ssh res=success'
+[   15.634157] audit: type=1103 audit(1595391291.035:28): pid=409 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=pam_tally2,pam_shells,pam_unix,pam_permit,pam_env acct="bjorn" exe="/usr/bin/sshd" hostname=192.168.86.31 addr=192.168.86.31 terminal=ssh res=success'
+[   15.634788] audit: type=1006 audit(1595391291.035:29): pid=409 uid=0 old-auid=4294967295 auid=1001 tty=(none) old-ses=4294967295 ses=1 res=1
+[   15.634913] audit: type=1300 audit(1595391291.035:29): arch=c00000b7 syscall=64 success=yes exit=4 a0=3 a1=ffffcfdce510 a2=4 a3=ffffad15ff10 items=0 ppid=390 pid=409 auid=1001 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=(none) ses=1 comm="sshd" exe="/usr/bin/sshd" key=(null)
+[   15.634968] audit: type=1327 audit(1595391291.035:29): proctitle=737368643A20626A6F726E205B707269765D
+[   15.767955] audit: type=1130 audit(1595391291.171:30): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=user-runtime-dir@1001 comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[   15.792422] audit: type=1101 audit(1595391291.195:31): pid=412 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_tally2,pam_access,pam_unix,pam_permit,pam_time acct="bjorn" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+[   15.792464] audit: type=1103 audit(1595391291.195:32): pid=412 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=? acct="bjorn" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=failed'
+[   15.792673] audit: type=1006 audit(1595391291.195:33): pid=412 uid=0 old-auid=4294967295 auid=1001 tty=(none) old-ses=4294967295 ses=2 res=1
+[   15.792694] audit: type=1300 audit(1595391291.195:33): arch=c00000b7 syscall=64 success=yes exit=4 a0=8 a1=ffffdbb28e40 a2=4 a3=ffff9347ff10 items=0 ppid=1 pid=412 auid=1001 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=(none) ses=2 comm="(systemd)" exe="/usr/lib/systemd/systemd" key=(null)
