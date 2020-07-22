@@ -832,6 +832,17 @@ static int ti_sn_bridge_get_modes(struct drm_bridge *bridge,
 	return drm_panel_get_modes(pdata->panel, connector);
 }
 
+static enum drm_connector_status ti_sn_bridge_detect(struct drm_bridge *bridge)
+{
+	/**
+	 * TODO: Currently if drm_panel is present, then always
+	 * return the status as connected. Need to add support to detect
+	 * device state for hot pluggable scenarios.
+	 */
+	return connector_status_connected;
+}
+
+
 static const struct drm_bridge_funcs ti_sn_bridge_funcs = {
 	.attach = ti_sn_bridge_attach,
 	.pre_enable = ti_sn_bridge_pre_enable,
@@ -840,6 +851,7 @@ static const struct drm_bridge_funcs ti_sn_bridge_funcs = {
 	.post_disable = ti_sn_bridge_post_disable,
 	.mode_valid = ti_sn_bridge_mode_valid,
 	.get_modes = ti_sn_bridge_get_modes,
+	.detect = ti_sn_bridge_detect,
 };
 
 static struct ti_sn_bridge *aux_to_ti_sn_bridge(struct drm_dp_aux *aux)
@@ -1107,7 +1119,7 @@ static int ti_sn_bridge_probe(struct i2c_client *client,
 	pdata->bridge.funcs = &ti_sn_bridge_funcs;
 	pdata->bridge.of_node = client->dev.of_node;
 	pdata->bridge.type = DRM_MODE_CONNECTOR_eDP;
-	pdata->bridge.ops = DRM_BRIDGE_OP_MODES;
+	pdata->bridge.ops = DRM_BRIDGE_OP_MODES | DRM_BRIDGE_OP_DETECT;
 
 	drm_bridge_add(&pdata->bridge);
 
