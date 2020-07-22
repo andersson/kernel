@@ -320,6 +320,7 @@ static int ti_sn_bridge_attach(struct drm_bridge *bridge,
 						   .node = NULL,
 						 };
 
+	pr_err("VK: in %s\n", __func__);
 	if (!(flags & DRM_BRIDGE_ATTACH_NO_CONNECTOR)) {
 		pr_err("VK: DRM_BRIDGE_ATTACH_NO_CONNECTOR not set, doing connector init\n");
 		ret = ti_sn_bridge_connector_init(bridge);
@@ -390,6 +391,7 @@ static void ti_sn_bridge_disable(struct drm_bridge *bridge)
 {
 	struct ti_sn_bridge *pdata = bridge_to_ti_sn_bridge(bridge);
 
+	pr_err("VK: in %s\n", __func__);
 	drm_panel_disable(pdata->panel);
 
 	/* disable video stream */
@@ -702,6 +704,7 @@ static void ti_sn_bridge_enable(struct drm_bridge *bridge)
 	unsigned int val;
 	int ret = -EINVAL;
 
+	pr_err("VK: in %s\n", __func__);
 	/*
 	 * Run with the maximum number of lanes that the DP sink supports.
 	 *
@@ -774,6 +777,7 @@ static void ti_sn_bridge_pre_enable(struct drm_bridge *bridge)
 {
 	struct ti_sn_bridge *pdata = bridge_to_ti_sn_bridge(bridge);
 
+	pr_err("VK: in %s\n", __func__);
 	pm_runtime_get_sync(pdata->dev);
 
 	/* configure bridge ref_clk */
@@ -805,10 +809,11 @@ static void ti_sn_bridge_post_disable(struct drm_bridge *bridge)
 {
 	struct ti_sn_bridge *pdata = bridge_to_ti_sn_bridge(bridge);
 
+	pr_err("VK: in %s\n", __func__);
 	if (pdata->refclk)
 		clk_disable_unprepare(pdata->refclk);
 
-	pm_runtime_put_sync(pdata->dev);
+	//pm_runtime_put_sync(pdata->dev);
 }
 
 static enum drm_mode_status
@@ -839,6 +844,7 @@ static enum drm_connector_status ti_sn_bridge_detect(struct drm_bridge *bridge)
 	 * return the status as connected. Need to add support to detect
 	 * device state for hot pluggable scenarios.
 	 */
+	pr_err("VK: in %s\n", __func__);
 	return connector_status_connected;
 }
 
@@ -1133,6 +1139,7 @@ static int ti_sn_bridge_remove(struct i2c_client *client)
 {
 	struct ti_sn_bridge *pdata = i2c_get_clientdata(client);
 
+	pr_err("VK: in %s\n", __func__);
 	if (!pdata)
 		return -EINVAL;
 
