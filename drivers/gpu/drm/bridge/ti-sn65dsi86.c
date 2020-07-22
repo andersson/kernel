@@ -1107,6 +1107,7 @@ static int ti_sn_bridge_probe(struct i2c_client *client,
 	pdata->bridge.funcs = &ti_sn_bridge_funcs;
 	pdata->bridge.of_node = client->dev.of_node;
 	pdata->bridge.type = DRM_MODE_CONNECTOR_eDP;
+	pdata->bridge.ops = DRM_BRIDGE_OP_MODES;
 
 	drm_bridge_add(&pdata->bridge);
 
