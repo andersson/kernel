@@ -321,9 +321,12 @@ static int ti_sn_bridge_attach(struct drm_bridge *bridge,
 						 };
 
 	if (!(flags & DRM_BRIDGE_ATTACH_NO_CONNECTOR)) {
+		pr_err("VK: DRM_BRIDGE_ATTACH_NO_CONNECTOR not set, doing connector init\n");
 		ret = ti_sn_bridge_connector_init(bridge);
 		if (ret < 0)
 			return ret;
+	} else {
+		pr_err("VK: DRM_BRIDGE_ATTACH_NO_CONNECTOR set, skiping connector init\n");
 	}
 
 	/*
@@ -371,8 +374,9 @@ static int ti_sn_bridge_attach(struct drm_bridge *bridge,
 	pdata->dsi = dsi;
 
 	/* attach panel to bridge */
-	drm_panel_attach(pdata->panel, &pdata->connector);
+	ret = drm_panel_attach(pdata->panel, &pdata->connector);
 
+	pr_err("VK: drm_panel_attach ret %d\n", ret);
 	return 0;
 
 err_dsi_attach:
@@ -811,6 +815,7 @@ static enum drm_mode_status
 ti_sn_bridge_mode_valid(struct drm_bridge *bridge,
 				  const struct drm_display_mode *mode)
 {
+	pr_err("VK: in %s\n", __func__);
 	/* maximum supported resolution is 4K at 60 fps */
 	if (mode->clock > 594000)
 		return MODE_CLOCK_HIGH;
@@ -823,6 +828,7 @@ static int ti_sn_bridge_get_modes(struct drm_bridge *bridge,
 {
 	struct ti_sn_bridge *pdata = connector_to_ti_sn_bridge(connector);
 
+	pr_err("VK: in %s\n", __func__);
 	return drm_panel_get_modes(pdata->panel, connector);
 }
 
@@ -1105,6 +1111,7 @@ static int ti_sn_bridge_probe(struct i2c_client *client,
 	drm_bridge_add(&pdata->bridge);
 
 	ti_sn_debugfs_init(pdata);
+	pr_err("VK: in %s completed\n", __func__);
 
 	return 0;
 }
