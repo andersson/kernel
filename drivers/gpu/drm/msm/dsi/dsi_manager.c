@@ -723,6 +723,7 @@ struct drm_connector *msm_dsi_manager_ext_bridge_init(u8 id)
 	 */
 	drm_bridge_attach(encoder, ext_bridge, int_bridge, DRM_BRIDGE_ATTACH_NO_CONNECTOR);
 
+	pr_err("VK: in %s doing connector init %s\n", __func__, connector->name);
 	connector = drm_bridge_connector_init(dev, encoder);
 	if (IS_ERR(connector)) {
 		DRM_DEV_ERROR(dev->dev, "drm_bridge_connector_init failed: %ld\n",
