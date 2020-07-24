@@ -323,7 +323,8 @@ static int rmnet_changelink(struct net_device *dev, struct nlattr *tb[],
 		struct ifla_rmnet_flags *flags;
 
 		flags = nla_data(data[IFLA_RMNET_FLAGS]);
-		port->data_format = flags->flags & flags->mask;
+		port->data_format = (port->data_format & ~flags->mask) |
+				    (flags->flags & flags->mask);
 	}
 
 	return 0;
