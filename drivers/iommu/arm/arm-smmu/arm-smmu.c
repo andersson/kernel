@@ -645,6 +645,9 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
 	struct arm_smmu_cfg *cfg = &smmu_domain->cfg;
 	irqreturn_t (*context_fault)(int irq, void *dev);
+	struct arm_smmu_cfg new_cfg = *cfg;
+	enum arm_smmu_domain_stage new_stage = smmu_domain->stage;
+	const struct iommu_flush_ops *flush_ops;
 
 	mutex_lock(&smmu_domain->init_mutex);
 	if (smmu_domain->smmu)
@@ -675,9 +678,9 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 	 * Note that you can't actually request stage-2 mappings.
 	 */
 	if (!(smmu->features & ARM_SMMU_FEAT_TRANS_S1))
-		smmu_domain->stage = ARM_SMMU_DOMAIN_S2;
+		new_stage = ARM_SMMU_DOMAIN_S2;
 	if (!(smmu->features & ARM_SMMU_FEAT_TRANS_S2))
-		smmu_domain->stage = ARM_SMMU_DOMAIN_S1;
+		new_stage = ARM_SMMU_DOMAIN_S1;
 
 	/*
 	 * Choosing a suitable context format is even more fiddly. Until we
@@ -688,32 +691,32 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 	 * support to be a superset of AArch32 support...
 	 */
 	if (smmu->features & ARM_SMMU_FEAT_FMT_AARCH32_L)
-		cfg->fmt = ARM_SMMU_CTX_FMT_AARCH32_L;
+		new_cfg.fmt = ARM_SMMU_CTX_FMT_AARCH32_L;
 	if (IS_ENABLED(CONFIG_IOMMU_IO_PGTABLE_ARMV7S) &&
 	    !IS_ENABLED(CONFIG_64BIT) && !IS_ENABLED(CONFIG_ARM_LPAE) &&
 	    (smmu->features & ARM_SMMU_FEAT_FMT_AARCH32_S) &&
-	    (smmu_domain->stage == ARM_SMMU_DOMAIN_S1))
-		cfg->fmt = ARM_SMMU_CTX_FMT_AARCH32_S;
-	if ((IS_ENABLED(CONFIG_64BIT) || cfg->fmt == ARM_SMMU_CTX_FMT_NONE) &&
+	    (new_stage == ARM_SMMU_DOMAIN_S1))
+		new_cfg.fmt = ARM_SMMU_CTX_FMT_AARCH32_S;
+	if ((IS_ENABLED(CONFIG_64BIT) || new_cfg.fmt == ARM_SMMU_CTX_FMT_NONE) &&
 	    (smmu->features & (ARM_SMMU_FEAT_FMT_AARCH64_64K |
 			       ARM_SMMU_FEAT_FMT_AARCH64_16K |
 			       ARM_SMMU_FEAT_FMT_AARCH64_4K)))
-		cfg->fmt = ARM_SMMU_CTX_FMT_AARCH64;
+		new_cfg.fmt = ARM_SMMU_CTX_FMT_AARCH64;
 
-	if (cfg->fmt == ARM_SMMU_CTX_FMT_NONE) {
+	if (new_cfg.fmt == ARM_SMMU_CTX_FMT_NONE) {
 		ret = -EINVAL;
 		goto out_unlock;
 	}
 
-	switch (smmu_domain->stage) {
+	switch (new_stage) {
 	case ARM_SMMU_DOMAIN_S1:
-		cfg->cbar = CBAR_TYPE_S1_TRANS_S2_BYPASS;
+		new_cfg.cbar = CBAR_TYPE_S1_TRANS_S2_BYPASS;
 		start = smmu->num_s2_context_banks;
 		ias = smmu->va_size;
 		oas = smmu->ipa_size;
-		if (cfg->fmt == ARM_SMMU_CTX_FMT_AARCH64) {
+		if (new_cfg.fmt == ARM_SMMU_CTX_FMT_AARCH64) {
 			fmt = ARM_64_LPAE_S1;
-		} else if (cfg->fmt == ARM_SMMU_CTX_FMT_AARCH32_L) {
+		} else if (new_cfg.fmt == ARM_SMMU_CTX_FMT_AARCH32_L) {
 			fmt = ARM_32_LPAE_S1;
 			ias = min(ias, 32UL);
 			oas = min(oas, 40UL);
@@ -722,7 +725,7 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 			ias = min(ias, 32UL);
 			oas = min(oas, 32UL);
 		}
-		smmu_domain->flush_ops = &arm_smmu_s1_tlb_ops;
+		flush_ops = &arm_smmu_s1_tlb_ops;
 		break;
 	case ARM_SMMU_DOMAIN_NESTED:
 		/*
@@ -730,11 +733,11 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 		 * involved.
 		 */
 	case ARM_SMMU_DOMAIN_S2:
-		cfg->cbar = CBAR_TYPE_S2_TRANS;
+		new_cfg.cbar = CBAR_TYPE_S2_TRANS;
 		start = 0;
 		ias = smmu->ipa_size;
 		oas = smmu->pa_size;
-		if (cfg->fmt == ARM_SMMU_CTX_FMT_AARCH64) {
+		if (new_cfg.fmt == ARM_SMMU_CTX_FMT_AARCH64) {
 			fmt = ARM_64_LPAE_S2;
 		} else {
 			fmt = ARM_32_LPAE_S2;
@@ -742,9 +745,9 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 			oas = min(oas, 40UL);
 		}
 		if (smmu->version == ARM_SMMU_V2)
-			smmu_domain->flush_ops = &arm_smmu_s2_tlb_ops_v2;
+			flush_ops = &arm_smmu_s2_tlb_ops_v2;
 		else
-			smmu_domain->flush_ops = &arm_smmu_s2_tlb_ops_v1;
+			flush_ops = &arm_smmu_s2_tlb_ops_v1;
 		break;
 	default:
 		ret = -EINVAL;
@@ -757,6 +760,9 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 	}
 
 	smmu_domain->smmu = smmu;
+	smmu_domain->cfg = new_cfg;
+	smmu_domain->stage = new_stage;
+	smmu_domain->flush_ops = flush_ops;
 
 	cfg->cbndx = ret;
 	if (smmu->version < ARM_SMMU_V2) {
