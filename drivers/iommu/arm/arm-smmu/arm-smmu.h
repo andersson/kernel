@@ -437,7 +437,8 @@ struct arm_smmu_impl {
 	irqreturn_t (*global_fault)(int irq, void *dev);
 	irqreturn_t (*context_fault)(int irq, void *dev);
 	int (*alloc_context_bank)(struct arm_smmu_domain *smmu_domain,
-			struct device *dev, int start, int max);
+				  struct arm_smmu_device *smmu,
+				  struct device *dev, int start);
 };
 
 #define INVALID_SMENDX			-1

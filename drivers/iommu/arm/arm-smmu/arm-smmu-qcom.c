@@ -91,9 +91,10 @@ static int qcom_adreno_smmu_set_ttbr0_cfg(const void *cookie,
 }
 
 static int qcom_adreno_smmu_alloc_context_bank(struct arm_smmu_domain *smmu_domain,
-		struct device *dev, int start, int count)
+					       struct arm_smmu_device *smmu,
+					       struct device *dev, int start)
 {
-	struct arm_smmu_device *smmu = smmu_domain->smmu;
+	int count;
 
 	/*
 	 * Assign context bank 0 to the GPU device so the GPU hardware can
@@ -104,6 +105,7 @@ static int qcom_adreno_smmu_alloc_context_bank(struct arm_smmu_domain *smmu_doma
 		count = 1;
 	} else {
 		start = 1;
+		count = smmu->num_context_banks;
 	}
 
 	return __arm_smmu_alloc_bitmap(smmu->context_map, start, count);
