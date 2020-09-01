@@ -94,7 +94,11 @@ static int qcom_adreno_smmu_alloc_context_bank(struct arm_smmu_domain *smmu_doma
 					       struct arm_smmu_device *smmu,
 					       struct device *dev, int start)
 {
+	struct iommu_domain *domain = &smmu_domain->domain;
 	int count;
+
+	if (domain->type == IOMMU_DOMAIN_IDENTITY)
+		return ARM_SMMU_CBNDX_BYPASS;
 
 	/*
 	 * Assign context bank 0 to the GPU device so the GPU hardware can
