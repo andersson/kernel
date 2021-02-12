@@ -162,6 +162,18 @@
 	vdda-pll-supply = <&vreg_l3c_1p2>;
 };
 
+&usb_mp0_hsphy {
+	status = "okay";
+};
+
+&usb_mp1_hsphy {
+	status = "okay";
+};
+
+&usb_mp {
+	status = "okay";
+};
+
 &usb_prim_hsphy {
 	status = "okay";
 	vdda-pll-supply = <&vreg_l5e_0p88>;

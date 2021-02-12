@@ -1379,6 +1379,32 @@
 			resets = <&gcc GCC_QUSB2PHY_SEC_BCR>;
 		};
 
+		usb_mp0_hsphy: phy@88e4000 {
+			compatible = "qcom,sc8180x-usb-hs-phy",
+				     "qcom,usb-snps-hs-7nm-phy";
+			reg = <0 0x088e4000 0 0x400>;
+			status = "disabled";
+			#phy-cells = <0>;
+
+			clocks = <&rpmhcc RPMH_CXO_CLK>;
+			clock-names = "ref";
+
+			resets = <&gcc GCC_QUSB2PHY_MP0_BCR>;
+		};
+
+		usb_mp1_hsphy: phy@88e5000 {
+			compatible = "qcom,sc8180x-usb-hs-phy",
+				     "qcom,usb-snps-hs-7nm-phy";
+			reg = <0 0x088e5000 0 0x400>;
+			status = "disabled";
+			#phy-cells = <0>;
+
+			clocks = <&rpmhcc RPMH_CXO_CLK>;
+			clock-names = "ref";
+
+			resets = <&gcc GCC_QUSB2PHY_MP1_BCR>;
+		};
+
 		usb_prim_qmpphy: phy@88e9000 {
 			compatible = "qcom,sc8180x-qmp-usb3-phy";
 			reg = <0 0x088e9000 0 0x18c>,
@@ -1461,6 +1487,52 @@
 			reg = <0 0x09680000 0 0x3e200>;
 			#interconnect-cells = <1>;
 			qcom,bcm-voters = <&apps_bcm_voter>;
+		};
+
+		usb_mp: usb@a4f8800 {
+			compatible = "qcom,sc8180x-dwc3", "qcom,dwc3";
+			reg = <0 0x0a4f8800 0 0x400>;
+			status = "disabled";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			ranges;
+			dma-ranges;
+
+			clocks = <&gcc GCC_CFG_NOC_USB3_MP_AXI_CLK>,
+				 <&gcc GCC_USB30_MP_MASTER_CLK>,
+				 <&gcc GCC_AGGRE_USB3_MP_AXI_CLK>,
+				 <&gcc GCC_USB30_MP_MOCK_UTMI_CLK>,
+				 <&gcc GCC_USB30_MP_SLEEP_CLK>,
+				 <&gcc GCC_USB3_SEC_CLKREF_CLK>;
+			clock-names = "cfg_noc", "core", "iface", "mock_utmi",
+				      "sleep", "xo";
+
+			assigned-clocks = <&gcc GCC_USB30_MP_MOCK_UTMI_CLK>,
+					  <&gcc GCC_USB30_MP_MASTER_CLK>;
+			assigned-clock-rates = <19200000>, <200000000>;
+
+			interrupts = <GIC_SPI 659 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 658 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 558 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 580 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "hs_phy_irq", "ss_phy_irq",
+					  "dm_hs_phy_irq", "dp_hs_phy_irq";
+
+			power-domains = <&gcc USB30_MP_GDSC>;
+
+			resets = <&gcc GCC_USB30_MP_BCR>;
+
+			usb_mp_dwc3: dwc3@a400000 {
+				compatible = "snps,dwc3";
+				reg = <0 0x0a400000 0 0xcd00>;
+				interrupts = <GIC_SPI 654 IRQ_TYPE_LEVEL_HIGH>;
+				iommus = <&apps_smmu 0x60 0>;
+				snps,dis_u2_susphy_quirk;
+				snps,dis_enblslpm_quirk;
+				phys = <&usb_mp0_hsphy>, <&usb_mp1_hsphy>;
+				phy-names = "usb2-phy", "usb3-phy";
+				dr_mode = "host";
+			};
 		};
 
 		usb_prim: usb@a6f8800 {
