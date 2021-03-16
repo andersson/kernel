@@ -1831,7 +1831,7 @@
 			ranges;
 
 			mdss_mdp: mdp@ae01000 {
-				compatible = "qcom,sdm845-dpu";
+				compatible = "qcom,sc8180x-dpu";
 				reg = <0 0x0ae01000 0 0x8f000>,
 				      <0 0x0aeb0000 0 0x2008>;
 				reg-names = "mdp", "vbif";
@@ -1852,8 +1852,6 @@
 
 				interrupt-parent = <&mdss>;
 				interrupts = <0 IRQ_TYPE_LEVEL_HIGH>;
-
-				status = "disabled";
 
 				ports {
 					#address-cells = <1>;
@@ -2073,7 +2071,7 @@
 				status = "disabled";
 			};
 
-			dp0: displayport-controller@ae90000 {
+			mdss_dp0: displayport-controller@ae90000 {
 				compatible = "qcom,sc8180x-dp";
 				reg = <0 0xae90000 0 0x1400>;
 				interrupt-parent = <&mdss>;
@@ -2093,6 +2091,8 @@
 			        #sound-dai-cells = <0>;
 
 			        power-domains = <&rpmhpd SC8180X_CX>;
+
+				status = "disabled";
 
 				ports {
 					#address-cells = <1>;
@@ -2115,7 +2115,7 @@
 				};
 			};
 
-			dp1: displayport-controller@ae98000 {
+			mdss_dp1: displayport-controller@ae98000 {
 				compatible = "qcom,sc8180x-dp";
 				reg = <0 0xae98000 0 0x1400>;
 				interrupt-parent = <&mdss>;
@@ -2135,6 +2135,8 @@
 			        #sound-dai-cells = <0>;
 
 			        power-domains = <&rpmhpd SC8180X_CX>;
+
+				status = "disabled";
 
 				ports {
 					#address-cells = <1>;
@@ -2157,7 +2159,7 @@
 				};
 			};
 
-			edp: displayport-controller@ae9a000 {
+			mdss_edp: displayport-controller@ae9a000 {
 				compatible = "qcom,sc8180x-dp";
 				reg = <0 0xae9a000 0 0x1400>;
 				interrupt-parent = <&mdss>;
@@ -2177,6 +2179,8 @@
 			        #sound-dai-cells = <0>;
 
 			        power-domains = <&rpmhpd SC8180X_CX>;
+
+				status = "disabled";
 
 				ports {
 					#address-cells = <1>;

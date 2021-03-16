@@ -126,6 +126,22 @@
 	};
 };
 
+&mdss {
+	status = "okay";
+};
+
+&mdss_dp0 {
+	status = "okay";
+};
+
+&mdss_dp1 {
+	status = "okay";
+};
+
+&mdss_edp {
+	status = "okay";
+};
+
 &qupv3_id_0 {
 	status = "okay";
 };
