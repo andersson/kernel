@@ -1219,6 +1219,7 @@ static const struct dev_pm_ops dpu_pm_ops = {
 static const struct of_device_id dpu_dt_match[] = {
 	{ .compatible = "qcom,sdm845-dpu", },
 	{ .compatible = "qcom,sc7180-dpu", },
+	{ .compatible = "qcom,sc8180x-dpu", },
 	{}
 };
 MODULE_DEVICE_TABLE(of, dpu_dt_match);
