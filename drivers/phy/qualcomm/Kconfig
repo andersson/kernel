@@ -53,6 +53,7 @@ config PHY_QCOM_PCIE2
 config PHY_QCOM_QMP
 	tristate "Qualcomm QMP PHY Driver"
 	depends on OF && COMMON_CLK && (ARCH_QCOM || COMPILE_TEST)
+	depends on TYPEC || TYPEC=n
 	select GENERIC_PHY
 	help
 	  Enable this to support the QMP PHY transceiver that is used
