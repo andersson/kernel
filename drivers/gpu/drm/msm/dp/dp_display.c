@@ -78,6 +78,8 @@ struct dp_display_private {
 	char *name;
 	int irq;
 
+	int id;
+
 	/* state variables */
 	bool core_initialized;
 	bool hpd_irq_on;
@@ -228,7 +230,7 @@ static int dp_display_bind(struct device *dev, struct device *master,
 
 	dp->dp_display.drm_dev = drm;
 	priv = drm->dev_private;
-	priv->dp = &(dp->dp_display);
+	priv->dp[dp->id] = &(dp->dp_display);
 
 	rc = dp->parser->parse(dp->parser);
 	if (rc) {
@@ -266,7 +268,7 @@ static void dp_display_unbind(struct device *dev, struct device *master,
 
 	dp_power_client_deinit(dp->power);
 	dp_aux_unregister(dp->aux);
-	priv->dp = NULL;
+	priv->dp[dp->id] = NULL;
 }
 
 static const struct component_ops dp_display_comp_ops = {
@@ -1197,7 +1199,7 @@ int dp_display_request_irq(struct msm_dp *dp_display)
 	return 0;
 }
 
-static struct msm_dp_desc *dp_display_get_desc(struct platform_device *pdev)
+static struct msm_dp_desc *dp_display_get_desc(struct platform_device *pdev, int *id)
 {
 	const struct msm_dp_config *cfg = of_device_get_match_data(&pdev->dev);
 	struct resource *res;
@@ -1209,8 +1211,10 @@ static struct msm_dp_desc *dp_display_get_desc(struct platform_device *pdev)
 		return NULL;
 
 	for (i = 0; i < cfg->num_descs; i++) {
-		if (cfg->descs[i].io_start == res->start)
+		if (cfg->descs[i].io_start == res->start) {
+			*id = i;
 			return &cfg->descs[i];
+		}
 	}
 
 	dev_err(&pdev->dev, "unknown displayport instance\n");
@@ -1222,6 +1226,7 @@ static int dp_display_probe(struct platform_device *pdev)
 	int rc = 0;
 	struct dp_display_private *dp;
 	struct msm_dp_desc *desc;
+	int id;
 
 	if (!pdev || !pdev->dev.of_node) {
 		DRM_ERROR("pdev not found\n");
@@ -1232,10 +1237,11 @@ static int dp_display_probe(struct platform_device *pdev)
 	if (!dp)
 		return -ENOMEM;
 
-	desc = dp_display_get_desc(pdev);
+	desc = dp_display_get_desc(pdev, &id);
 	if (!desc)
 		return -EINVAL;
 
+	dp->id = id;
 	dp->pdev = pdev;
 	dp->name = "drm_dp";
 	dp->dp_display.connector_type = desc->connector_type;
