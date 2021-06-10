@@ -935,12 +935,11 @@
 			iommus = <&apps_smmu 0x3C0 0x0>;
 
 			snps,tso;
-			rx-fifo-depth = <4096>; //test with 16384
-			tx-fifo-depth = <4096>; //test with 32768
+			rx-fifo-depth = <16384>; //4096 default
+			tx-fifo-depth = <32768>; //4096 default
 
 			status = "disabled";
 		};
-
 
 		qupv3_id_0: geniqup@8c0000 {
 			compatible = "qcom,geni-se-qup";

@@ -47,6 +47,64 @@
 
 		vin-supply = <&vreg_3p3>;
 	};
+
+	mtl_rx_setup: rx-queues-config {
+		snps,rx-queues-to-use = <4>;
+		snps,rx-sched-sp;
+
+		queue0 {
+			snps,dcb-algorithm;
+			snps,map-to-dma-channel = <0x0>;
+			snps,route-up;
+			snps,priority = <0x1>;
+		};
+
+		queue1 {
+			snps,dcb-algorithm;
+			snps,map-to-dma-channel = <0x1>;
+			snps,route-ptp;
+		};
+
+		queue2 {
+			snps,avb-algorithm;
+			snps,map-to-dma-channel = <0x2>;
+			snps,route-avcp;
+		};
+
+		queue3 {
+			snps,avb-algorithm;
+			snps,map-to-dma-channel = <0x3>;
+			snps,priority = <0xC>;
+		};
+	};
+
+	mtl_tx_setup: tx-queues-config {
+	      snps,tx-queues-to-use = <4>;
+	      snps,tx-sched-sp;
+	      queue0 {
+		      snps,dcb-algorithm;
+	      };
+
+	      queue1 {
+		      snps,dcb-algorithm;
+	      };
+
+	      queue2 {
+		      snps,avb-algorithm;
+		      snps,send_slope = <0x1000>;
+		      snps,idle_slope = <0x1000>;
+		      snps,high_credit = <0x3E800>;
+		      snps,low_credit = <0xFFC18000>;
+	      };
+
+	      queue3 {
+		      snps,avb-algorithm;
+		      snps,send_slope = <0x1000>;
+		      snps,idle_slope = <0x1000>;
+		      snps,high_credit = <0x3E800>;
+		      snps,low_credit = <0xFFC18000>;
+	      };
+	};
 };
 
 &apps_rsc {
@@ -317,6 +375,39 @@
 	firmware-name = "qcom/sa8155p/cdsp.mdt";
 };
 
+&ethernet {
+	status = "okay";
+
+	snps,reset-gpio = <&tlmm 79 GPIO_ACTIVE_LOW>;
+	snps,reset-active-low;
+	snps,reset-delays-us = <0 11000 70000>;
+
+	snps,ptp-ref-clk-rate = <250000000>;
+	snps,ptp-req-clk-rate = <96000000>;
+
+	snps,mtl-rx-config = <&mtl_rx_setup>;
+	snps,mtl-tx-config = <&mtl_tx_setup>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&ethernet_defaults>;
+
+	phy-handle = <&rgmii_phy>;
+	phy-mode = "rgmii";
+	mdio {
+		#address-cells = <0x1>;
+		#size-cells = <0x0>;
+
+		compatible = "snps,dwmac-mdio";
+
+		/* Micrel KSZ9031RNZ PHY */
+		rgmii_phy: phy@7 {
+			reg = <0x7>;
+			device_type = "ethernet-phy";
+			compatible = "ethernet-phy-ieee802.3-c22";
+		};
+	};
+};
+
 &uart2 {
 	status = "okay";
 };
@@ -405,6 +496,38 @@
 			function = "usb2phy_ac";
 			bias-disable;
 			drive-strength = <2>;
+		};
+	};
+
+	ethernet_defaults: ethernet-defaults {
+		rgmii {
+			pins = 	"gpio4", "gpio5", "gpio6", "gpio7", "gpio59",
+				"gpio114", "gpio115", "gpio116", "gpio117",
+				"gpio118", "gpio119", "gpio120", "gpio121", "gpio122";
+			function = "rgmii";
+			bias-disable;
+			drive-strength = <2>;
+		};
+
+		emac_phy {
+			pins = 	"gpio124";
+			function = "emac_phy";
+			bias-disable;
+			drive-strength = <8>;
+		};
+
+		emac_pps {
+			pins = 	"gpio81";
+			function = "emac_pps";
+			bias-disable;
+			drive-strength = <8>;
+		};
+
+		phy_reset {
+			pins = 	"gpio79";
+			function = "phase_flag";
+			bias-pull-up;
+			drive-strength = <16>;
 		};
 	};
 };
