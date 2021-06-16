@@ -161,6 +161,7 @@ static int dpu_mdss_enable(struct msm_mdss *mdss)
 		writel_relaxed(1, dpu_mdss->mmio + UBWC_PREDICTION_MODE);
 		break;
 	case DPU_HW_VER_620:
+	case DPU_HW_VER_700:
 		writel_relaxed(0x1e, dpu_mdss->mmio + UBWC_STATIC);
 		break;
 	case DPU_HW_VER_720:
