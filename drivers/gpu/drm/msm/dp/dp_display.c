@@ -1432,11 +1432,24 @@ int msm_dp_modeset_init(struct msm_dp *dp_display, struct drm_device *dev,
 	return 0;
 }
 
-int msm_dp_display_enable(struct msm_dp *dp, struct drm_encoder *encoder)
+static struct msm_dp *msm_dp_from_drm_encoder(struct msm_drm_private *priv,
+					      struct drm_encoder *encoder)
+{
+	if (priv->dp && priv->dp->encoder == encoder)
+		return priv->dp;
+
+	return NULL;
+}
+
+int msm_dp_display_enable(struct msm_drm_private *priv, struct drm_encoder *encoder)
 {
 	int rc = 0;
 	struct dp_display_private *dp_display;
+	struct msm_dp *dp = msm_dp_from_drm_encoder(priv, encoder);
 	u32 state;
+
+	if (!dp)
+		return -EINVAL;
 
 	dp_display = container_of(dp, struct dp_display_private, dp_display);
 	if (!dp_display->dp_mode.drm_mode.clock) {
@@ -1489,9 +1502,13 @@ int msm_dp_display_enable(struct msm_dp *dp, struct drm_encoder *encoder)
 	return rc;
 }
 
-int msm_dp_display_pre_disable(struct msm_dp *dp, struct drm_encoder *encoder)
+int msm_dp_display_pre_disable(struct msm_drm_private *priv, struct drm_encoder *encoder)
 {
 	struct dp_display_private *dp_display;
+	struct msm_dp *dp = msm_dp_from_drm_encoder(priv, encoder);
+
+	if (!dp)
+		return 0;
 
 	dp_display = container_of(dp, struct dp_display_private, dp_display);
 
@@ -1500,11 +1517,15 @@ int msm_dp_display_pre_disable(struct msm_dp *dp, struct drm_encoder *encoder)
 	return 0;
 }
 
-int msm_dp_display_disable(struct msm_dp *dp, struct drm_encoder *encoder)
+int msm_dp_display_disable(struct msm_drm_private *priv, struct drm_encoder *encoder)
 {
 	int rc = 0;
 	u32 state;
 	struct dp_display_private *dp_display;
+	struct msm_dp *dp = msm_dp_from_drm_encoder(priv, encoder);
+
+	if (!dp)
+		return 0;
 
 	dp_display = container_of(dp, struct dp_display_private, dp_display);
 
@@ -1531,11 +1552,16 @@ int msm_dp_display_disable(struct msm_dp *dp, struct drm_encoder *encoder)
 	return rc;
 }
 
-void msm_dp_display_mode_set(struct msm_dp *dp, struct drm_encoder *encoder,
-				struct drm_display_mode *mode,
-				struct drm_display_mode *adjusted_mode)
+void msm_dp_display_mode_set(struct msm_drm_private *priv,
+			     struct drm_encoder *encoder,
+			     struct drm_display_mode *mode,
+			     struct drm_display_mode *adjusted_mode)
 {
 	struct dp_display_private *dp_display;
+	struct msm_dp *dp = msm_dp_from_drm_encoder(priv, encoder);
+
+	if (!dp)
+		return;
 
 	dp_display = container_of(dp, struct dp_display_private, dp_display);
 
