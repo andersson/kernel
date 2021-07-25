@@ -10,6 +10,7 @@
 #include <linux/component.h>
 #include <linux/of_irq.h>
 #include <linux/delay.h>
+#include <drm/drm_panel.h>
 
 #include "msm_drv.h"
 #include "msm_kms.h"
@@ -251,6 +252,8 @@ static int dp_display_bind(struct device *dev, struct device *master,
 		DRM_ERROR("device tree parsing failed\n");
 		goto end;
 	}
+
+	dp->dp_display.drm_panel = dp->parser->drm_panel;
 
 	rc = dp_aux_register(dp->aux, drm);
 	if (rc) {
@@ -866,8 +869,10 @@ static int dp_display_set_mode(struct msm_dp *dp_display,
 	return 0;
 }
 
-static int dp_display_prepare(struct msm_dp *dp)
+static int dp_display_prepare(struct msm_dp *dp_display)
 {
+	drm_panel_prepare(dp_display->drm_panel);
+
 	return 0;
 }
 
@@ -884,6 +889,8 @@ static int dp_display_enable(struct dp_display_private *dp, u32 data)
 	rc = dp_ctrl_on_stream(dp->ctrl);
 	if (!rc)
 		dp_display->power_on = true;
+
+	drm_panel_enable(dp_display->drm_panel);
 
 	return rc;
 }
@@ -914,6 +921,8 @@ static int dp_display_disable(struct dp_display_private *dp, u32 data)
 	if (!dp_display->power_on)
 		return 0;
 
+	drm_panel_disable(dp_display->drm_panel);
+
 	/* wait only if audio was enabled */
 	if (dp_display->audio_enabled) {
 		/* signal the disconnect event */
@@ -938,8 +947,10 @@ static int dp_display_disable(struct dp_display_private *dp, u32 data)
 	return 0;
 }
 
-static int dp_display_unprepare(struct msm_dp *dp)
+static int dp_display_unprepare(struct msm_dp *dp_display)
 {
+	drm_panel_unprepare(dp_display->drm_panel);
+
 	return 0;
 }
 
