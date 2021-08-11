@@ -214,6 +214,32 @@
 	firmware-name = "qcom/sm8350/cdsp.mbn";
 };
 
+&dsi0 {
+	status = "okay";
+
+	panel {
+		status = "okay";
+
+		compatible = "visionox,r66451";
+
+		reset-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
+		port {
+			panel0_in: endpoint {
+				remote-endpoint = <&dsi0_out>;
+			};
+		};
+	};
+};
+
+&dsi0_phy  {
+	status = "okay";
+};
+
+&dsi0_out {
+	remote-endpoint = <&panel0_in>;
+	data-lanes = <0 1 2 3>;
+};
+
 &mpss {
 	status = "okay";
 	firmware-name = "qcom/sm8350/modem.mbn";
