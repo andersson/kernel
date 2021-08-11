@@ -126,6 +126,8 @@ int msm_dss_parse_clock(struct platform_device *pdev,
 	const char *clock_name;
 	int num_clk = 0;
 
+	DRM_DEBUG("");
+
 	if (!pdev || !mp)
 		return -EINVAL;
 

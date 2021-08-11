@@ -1545,10 +1545,13 @@
 			reg = <0 0x0ae00000 0 0x1000>;
 			reg-names = "mdss";
 
+#if 0
 			interconnects = <&mmss_noc MASTER_MDP0_DISP &mc_virt SLAVE_EBI1_DISP>,
 					<&mmss_noc MASTER_MDP1_DISP &mc_virt SLAVE_EBI1_DISP>;
+#endif
+			interconnects = <&mmss_noc MASTER_MDP0 &mc_virt SLAVE_EBI1>,
+					<&mmss_noc MASTER_MDP1 &mc_virt SLAVE_EBI1>;
 			interconnect-names = "mdp0-mem", "mdp1-mem";
-
 			power-domains = <&dispcc MDSS_GDSC>;
 
 			// TODO: Are these clocks used downstream

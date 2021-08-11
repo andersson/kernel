@@ -185,6 +185,8 @@ static struct icc_path *path_find(struct device *dev, struct icc_node *src,
 	size_t i, depth = 1;
 	bool found = false;
 
+	printk("%s() src=%p  dst=%p", __func__, src, dst);
+
 	INIT_LIST_HEAD(&traverse_list);
 	INIT_LIST_HEAD(&edge_list);
 	INIT_LIST_HEAD(&visited_list);
@@ -194,6 +196,9 @@ static struct icc_path *path_find(struct device *dev, struct icc_node *src,
 
 	do {
 		list_for_each_entry_safe(node, n, &traverse_list, search_list) {
+			if (!node) {
+				printk("%s() node=%p", __func__, node);
+			}
 			if (node == dst) {
 				found = true;
 				list_splice_init(&edge_list, &visited_list);
@@ -201,9 +206,13 @@ static struct icc_path *path_find(struct device *dev, struct icc_node *src,
 				break;
 			}
 			for (i = 0; i < node->num_links; i++) {
+				if (!node) {
+					printk("%s() node=%p", __func__, node);
+				}
 				struct icc_node *tmp = node->links[i];
 
 				if (!tmp) {
+					printk("%s() node=%s [%ld/%ld]\n", __func__, node->name, i, node->num_links);
 					path = ERR_PTR(-ENOENT);
 					goto out;
 				}
@@ -339,6 +348,8 @@ struct icc_node *of_icc_xlate_onecell(struct of_phandle_args *spec,
 		return ERR_PTR(-EINVAL);
 	}
 
+	printk("%s() idx=%u ptr=%p", __func__, idx, icc_data->nodes[idx]);
+
 	return icc_data->nodes[idx];
 }
 EXPORT_SYMBOL_GPL(of_icc_xlate_onecell);
@@ -365,6 +376,7 @@ struct icc_node_data *of_icc_get_from_provider(struct of_phandle_args *spec)
 	mutex_lock(&icc_lock);
 	list_for_each_entry(provider, &icc_providers, provider_list) {
 		if (provider->dev->of_node == spec->np) {
+			printk("%s() dev->init_name=%s  dev->of_node->name=%s  dev->driver->name=%s", __func__, provider->dev->init_name, provider->dev->of_node->name, provider->dev->driver->name);
 			if (provider->xlate_extended) {
 				data = provider->xlate_extended(spec, provider->data);
 				if (!IS_ERR(data)) {
@@ -442,8 +454,10 @@ struct icc_path *of_icc_get_by_index(struct device *dev, int idx)
 	struct of_phandle_args src_args, dst_args;
 	int ret;
 
-	if (!dev || !dev->of_node)
+	if (!dev || !dev->of_node) {
+		printk("%s() !dev || !dev->of_node", __func__);
 		return ERR_PTR(-ENODEV);
+	}
 
 	np = dev->of_node;
 
@@ -451,8 +465,10 @@ struct icc_path *of_icc_get_by_index(struct device *dev, int idx)
 	 * When the consumer DT node do not have "interconnects" property
 	 * return a NULL path to skip setting constraints.
 	 */
-	if (!of_find_property(np, "interconnects", NULL))
+	if (!of_find_property(np, "interconnects", NULL)) {
+		printk("%s() !of_find_property(np, \"interconnects\", NULL)", __func__);
 		return NULL;
+	}
 
 	/*
 	 * We use a combination of phandle and specifier for endpoint. For now
@@ -462,33 +478,53 @@ struct icc_path *of_icc_get_by_index(struct device *dev, int idx)
 	ret = of_parse_phandle_with_args(np, "interconnects",
 					 "#interconnect-cells", idx * 2,
 					 &src_args);
-	if (ret)
+	if (ret) {
+		printk("%s() of_parse_phandle_with_args(np, \"interconnects\", \"#interconnect-cells\", %d * 2, &src_args) failed", __func__, idx);
 		return ERR_PTR(ret);
+	}
 
 	of_node_put(src_args.np);
+	printk("%s() src_args.np->name %s", __func__,  src_args.np->name);
+
+
 
 	ret = of_parse_phandle_with_args(np, "interconnects",
 					 "#interconnect-cells", idx * 2 + 1,
 					 &dst_args);
-	if (ret)
+	if (ret) {
+		printk("%s() of_parse_phandle_with_args(np, \"interconnects\", \"#interconnect-cells\", %d * 2 + 1, &dst_args) failed", __func__, idx);
 		return ERR_PTR(ret);
+	}
 
 	of_node_put(dst_args.np);
+	printk("%s() dst_args.np->name %s", __func__,  dst_args.np->name);
 
+
+
+	printk("%s() of_icc_get_from_provider(src_args)", __func__);
 	src_data = of_icc_get_from_provider(&src_args);
 
 	if (IS_ERR(src_data)) {
+		printk("%s() error finding src node", __func__);
+
 		dev_err_probe(dev, PTR_ERR(src_data), "error finding src node\n");
 		return ERR_CAST(src_data);
 	}
 
+	printk("%s() of_icc_get_from_provider(dst_args)", __func__);
 	dst_data = of_icc_get_from_provider(&dst_args);
 
 	if (IS_ERR(dst_data)) {
+		printk("%s() error finding dst node", __func__);
 		dev_err_probe(dev, PTR_ERR(dst_data), "error finding dst node\n");
 		kfree(src_data);
 		return ERR_CAST(dst_data);
 	}
+
+	printk("%s() src_data %p", __func__, src_data);
+	printk("%s() dst_data %p", __func__, dst_data);
+	printk("%s() src_data->node %p", __func__, src_data->node);
+	printk("%s() dst_data->node %p", __func__, dst_data->node);
 
 	mutex_lock(&icc_lock);
 	path = path_find(dev, src_data->node, dst_data->node);
@@ -535,17 +571,23 @@ struct icc_path *of_icc_get(struct device *dev, const char *name)
 	struct device_node *np;
 	int idx = 0;
 
-	if (!dev || !dev->of_node)
+	printk("%s() name=%s", __func__, name);
+
+	if (!dev || !dev->of_node) {
+		printk("%s() !dev || !dev->of_node", __func__);
 		return ERR_PTR(-ENODEV);
+	}
 
 	np = dev->of_node;
 
-	/*
+	/*np
 	 * When the consumer DT node do not have "interconnects" property
 	 * return a NULL path to skip setting constraints.
 	 */
-	if (!of_find_property(np, "interconnects", NULL))
+	if (!of_find_property(np, "interconnects", NULL)) {
+		printk("%s() %s !of_find_property(np, \"interconnects\", NULL)", __func__, np->name);
 		return NULL;
+	}
 
 	/*
 	 * We use a combination of phandle and specifier for endpoint. For now
@@ -553,9 +595,14 @@ struct icc_path *of_icc_get(struct device *dev, const char *name)
 	 * without breaking DT compatibility.
 	 */
 	if (name) {
+		printk("%s() !name", __func__);
 		idx = of_property_match_string(np, "interconnect-names", name);
-		if (idx < 0)
+		if (idx < 0) {
+			printk("%s() !of_property_match_string(np, \"interconnect-names\", name)", __func__);
 			return ERR_PTR(idx);
+		} else {
+			printk("%s() !of_property_match_string(np, \"interconnect-names\", %s) = %d", __func__, name, idx);
+		}
 	}
 
 	return of_icc_get_by_index(dev, idx);
@@ -726,6 +773,8 @@ struct icc_path *icc_get(struct device *dev, const int src_id, const int dst_id)
 	struct icc_node *src, *dst;
 	struct icc_path *path = ERR_PTR(-EPROBE_DEFER);
 
+	printk("%s()", __func__);
+
 	mutex_lock(&icc_lock);
 
 	src = node_find(src_id);
@@ -736,6 +785,7 @@ struct icc_path *icc_get(struct device *dev, const int src_id, const int dst_id)
 	if (!dst)
 		goto out;
 
+	printk("%s() path_find(dev, src=%p, dst=%p)", __func__, src, dst);
 	path = path_find(dev, src, dst);
 	if (IS_ERR(path)) {
 		dev_err(dev, "%s: invalid path=%ld\n", __func__, PTR_ERR(path));

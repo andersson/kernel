@@ -222,9 +222,13 @@ int dpu_mdss_init(struct drm_device *dev)
 	int ret;
 	int irq;
 
+	printk("%s() devm_kzalloc()", __func__);
+
 	dpu_mdss = devm_kzalloc(dev->dev, sizeof(*dpu_mdss), GFP_KERNEL);
-	if (!dpu_mdss)
+	if (!dpu_mdss) {
+		printk("%s() devm_kzalloc() failed - ENOMEM", __func__);
 		return -ENOMEM;
+	}
 
 	dpu_mdss->mmio = msm_ioremap(pdev, "mdss", "mdss");
 	if (IS_ERR(dpu_mdss->mmio))
@@ -233,6 +237,7 @@ int dpu_mdss_init(struct drm_device *dev)
 	DRM_DEBUG("mapped mdss address space @%pK\n", dpu_mdss->mmio);
 
 	mp = &dpu_mdss->mp;
+	printk("%s() msm_dss_parse_clock", __func__);
 	ret = msm_dss_parse_clock(pdev, mp);
 	if (ret) {
 		DPU_ERROR("failed to parse clocks, ret=%d\n", ret);
@@ -242,16 +247,19 @@ int dpu_mdss_init(struct drm_device *dev)
 	dpu_mdss->base.dev = dev;
 	dpu_mdss->base.funcs = &mdss_funcs;
 
+	printk("%s() _dpu_mdss_irq_domain_add()", __func__);
 	ret = _dpu_mdss_irq_domain_add(dpu_mdss);
 	if (ret)
 		goto irq_domain_error;
 
+	printk("%s() platform_get_irq()", __func__);
 	irq = platform_get_irq(pdev, 0);
 	if (irq < 0) {
 		ret = irq;
 		goto irq_error;
 	}
 
+	printk("%s() irq_set_chained_handler_and_data()", __func__);
 	irq_set_chained_handler_and_data(irq, dpu_mdss_irq,
 					 dpu_mdss);
 
@@ -262,10 +270,13 @@ int dpu_mdss_init(struct drm_device *dev)
 	return 0;
 
 irq_error:
+	printk("%s() irq_error:", __func__);
 	_dpu_mdss_irq_domain_fini(dpu_mdss);
 irq_domain_error:
+	printk("%s() irq_domain_error:", __func__);
 	msm_dss_put_clk(mp->clk_config, mp->num_clk);
 clk_parse_err:
+	printk("%s() clk_parse_err:", __func__);
 	devm_kfree(&pdev->dev, mp->clk_config);
 	if (dpu_mdss->mmio)
 		devm_iounmap(&pdev->dev, dpu_mdss->mmio);

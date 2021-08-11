@@ -425,6 +425,8 @@ static int msm_drm_init(struct device *dev, const struct drm_driver *drv)
 	struct msm_mdss *mdss;
 	int ret, i;
 
+	printk("%s", __func__);
+
 	ddev = drm_dev_alloc(drv, dev);
 	if (IS_ERR(ddev)) {
 		DRM_DEV_ERROR(dev, "failed to allocate drm_device\n");
@@ -453,11 +455,14 @@ static int msm_drm_init(struct device *dev, const struct drm_driver *drv)
 		ret = 0;
 		break;
 	}
-	if (ret)
+	if (ret) {
+		DRM_DEBUG("dpu_mdss_init() ret=%d", ret);
 		goto err_free_priv;
+	}
 
 	mdss = priv->mdss;
 
+	DRM_DEBUG("alloc_ordered_workqueue()");
 	priv->wq = alloc_ordered_workqueue("msm", 0);
 	priv->hangcheck_period = DRM_MSM_HANGCHECK_DEFAULT_PERIOD;
 
@@ -474,19 +479,25 @@ static int msm_drm_init(struct device *dev, const struct drm_driver *drv)
 	might_lock(&priv->mm_lock);
 	fs_reclaim_release(GFP_KERNEL);
 
+	DRM_DEBUG("drm_mode_config_init()");
 	drm_mode_config_init(ddev);
 
+
+	DRM_DEBUG("msm_init_vram()");
 	ret = msm_init_vram(ddev);
 	if (ret)
 		goto err_destroy_mdss;
 
 	/* Bind all our sub-components: */
+	DRM_DEBUG("component_bind_all()");
 	ret = component_bind_all(dev, ddev);
 	if (ret)
 		goto err_destroy_mdss;
 
+	DRM_DEBUG("dma_set_max_seg_size()");
 	dma_set_max_seg_size(dev, UINT_MAX);
 
+	DRM_DEBUG("msm_gem_shrinker_init()");
 	msm_gem_shrinker_init(ddev);
 
 	switch (get_mdp_ver(pdev)) {
@@ -498,6 +509,7 @@ static int msm_drm_init(struct device *dev, const struct drm_driver *drv)
 		kms = mdp5_kms_init(ddev);
 		break;
 	case KMS_DPU:
+		DRM_DEBUG("dpu_kms_init()");
 		kms = dpu_kms_init(ddev);
 		priv->kms = kms;
 		break;
@@ -527,6 +539,7 @@ static int msm_drm_init(struct device *dev, const struct drm_driver *drv)
 		}
 	}
 
+	DRM_DEBUG("mode_config setup");
 	ddev->mode_config.funcs = &mode_config_funcs;
 	ddev->mode_config.helper_private = &mode_config_helper_funcs;
 
@@ -546,6 +559,7 @@ static int msm_drm_init(struct device *dev, const struct drm_driver *drv)
 		sched_set_fifo(priv->event_thread[i].worker->task);
 	}
 
+	DRM_DEBUG("drm_vblank_init()");
 	ret = drm_vblank_init(ddev, priv->num_crtcs);
 	if (ret < 0) {
 		DRM_DEV_ERROR(dev, "failed to initialize vblank\n");
@@ -562,6 +576,7 @@ static int msm_drm_init(struct device *dev, const struct drm_driver *drv)
 		}
 	}
 
+	DRM_DEBUG("drm_dev_register()");
 	ret = drm_dev_register(ddev, 0);
 	if (ret)
 		goto err_msm_uninit;
@@ -581,6 +596,7 @@ static int msm_drm_init(struct device *dev, const struct drm_driver *drv)
 	if (ret)
 		goto err_msm_uninit;
 
+	DRM_DEBUG("drm_kms_helper_poll_init()");
 	drm_kms_helper_poll_init(ddev);
 
 	return 0;
@@ -1230,6 +1246,8 @@ static int add_display_components(struct platform_device *pdev,
 	struct device *dev = &pdev->dev;
 	int ret;
 
+	printk("%s()", __func__);
+
 	/*
 	 * MDP5/DPU based devices don't have a flat hierarchy. There is a top
 	 * level parent: MDSS, and children: MDP5/DPU, DSI, HDMI, eDP etc.
@@ -1289,6 +1307,8 @@ static int add_gpu_components(struct device *dev,
 {
 	struct device_node *np;
 
+	printk("%s()", __func__);
+
 	np = of_find_matching_node(NULL, msm_gpu_match);
 	if (!np)
 		return 0;
@@ -1324,6 +1344,8 @@ static int msm_pdev_probe(struct platform_device *pdev)
 {
 	struct component_match *match = NULL;
 	int ret;
+
+	printk("%s()", __func__);
 
 	if (get_mdp_ver(pdev)) {
 		ret = add_display_components(pdev, &match);

@@ -296,10 +296,14 @@ static int dpu_kms_parse_data_bus_icc_path(struct dpu_kms *dpu_kms)
 	struct drm_device *dev = dpu_kms->dev;
 
 	path0 = of_icc_get(dev->dev, "mdp0-mem");
+	DRM_DEBUG("of_icc_get(dev->dev, \"mdp0-mem\"): %d", PTR_ERR_OR_ZERO(path0));
 	path1 = of_icc_get(dev->dev, "mdp1-mem");
+	DRM_DEBUG("of_icc_get(dev->dev, \"mdp1-mem\"): %d", PTR_ERR_OR_ZERO(path1));
 
-	if (IS_ERR_OR_NULL(path0))
+	if (IS_ERR_OR_NULL(path0)) {
+		DRM_DEBUG("\"mdp0-mem\" path0 - %d", PTR_ERR_OR_ZERO(path0));
 		return PTR_ERR_OR_ZERO(path0);
+	}
 
 	dpu_kms->path[0] = path0;
 	dpu_kms->num_paths = 1;
@@ -951,6 +955,9 @@ static int dpu_kms_hw_init(struct msm_kms *kms)
 	struct drm_device *dev;
 	int i, rc = -EINVAL;
 
+	printk("%s()", __func__);
+	DRM_DEBUG("");
+
 	if (!kms) {
 		DPU_ERROR("invalid kms\n");
 		return rc;
@@ -959,12 +966,14 @@ static int dpu_kms_hw_init(struct msm_kms *kms)
 	dpu_kms = to_dpu_kms(kms);
 	dev = dpu_kms->dev;
 
+	DRM_DEBUG("dpu_kms_global_obj_init()");
 	rc = dpu_kms_global_obj_init(dpu_kms);
 	if (rc)
 		return rc;
 
 	atomic_set(&dpu_kms->bandwidth_ref, 0);
 
+	DRM_DEBUG("msm_ioremap(\"mdp\", \"mdp\")");
 	dpu_kms->mmio = msm_ioremap(dpu_kms->pdev, "mdp", "mdp");
 	if (IS_ERR(dpu_kms->mmio)) {
 		rc = PTR_ERR(dpu_kms->mmio);
@@ -974,6 +983,7 @@ static int dpu_kms_hw_init(struct msm_kms *kms)
 	}
 	DRM_DEBUG("mapped dpu address space @%pK\n", dpu_kms->mmio);
 
+	DRM_DEBUG("msm_ioremap(\"vbif\", \"vbif\")");
 	dpu_kms->vbif[VBIF_RT] = msm_ioremap(dpu_kms->pdev, "vbif", "vbif");
 	if (IS_ERR(dpu_kms->vbif[VBIF_RT])) {
 		rc = PTR_ERR(dpu_kms->vbif[VBIF_RT]);
@@ -981,20 +991,25 @@ static int dpu_kms_hw_init(struct msm_kms *kms)
 		dpu_kms->vbif[VBIF_RT] = NULL;
 		goto error;
 	}
+
+	DRM_DEBUG("msm_ioremap_quiet(\"vbif_nrt\", \"vbif_nrt\")");
 	dpu_kms->vbif[VBIF_NRT] = msm_ioremap_quiet(dpu_kms->pdev, "vbif_nrt", "vbif_nrt");
 	if (IS_ERR(dpu_kms->vbif[VBIF_NRT])) {
 		dpu_kms->vbif[VBIF_NRT] = NULL;
 		DPU_DEBUG("VBIF NRT is not defined");
 	}
 
+	DRM_DEBUG("msm_ioremap_quiet(\"regdma\", \"regdma\")");
 	dpu_kms->reg_dma = msm_ioremap_quiet(dpu_kms->pdev, "regdma", "regdma");
 	if (IS_ERR(dpu_kms->reg_dma)) {
 		dpu_kms->reg_dma = NULL;
 		DPU_DEBUG("REG_DMA is not defined");
 	}
 
+	DRM_DEBUG("dpu_kms_parse_data_bus_icc_path()");
 	dpu_kms_parse_data_bus_icc_path(dpu_kms);
 
+	DRM_DEBUG("pm_runtime_get_sync()");
 	pm_runtime_get_sync(&dpu_kms->pdev->dev);
 
 	dpu_kms->core_rev = readl_relaxed(dpu_kms->mmio + 0x0);
@@ -1144,6 +1159,8 @@ static int dpu_bind(struct device *dev, struct device *master, void *data)
 	struct dss_module_power *mp;
 	int ret = 0;
 
+	printk("%s()", __func__);
+
 	dpu_kms = devm_kzalloc(&pdev->dev, sizeof(*dpu_kms), GFP_KERNEL);
 	if (!dpu_kms)
 		return -ENOMEM;
@@ -1167,6 +1184,7 @@ static int dpu_bind(struct device *dev, struct device *master, void *data)
 
 	platform_set_drvdata(pdev, dpu_kms);
 
+	printk("%s() msm_kms_init()", __func__);
 	ret = msm_kms_init(&dpu_kms->base, &kms_funcs);
 	if (ret) {
 		DPU_ERROR("failed to init kms, ret=%d\n", ret);
@@ -1175,10 +1193,13 @@ static int dpu_bind(struct device *dev, struct device *master, void *data)
 	dpu_kms->dev = ddev;
 	dpu_kms->pdev = pdev;
 
+	printk("%s() pm_runtime_enable()", __func__);
 	pm_runtime_enable(&pdev->dev);
 	dpu_kms->rpm_enabled = true;
 
 	priv->kms = &dpu_kms->base;
+
+	printk("%s() returning: %d", __func__, ret);
 
 	return ret;
 }
@@ -1204,6 +1225,7 @@ static const struct component_ops dpu_ops = {
 
 static int dpu_dev_probe(struct platform_device *pdev)
 {
+	printk("%s", __func__);
 	return component_add(&pdev->dev, &dpu_ops);
 }
 

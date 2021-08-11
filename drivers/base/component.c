@@ -708,6 +708,9 @@ static int __component_add(struct device *dev, const struct component_ops *ops,
 int component_add_typed(struct device *dev, const struct component_ops *ops,
 	int subcomponent)
 {
+
+	printk("%s", __func__);
+
 	if (WARN_ON(subcomponent == 0))
 		return -EINVAL;
 

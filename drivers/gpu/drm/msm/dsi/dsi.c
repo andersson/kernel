@@ -101,6 +101,8 @@ static struct msm_dsi *dsi_init(struct platform_device *pdev)
 	if (ret)
 		goto destroy_dsi;
 
+	DBG("success");
+
 	return msm_dsi;
 
 destroy_dsi:
@@ -116,6 +118,9 @@ static int dsi_bind(struct device *dev, struct device *master, void *data)
 	struct msm_dsi *msm_dsi;
 
 	DBG("");
+
+	printk("%s()", __func__);
+
 	msm_dsi = dsi_init(pdev);
 	if (IS_ERR(msm_dsi)) {
 		/* Don't fail the bind if the dsi port is not connected */
@@ -138,6 +143,8 @@ static void dsi_unbind(struct device *dev, struct device *master,
 	struct msm_dsi *msm_dsi = dev_get_drvdata(dev);
 	int id = msm_dsi->id;
 
+	printk("%s()", __func__);
+
 	if (priv->dsi[id]) {
 		dsi_destroy(msm_dsi);
 		priv->dsi[id] = NULL;
@@ -151,6 +158,7 @@ static const struct component_ops dsi_ops = {
 
 static int dsi_dev_probe(struct platform_device *pdev)
 {
+	printk("%s", __func__);
 	return component_add(&pdev->dev, &dsi_ops);
 }
 

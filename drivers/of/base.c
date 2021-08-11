@@ -1414,6 +1414,7 @@ static int __of_parse_phandle_with_args(const struct device_node *np,
 
  err:
 	of_node_put(it.node);
+	printk("%s() failed - %d", __func__, rc);
 	return rc;
 }
 
@@ -1481,8 +1482,10 @@ int of_parse_phandle_with_args(const struct device_node *np, const char *list_na
 {
 	int cell_count = -1;
 
-	if (index < 0)
+	if (index < 0) {
+		printk("%s() failed - index < 0", __func__);
 		return -EINVAL;
+	}
 
 	/* If cells_name is NULL we assume a cell count of 0 */
 	if (!cells_name)

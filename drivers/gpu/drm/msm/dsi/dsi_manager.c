@@ -815,6 +815,8 @@ int msm_dsi_manager_register(struct msm_dsi *msm_dsi)
 		goto fail;
 	}
 
+	DRM_DEBUG("success");
+
 	return 0;
 
 fail:
