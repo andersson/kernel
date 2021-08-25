@@ -58,7 +58,7 @@ struct dsi_pll_config {
 	u32 ssc_div_per;
 };
 
-struct pll_7nm_cached_state {
+struct pll_cached_state {
 	unsigned long vco_rate;
 	u8 bit_clk_div;
 	u8 pix_clk_div;
@@ -66,28 +66,28 @@ struct pll_7nm_cached_state {
 	u8 pll_mux;
 };
 
-struct dsi_pll_7nm {
+struct dsi_pll {
 	struct clk_hw clk_hw;
 
 	struct msm_dsi_phy *phy;
 
 	u64 vco_current_rate;
 
-	/* protects REG_DSI_7nm_PHY_CMN_CLK_CFG0 register */
+	/* protects PHY_CMN_CLK_CFG0 register */
 	spinlock_t postdiv_lock;
 
-	struct pll_7nm_cached_state cached_state;
+	struct pll_cached_state cached_state;
 
-	struct dsi_pll_7nm *slave;
+	struct dsi_pll *slave;
 };
 
-#define to_pll_7nm(x)	container_of(x, struct dsi_pll_7nm, clk_hw)
+#define to_pll(x)	container_of(x, struct dsi_pll, clk_hw)
 
 /*
  * Global list of private DSI PLL struct pointers. We need this for bonded DSI
  * mode, where the master PLL's clk_ops needs access the slave's private data
  */
-static struct dsi_pll_7nm *pll_7nm_list[DSI_MAX];
+static struct dsi_pll *pll_list[DSI_MAX];
 
 static void dsi_pll_setup_config(struct dsi_pll_config *config)
 {
@@ -100,7 +100,7 @@ static void dsi_pll_setup_config(struct dsi_pll_config *config)
 	config->ssc_center = 0;
 }
 
-static void dsi_pll_calc_dec_frac(struct dsi_pll_7nm *pll, struct dsi_pll_config *config)
+static void dsi_pll_calc_dec_frac(struct dsi_pll *pll, struct dsi_pll_config *config)
 {
 	u64 fref = VCO_REF_CLK_RATE;
 	u64 pll_freq;
@@ -149,7 +149,7 @@ static void dsi_pll_calc_dec_frac(struct dsi_pll_7nm *pll, struct dsi_pll_config
 #define SSC_CENTER		BIT(0)
 #define SSC_EN			BIT(1)
 
-static void dsi_pll_calc_ssc(struct dsi_pll_7nm *pll, struct dsi_pll_config *config)
+static void dsi_pll_calc_ssc(struct dsi_pll *pll, struct dsi_pll_config *config)
 {
 	u32 ssc_per;
 	u32 ssc_mod;
@@ -183,7 +183,7 @@ static void dsi_pll_calc_ssc(struct dsi_pll_7nm *pll, struct dsi_pll_config *con
 		 ssc_per, (u32)ssc_step_size, config->ssc_adj_per);
 }
 
-static void dsi_pll_ssc_commit(struct dsi_pll_7nm *pll, struct dsi_pll_config *config)
+static void dsi_pll_ssc_commit(struct dsi_pll *pll, struct dsi_pll_config *config)
 {
 	void __iomem *base = pll->phy->pll_base;
 
@@ -207,7 +207,7 @@ static void dsi_pll_ssc_commit(struct dsi_pll_7nm *pll, struct dsi_pll_config *c
 	}
 }
 
-static void dsi_pll_config_hzindep_reg(struct dsi_pll_7nm *pll)
+static void dsi_pll_config_hzindep_reg(struct dsi_pll *pll)
 {
 	void __iomem *base = pll->phy->pll_base;
 	int is_v4_1 = pll->phy->cfg->quirks & DSI_PHY_7NM_QUIRK_V4_1;
@@ -256,7 +256,7 @@ static void dsi_pll_config_hzindep_reg(struct dsi_pll_7nm *pll)
 	}
 }
 
-static void dsi_pll_commit(struct dsi_pll_7nm *pll, struct dsi_pll_config *config)
+static void dsi_pll_commit(struct dsi_pll *pll, struct dsi_pll_config *config)
 {
 	void __iomem *base = pll->phy->pll_base;
 
@@ -274,28 +274,28 @@ static void dsi_pll_commit(struct dsi_pll_7nm *pll, struct dsi_pll_config *confi
 	dsi_phy_write(base + REG_DSI_7nm_PHY_PLL_CLOCK_INVERTERS, config->pll_clock_inverters);
 }
 
-static int dsi_pll_7nm_vco_set_rate(struct clk_hw *hw, unsigned long rate,
+static int dsi_pll_vco_set_rate(struct clk_hw *hw, unsigned long rate,
 				     unsigned long parent_rate)
 {
-	struct dsi_pll_7nm *pll_7nm = to_pll_7nm(hw);
+	struct dsi_pll *pll = to_pll(hw);
 	struct dsi_pll_config config;
 
-	DBG("DSI PLL%d rate=%lu, parent's=%lu", pll_7nm->phy->id, rate,
+	DBG("DSI PLL%d rate=%lu, parent's=%lu", pll->phy->id, rate,
 	    parent_rate);
 
-	pll_7nm->vco_current_rate = rate;
+	pll->vco_current_rate = rate;
 
 	dsi_pll_setup_config(&config);
 
-	dsi_pll_calc_dec_frac(pll_7nm, &config);
+	dsi_pll_calc_dec_frac(pll, &config);
 
-	dsi_pll_calc_ssc(pll_7nm, &config);
+	dsi_pll_calc_ssc(pll, &config);
 
-	dsi_pll_commit(pll_7nm, &config);
+	dsi_pll_commit(pll, &config);
 
-	dsi_pll_config_hzindep_reg(pll_7nm);
+	dsi_pll_config_hzindep_reg(pll);
 
-	dsi_pll_ssc_commit(pll_7nm, &config);
+	dsi_pll_ssc_commit(pll, &config);
 
 	/* flush, ensure all register writes are done*/
 	wmb();
@@ -303,7 +303,7 @@ static int dsi_pll_7nm_vco_set_rate(struct clk_hw *hw, unsigned long rate,
 	return 0;
 }
 
-static int dsi_pll_7nm_lock_status(struct dsi_pll_7nm *pll)
+static int dsi_pll_lock_status(struct dsi_pll *pll)
 {
 	int rc;
 	u32 status = 0;
@@ -323,7 +323,7 @@ static int dsi_pll_7nm_lock_status(struct dsi_pll_7nm *pll)
 	return rc;
 }
 
-static void dsi_pll_disable_pll_bias(struct dsi_pll_7nm *pll)
+static void dsi_pll_disable_pll_bias(struct dsi_pll *pll)
 {
 	u32 data = dsi_phy_read(pll->phy->base + REG_DSI_7nm_PHY_CMN_CTRL_0);
 
@@ -332,7 +332,7 @@ static void dsi_pll_disable_pll_bias(struct dsi_pll_7nm *pll)
 	ndelay(250);
 }
 
-static void dsi_pll_enable_pll_bias(struct dsi_pll_7nm *pll)
+static void dsi_pll_enable_pll_bias(struct dsi_pll *pll)
 {
 	u32 data = dsi_phy_read(pll->phy->base + REG_DSI_7nm_PHY_CMN_CTRL_0);
 
@@ -341,7 +341,7 @@ static void dsi_pll_enable_pll_bias(struct dsi_pll_7nm *pll)
 	ndelay(250);
 }
 
-static void dsi_pll_disable_global_clk(struct dsi_pll_7nm *pll)
+static void dsi_pll_disable_global_clk(struct dsi_pll *pll)
 {
 	u32 data;
 
@@ -349,7 +349,7 @@ static void dsi_pll_disable_global_clk(struct dsi_pll_7nm *pll)
 	dsi_phy_write(pll->phy->base + REG_DSI_7nm_PHY_CMN_CLK_CFG1, data & ~BIT(5));
 }
 
-static void dsi_pll_enable_global_clk(struct dsi_pll_7nm *pll)
+static void dsi_pll_enable_global_clk(struct dsi_pll *pll)
 {
 	u32 data;
 
@@ -360,7 +360,7 @@ static void dsi_pll_enable_global_clk(struct dsi_pll_7nm *pll)
 		  data | BIT(5) | BIT(4));
 }
 
-static void dsi_pll_phy_dig_reset(struct dsi_pll_7nm *pll)
+static void dsi_pll_phy_dig_reset(struct dsi_pll *pll)
 {
 	/*
 	 * Reset the PHY digital domain. This would be needed when
@@ -373,17 +373,17 @@ static void dsi_pll_phy_dig_reset(struct dsi_pll_7nm *pll)
 	wmb(); /* Ensure that the reset is deasserted */
 }
 
-static int dsi_pll_7nm_vco_prepare(struct clk_hw *hw)
+static int dsi_pll_vco_prepare(struct clk_hw *hw)
 {
-	struct dsi_pll_7nm *pll_7nm = to_pll_7nm(hw);
+	struct dsi_pll *pll = to_pll(hw);
 	int rc;
 
-	dsi_pll_enable_pll_bias(pll_7nm);
-	if (pll_7nm->slave)
-		dsi_pll_enable_pll_bias(pll_7nm->slave);
+	dsi_pll_enable_pll_bias(pll);
+	if (pll->slave)
+		dsi_pll_enable_pll_bias(pll->slave);
 
 	/* Start PLL */
-	dsi_phy_write(pll_7nm->phy->base + REG_DSI_7nm_PHY_CMN_PLL_CNTRL, 0x01);
+	dsi_phy_write(pll->phy->base + REG_DSI_7nm_PHY_CMN_PLL_CNTRL, 0x01);
 
 	/*
 	 * ensure all PLL configurations are written prior to checking
@@ -392,63 +392,63 @@ static int dsi_pll_7nm_vco_prepare(struct clk_hw *hw)
 	wmb();
 
 	/* Check for PLL lock */
-	rc = dsi_pll_7nm_lock_status(pll_7nm);
+	rc = dsi_pll_lock_status(pll);
 	if (rc) {
-		pr_err("PLL(%d) lock failed\n", pll_7nm->phy->id);
+		pr_err("PLL(%d) lock failed\n", pll->phy->id);
 		goto error;
 	}
 
-	pll_7nm->phy->pll_on = true;
+	pll->phy->pll_on = true;
 
 	/*
 	 * assert power on reset for PHY digital in case the PLL is
 	 * enabled after CX of analog domain power collapse. This needs
 	 * to be done before enabling the global clk.
 	 */
-	dsi_pll_phy_dig_reset(pll_7nm);
-	if (pll_7nm->slave)
-		dsi_pll_phy_dig_reset(pll_7nm->slave);
+	dsi_pll_phy_dig_reset(pll);
+	if (pll->slave)
+		dsi_pll_phy_dig_reset(pll->slave);
 
-	dsi_pll_enable_global_clk(pll_7nm);
-	if (pll_7nm->slave)
-		dsi_pll_enable_global_clk(pll_7nm->slave);
+	dsi_pll_enable_global_clk(pll);
+	if (pll->slave)
+		dsi_pll_enable_global_clk(pll->slave);
 
 error:
 	return rc;
 }
 
-static void dsi_pll_disable_sub(struct dsi_pll_7nm *pll)
+static void dsi_pll_disable_sub(struct dsi_pll *pll)
 {
 	dsi_phy_write(pll->phy->base + REG_DSI_7nm_PHY_CMN_RBUF_CTRL, 0);
 	dsi_pll_disable_pll_bias(pll);
 }
 
-static void dsi_pll_7nm_vco_unprepare(struct clk_hw *hw)
+static void dsi_pll_vco_unprepare(struct clk_hw *hw)
 {
-	struct dsi_pll_7nm *pll_7nm = to_pll_7nm(hw);
+	struct dsi_pll *pll = to_pll(hw);
 
 	/*
 	 * To avoid any stray glitches while abruptly powering down the PLL
 	 * make sure to gate the clock using the clock enable bit before
 	 * powering down the PLL
 	 */
-	dsi_pll_disable_global_clk(pll_7nm);
-	dsi_phy_write(pll_7nm->phy->base + REG_DSI_7nm_PHY_CMN_PLL_CNTRL, 0);
-	dsi_pll_disable_sub(pll_7nm);
-	if (pll_7nm->slave) {
-		dsi_pll_disable_global_clk(pll_7nm->slave);
-		dsi_pll_disable_sub(pll_7nm->slave);
+	dsi_pll_disable_global_clk(pll);
+	dsi_phy_write(pll->phy->base + REG_DSI_7nm_PHY_CMN_PLL_CNTRL, 0);
+	dsi_pll_disable_sub(pll);
+	if (pll->slave) {
+		dsi_pll_disable_global_clk(pll->slave);
+		dsi_pll_disable_sub(pll->slave);
 	}
 	/* flush, ensure all register writes are done */
 	wmb();
-	pll_7nm->phy->pll_on = false;
+	pll->phy->pll_on = false;
 }
 
-static unsigned long dsi_pll_7nm_vco_recalc_rate(struct clk_hw *hw,
+static unsigned long dsi_pll_vco_recalc_rate(struct clk_hw *hw,
 						  unsigned long parent_rate)
 {
-	struct dsi_pll_7nm *pll_7nm = to_pll_7nm(hw);
-	void __iomem *base = pll_7nm->phy->pll_base;
+	struct dsi_pll *pll = to_pll(hw);
+	void __iomem *base = pll->phy->pll_base;
 	u64 ref_clk = VCO_REF_CLK_RATE;
 	u64 vco_rate = 0x0;
 	u64 multiplier;
@@ -475,47 +475,47 @@ static unsigned long dsi_pll_7nm_vco_recalc_rate(struct clk_hw *hw,
 	pll_freq += div_u64(tmp64, multiplier);
 
 	vco_rate = pll_freq;
-	pll_7nm->vco_current_rate = vco_rate;
+	pll->vco_current_rate = vco_rate;
 
 	DBG("DSI PLL%d returning vco rate = %lu, dec = %x, frac = %x",
-	    pll_7nm->phy->id, (unsigned long)vco_rate, dec, frac);
+	    pll->phy->id, (unsigned long)vco_rate, dec, frac);
 
 	return (unsigned long)vco_rate;
 }
 
-static long dsi_pll_7nm_clk_round_rate(struct clk_hw *hw,
+static long dsi_pll_clk_round_rate(struct clk_hw *hw,
 		unsigned long rate, unsigned long *parent_rate)
 {
-	struct dsi_pll_7nm *pll_7nm = to_pll_7nm(hw);
+	struct dsi_pll *pll = to_pll(hw);
 
-	if      (rate < pll_7nm->phy->cfg->min_pll_rate)
-		return  pll_7nm->phy->cfg->min_pll_rate;
-	else if (rate > pll_7nm->phy->cfg->max_pll_rate)
-		return  pll_7nm->phy->cfg->max_pll_rate;
+	if      (rate < pll->phy->cfg->min_pll_rate)
+		return  pll->phy->cfg->min_pll_rate;
+	else if (rate > pll->phy->cfg->max_pll_rate)
+		return  pll->phy->cfg->max_pll_rate;
 	else
 		return rate;
 }
 
-static const struct clk_ops clk_ops_dsi_pll_7nm_vco = {
-	.round_rate = dsi_pll_7nm_clk_round_rate,
-	.set_rate = dsi_pll_7nm_vco_set_rate,
-	.recalc_rate = dsi_pll_7nm_vco_recalc_rate,
-	.prepare = dsi_pll_7nm_vco_prepare,
-	.unprepare = dsi_pll_7nm_vco_unprepare,
+static const struct clk_ops clk_ops_dsi_pll_vco = {
+	.round_rate = dsi_pll_clk_round_rate,
+	.set_rate = dsi_pll_vco_set_rate,
+	.recalc_rate = dsi_pll_vco_recalc_rate,
+	.prepare = dsi_pll_vco_prepare,
+	.unprepare = dsi_pll_vco_unprepare,
 };
 
 /*
  * PLL Callbacks
  */
 
-static void dsi_7nm_pll_save_state(struct msm_dsi_phy *phy)
+static void dsi_pll_save_state(struct msm_dsi_phy *phy)
 {
-	struct dsi_pll_7nm *pll_7nm = to_pll_7nm(phy->vco_hw);
-	struct pll_7nm_cached_state *cached = &pll_7nm->cached_state;
-	void __iomem *phy_base = pll_7nm->phy->base;
+	struct dsi_pll *pll = to_pll(phy->vco_hw);
+	struct pll_cached_state *cached = &pll->cached_state;
+	void __iomem *phy_base = pll->phy->base;
 	u32 cmn_clk_cfg0, cmn_clk_cfg1;
 
-	cached->pll_out_div = dsi_phy_read(pll_7nm->phy->pll_base +
+	cached->pll_out_div = dsi_phy_read(pll->phy->pll_base +
 				       REG_DSI_7nm_PHY_PLL_PLL_OUTDIV_RATE);
 	cached->pll_out_div &= 0x3;
 
@@ -527,22 +527,22 @@ static void dsi_7nm_pll_save_state(struct msm_dsi_phy *phy)
 	cached->pll_mux = cmn_clk_cfg1 & 0x3;
 
 	DBG("DSI PLL%d outdiv %x bit_clk_div %x pix_clk_div %x pll_mux %x",
-	    pll_7nm->phy->id, cached->pll_out_div, cached->bit_clk_div,
+	    pll->phy->id, cached->pll_out_div, cached->bit_clk_div,
 	    cached->pix_clk_div, cached->pll_mux);
 }
 
-static int dsi_7nm_pll_restore_state(struct msm_dsi_phy *phy)
+static int dsi_pll_restore_state(struct msm_dsi_phy *phy)
 {
-	struct dsi_pll_7nm *pll_7nm = to_pll_7nm(phy->vco_hw);
-	struct pll_7nm_cached_state *cached = &pll_7nm->cached_state;
-	void __iomem *phy_base = pll_7nm->phy->base;
+	struct dsi_pll *pll = to_pll(phy->vco_hw);
+	struct pll_cached_state *cached = &pll->cached_state;
+	void __iomem *phy_base = pll->phy->base;
 	u32 val;
 	int ret;
 
-	val = dsi_phy_read(pll_7nm->phy->pll_base + REG_DSI_7nm_PHY_PLL_PLL_OUTDIV_RATE);
+	val = dsi_phy_read(pll->phy->pll_base + REG_DSI_7nm_PHY_PLL_PLL_OUTDIV_RATE);
 	val &= ~0x3;
 	val |= cached->pll_out_div;
-	dsi_phy_write(pll_7nm->phy->pll_base + REG_DSI_7nm_PHY_PLL_PLL_OUTDIV_RATE, val);
+	dsi_phy_write(pll->phy->pll_base + REG_DSI_7nm_PHY_PLL_PLL_OUTDIV_RATE, val);
 
 	dsi_phy_write(phy_base + REG_DSI_7nm_PHY_CMN_CLK_CFG0,
 		  cached->bit_clk_div | (cached->pix_clk_div << 4));
@@ -552,33 +552,33 @@ static int dsi_7nm_pll_restore_state(struct msm_dsi_phy *phy)
 	val |= cached->pll_mux;
 	dsi_phy_write(phy_base + REG_DSI_7nm_PHY_CMN_CLK_CFG1, val);
 
-	ret = dsi_pll_7nm_vco_set_rate(phy->vco_hw,
-			pll_7nm->vco_current_rate,
+	ret = dsi_pll_vco_set_rate(phy->vco_hw,
+			pll->vco_current_rate,
 			VCO_REF_CLK_RATE);
 	if (ret) {
-		DRM_DEV_ERROR(&pll_7nm->phy->pdev->dev,
+		DRM_DEV_ERROR(&pll->phy->pdev->dev,
 			"restore vco rate failed. ret=%d\n", ret);
 		return ret;
 	}
 
-	DBG("DSI PLL%d", pll_7nm->phy->id);
+	DBG("DSI PLL%d", pll->phy->id);
 
 	return 0;
 }
 
-static int dsi_7nm_set_usecase(struct msm_dsi_phy *phy)
+static int dsi_set_usecase(struct msm_dsi_phy *phy)
 {
-	struct dsi_pll_7nm *pll_7nm = to_pll_7nm(phy->vco_hw);
+	struct dsi_pll *pll = to_pll(phy->vco_hw);
 	void __iomem *base = phy->base;
 	u32 data = 0x0;	/* internal PLL */
 
-	DBG("DSI PLL%d", pll_7nm->phy->id);
+	DBG("DSI PLL%d", pll->phy->id);
 
 	switch (phy->usecase) {
 	case MSM_DSI_PHY_STANDALONE:
 		break;
 	case MSM_DSI_PHY_MASTER:
-		pll_7nm->slave = pll_7nm_list[(pll_7nm->phy->id + 1) % DSI_MAX];
+		pll->slave = pll_list[(pll->phy->id + 1) % DSI_MAX];
 		break;
 	case MSM_DSI_PHY_SLAVE:
 		data = 0x1; /* external PLL */
@@ -599,7 +599,7 @@ static int dsi_7nm_set_usecase(struct msm_dsi_phy *phy)
  * state to follow the master PLL's divider/mux state. Therefore, we don't
  * require special clock ops that also configure the slave PLL registers
  */
-static int pll_7nm_register(struct dsi_pll_7nm *pll_7nm, struct clk_hw **provided_clocks)
+static int pll_register(struct dsi_pll *pll, struct clk_hw **provided_clocks)
 {
 	char clk_name[32], parent[32], vco_name[32];
 	char parent2[32], parent3[32], parent4[32];
@@ -608,27 +608,27 @@ static int pll_7nm_register(struct dsi_pll_7nm *pll_7nm, struct clk_hw **provide
 		.num_parents = 1,
 		.name = vco_name,
 		.flags = CLK_IGNORE_UNUSED,
-		.ops = &clk_ops_dsi_pll_7nm_vco,
+		.ops = &clk_ops_dsi_pll_vco,
 	};
-	struct device *dev = &pll_7nm->phy->pdev->dev;
+	struct device *dev = &pll->phy->pdev->dev;
 	struct clk_hw *hw;
 	int ret;
 
-	DBG("DSI%d", pll_7nm->phy->id);
+	DBG("DSI%d", pll->phy->id);
 
-	snprintf(vco_name, 32, "dsi%dvco_clk", pll_7nm->phy->id);
-	pll_7nm->clk_hw.init = &vco_init;
+	snprintf(vco_name, 32, "dsi%dvco_clk", pll->phy->id);
+	pll->clk_hw.init = &vco_init;
 
-	ret = devm_clk_hw_register(dev, &pll_7nm->clk_hw);
+	ret = devm_clk_hw_register(dev, &pll->clk_hw);
 	if (ret)
 		return ret;
 
-	snprintf(clk_name, 32, "dsi%d_pll_out_div_clk", pll_7nm->phy->id);
-	snprintf(parent, 32, "dsi%dvco_clk", pll_7nm->phy->id);
+	snprintf(clk_name, 32, "dsi%d_pll_out_div_clk", pll->phy->id);
+	snprintf(parent, 32, "dsi%dvco_clk", pll->phy->id);
 
 	hw = devm_clk_hw_register_divider(dev, clk_name,
 				     parent, CLK_SET_RATE_PARENT,
-				     pll_7nm->phy->pll_base +
+				     pll->phy->pll_base +
 				     REG_DSI_7nm_PHY_PLL_PLL_OUTDIV_RATE,
 				     0, 2, CLK_DIVIDER_POWER_OF_TWO, NULL);
 	if (IS_ERR(hw)) {
@@ -636,28 +636,28 @@ static int pll_7nm_register(struct dsi_pll_7nm *pll_7nm, struct clk_hw **provide
 		goto fail;
 	}
 
-	snprintf(clk_name, 32, "dsi%d_pll_bit_clk", pll_7nm->phy->id);
-	snprintf(parent, 32, "dsi%d_pll_out_div_clk", pll_7nm->phy->id);
+	snprintf(clk_name, 32, "dsi%d_pll_bit_clk", pll->phy->id);
+	snprintf(parent, 32, "dsi%d_pll_out_div_clk", pll->phy->id);
 
 	/* BIT CLK: DIV_CTRL_3_0 */
 	hw = devm_clk_hw_register_divider(dev, clk_name, parent,
 				     CLK_SET_RATE_PARENT,
-				     pll_7nm->phy->base +
+				     pll->phy->base +
 				     REG_DSI_7nm_PHY_CMN_CLK_CFG0,
 				     0, 4, CLK_DIVIDER_ONE_BASED,
-				     &pll_7nm->postdiv_lock);
+				     &pll->postdiv_lock);
 	if (IS_ERR(hw)) {
 		ret = PTR_ERR(hw);
 		goto fail;
 	}
 
-	snprintf(clk_name, 32, "dsi%d_phy_pll_out_byteclk", pll_7nm->phy->id);
-	snprintf(parent, 32, "dsi%d_pll_bit_clk", pll_7nm->phy->id);
+	snprintf(clk_name, 32, "dsi%d_phy_pll_out_byteclk", pll->phy->id);
+	snprintf(parent, 32, "dsi%d_pll_bit_clk", pll->phy->id);
 
 	/* DSI Byte clock = VCO_CLK / OUT_DIV / BIT_DIV / 8 */
 	hw = devm_clk_hw_register_fixed_factor(dev, clk_name, parent,
 					  CLK_SET_RATE_PARENT, 1,
-					  pll_7nm->phy->cphy_mode ? 7 : 8);
+					  pll->phy->cphy_mode ? 7 : 8);
 	if (IS_ERR(hw)) {
 		ret = PTR_ERR(hw);
 		goto fail;
@@ -665,8 +665,8 @@ static int pll_7nm_register(struct dsi_pll_7nm *pll_7nm, struct clk_hw **provide
 
 	provided_clocks[DSI_BYTE_PLL_CLK] = hw;
 
-	snprintf(clk_name, 32, "dsi%d_pll_by_2_bit_clk", pll_7nm->phy->id);
-	snprintf(parent, 32, "dsi%d_pll_bit_clk", pll_7nm->phy->id);
+	snprintf(clk_name, 32, "dsi%d_pll_by_2_bit_clk", pll->phy->id);
+	snprintf(parent, 32, "dsi%d_pll_bit_clk", pll->phy->id);
 
 	hw = devm_clk_hw_register_fixed_factor(dev, clk_name, parent,
 					  0, 1, 2);
@@ -675,10 +675,10 @@ static int pll_7nm_register(struct dsi_pll_7nm *pll_7nm, struct clk_hw **provide
 		goto fail;
 	}
 
-	snprintf(clk_name, 32, "dsi%d_pll_post_out_div_clk", pll_7nm->phy->id);
-	snprintf(parent, 32, "dsi%d_pll_out_div_clk", pll_7nm->phy->id);
+	snprintf(clk_name, 32, "dsi%d_pll_post_out_div_clk", pll->phy->id);
+	snprintf(parent, 32, "dsi%d_pll_out_div_clk", pll->phy->id);
 
-	if (pll_7nm->phy->cphy_mode)
+	if (pll->phy->cphy_mode)
 		hw = devm_clk_hw_register_fixed_factor(dev, clk_name, parent, 0, 2, 7);
 	else
 		hw = devm_clk_hw_register_fixed_factor(dev, clk_name, parent, 0, 1, 4);
@@ -690,24 +690,24 @@ static int pll_7nm_register(struct dsi_pll_7nm *pll_7nm, struct clk_hw **provide
 	/* in CPHY mode, pclk_mux will always have post_out_div as parent
 	 * don't register a pclk_mux clock and just use post_out_div instead
 	 */
-	if (pll_7nm->phy->cphy_mode) {
+	if (pll->phy->cphy_mode) {
 		u32 data;
 
-		data = dsi_phy_read(pll_7nm->phy->base + REG_DSI_7nm_PHY_CMN_CLK_CFG1);
-		dsi_phy_write(pll_7nm->phy->base + REG_DSI_7nm_PHY_CMN_CLK_CFG1, data | 3);
+		data = dsi_phy_read(pll->phy->base + REG_DSI_7nm_PHY_CMN_CLK_CFG1);
+		dsi_phy_write(pll->phy->base + REG_DSI_7nm_PHY_CMN_CLK_CFG1, data | 3);
 
-		snprintf(parent, 32, "dsi%d_pll_post_out_div_clk", pll_7nm->phy->id);
+		snprintf(parent, 32, "dsi%d_pll_post_out_div_clk", pll->phy->id);
 	} else {
-		snprintf(clk_name, 32, "dsi%d_pclk_mux", pll_7nm->phy->id);
-		snprintf(parent, 32, "dsi%d_pll_bit_clk", pll_7nm->phy->id);
-		snprintf(parent2, 32, "dsi%d_pll_by_2_bit_clk", pll_7nm->phy->id);
-		snprintf(parent3, 32, "dsi%d_pll_out_div_clk", pll_7nm->phy->id);
-		snprintf(parent4, 32, "dsi%d_pll_post_out_div_clk", pll_7nm->phy->id);
+		snprintf(clk_name, 32, "dsi%d_pclk_mux", pll->phy->id);
+		snprintf(parent, 32, "dsi%d_pll_bit_clk", pll->phy->id);
+		snprintf(parent2, 32, "dsi%d_pll_by_2_bit_clk", pll->phy->id);
+		snprintf(parent3, 32, "dsi%d_pll_out_div_clk", pll->phy->id);
+		snprintf(parent4, 32, "dsi%d_pll_post_out_div_clk", pll->phy->id);
 
 		hw = devm_clk_hw_register_mux(dev, clk_name,
 					((const char *[]){
 					parent, parent2, parent3, parent4
-					}), 4, 0, pll_7nm->phy->base +
+					}), 4, 0, pll->phy->base +
 					REG_DSI_7nm_PHY_CMN_CLK_CFG1,
 					0, 2, 0, NULL);
 		if (IS_ERR(hw)) {
@@ -715,17 +715,17 @@ static int pll_7nm_register(struct dsi_pll_7nm *pll_7nm, struct clk_hw **provide
 			goto fail;
 		}
 
-		snprintf(parent, 32, "dsi%d_pclk_mux", pll_7nm->phy->id);
+		snprintf(parent, 32, "dsi%d_pclk_mux", pll->phy->id);
 	}
 
-	snprintf(clk_name, 32, "dsi%d_phy_pll_out_dsiclk", pll_7nm->phy->id);
+	snprintf(clk_name, 32, "dsi%d_phy_pll_out_dsiclk", pll->phy->id);
 
 	/* PIX CLK DIV : DIV_CTRL_7_4*/
 	hw = devm_clk_hw_register_divider(dev, clk_name, parent,
-				     0, pll_7nm->phy->base +
+				     0, pll->phy->base +
 					REG_DSI_7nm_PHY_CMN_CLK_CFG0,
 				     4, 4, CLK_DIVIDER_ONE_BASED,
-				     &pll_7nm->postdiv_lock);
+				     &pll->postdiv_lock);
 	if (IS_ERR(hw)) {
 		ret = PTR_ERR(hw);
 		goto fail;
@@ -740,31 +740,31 @@ fail:
 	return ret;
 }
 
-static int dsi_pll_7nm_init(struct msm_dsi_phy *phy)
+static int dsi_pll_init(struct msm_dsi_phy *phy)
 {
 	struct platform_device *pdev = phy->pdev;
-	struct dsi_pll_7nm *pll_7nm;
+	struct dsi_pll *pll;
 	int ret;
 
-	pll_7nm = devm_kzalloc(&pdev->dev, sizeof(*pll_7nm), GFP_KERNEL);
-	if (!pll_7nm)
+	pll = devm_kzalloc(&pdev->dev, sizeof(*pll), GFP_KERNEL);
+	if (!pll)
 		return -ENOMEM;
 
 	DBG("DSI PLL%d", phy->id);
 
-	pll_7nm_list[phy->id] = pll_7nm;
+	pll_list[phy->id] = pll;
 
-	spin_lock_init(&pll_7nm->postdiv_lock);
+	spin_lock_init(&pll->postdiv_lock);
 
-	pll_7nm->phy = phy;
+	pll->phy = phy;
 
-	ret = pll_7nm_register(pll_7nm, phy->provided_clocks->hws);
+	ret = pll_register(pll, phy->provided_clocks->hws);
 	if (ret) {
 		DRM_DEV_ERROR(&pdev->dev, "failed to register PLL: %d\n", ret);
 		return ret;
 	}
 
-	phy->vco_hw = &pll_7nm->clk_hw;
+	phy->vco_hw = &pll->clk_hw;
 
 	/* TODO: Remove this when we have proper display handover support */
 	msm_dsi_phy_pll_save_state(phy);
@@ -835,8 +835,8 @@ static void dsi_phy_hw_v4_0_lane_settings(struct msm_dsi_phy *phy)
 	}
 }
 
-static int dsi_7nm_phy_enable(struct msm_dsi_phy *phy,
-			      struct msm_dsi_phy_clk_request *clk_req)
+static int dsi_phy_enable(struct msm_dsi_phy *phy,
+			  struct msm_dsi_phy_clk_request *clk_req)
 {
 	int ret;
 	u32 status;
@@ -968,7 +968,7 @@ static int dsi_7nm_phy_enable(struct msm_dsi_phy *phy,
 	if (!phy->cphy_mode)
 		dsi_phy_write(base + REG_DSI_7nm_PHY_CMN_CTRL_2, 0x40);
 
-	ret = dsi_7nm_set_usecase(phy);
+	ret = dsi_set_usecase(phy);
 	if (ret) {
 		DRM_DEV_ERROR(&phy->pdev->dev, "%s: set pll usecase failed, %d\n",
 			__func__, ret);
@@ -1015,7 +1015,7 @@ static int dsi_7nm_phy_enable(struct msm_dsi_phy *phy,
 	return 0;
 }
 
-static bool dsi_7nm_set_continuous_clock(struct msm_dsi_phy *phy, bool enable)
+static bool dsi_set_continuous_clock(struct msm_dsi_phy *phy, bool enable)
 {
 	void __iomem *base = phy->base;
 	u32 data;
@@ -1030,7 +1030,7 @@ static bool dsi_7nm_set_continuous_clock(struct msm_dsi_phy *phy, bool enable)
 	return enable;
 }
 
-static void dsi_7nm_phy_disable(struct msm_dsi_phy *phy)
+static void dsi_phy_disable(struct msm_dsi_phy *phy)
 {
 	void __iomem *base = phy->base;
 	u32 data;
@@ -1065,12 +1065,12 @@ const struct msm_dsi_phy_cfg dsi_phy_7nm_cfgs = {
 		},
 	},
 	.ops = {
-		.enable = dsi_7nm_phy_enable,
-		.disable = dsi_7nm_phy_disable,
-		.pll_init = dsi_pll_7nm_init,
-		.save_pll_state = dsi_7nm_pll_save_state,
-		.restore_pll_state = dsi_7nm_pll_restore_state,
-		.set_continuous_clock = dsi_7nm_set_continuous_clock,
+		.enable = dsi_phy_enable,
+		.disable = dsi_phy_disable,
+		.pll_init = dsi_pll_init,
+		.save_pll_state = dsi_pll_save_state,
+		.restore_pll_state = dsi_pll_restore_state,
+		.set_continuous_clock = dsi_set_continuous_clock,
 	},
 	.min_pll_rate = 600000000UL,
 #ifdef CONFIG_64BIT
@@ -1092,12 +1092,12 @@ const struct msm_dsi_phy_cfg dsi_phy_7nm_8150_cfgs = {
 		},
 	},
 	.ops = {
-		.enable = dsi_7nm_phy_enable,
-		.disable = dsi_7nm_phy_disable,
-		.pll_init = dsi_pll_7nm_init,
-		.save_pll_state = dsi_7nm_pll_save_state,
-		.restore_pll_state = dsi_7nm_pll_restore_state,
-		.set_continuous_clock = dsi_7nm_set_continuous_clock,
+		.enable = dsi_phy_enable,
+		.disable = dsi_phy_disable,
+		.pll_init = dsi_pll_init,
+		.save_pll_state = dsi_pll_save_state,
+		.restore_pll_state = dsi_pll_restore_state,
+		.set_continuous_clock = dsi_set_continuous_clock,
 	},
 	.min_pll_rate = 1000000000UL,
 	.max_pll_rate = 3500000000UL,
@@ -1114,11 +1114,11 @@ const struct msm_dsi_phy_cfg dsi_phy_7nm_7280_cfgs = {
 		},
 	},
 	.ops = {
-		.enable = dsi_7nm_phy_enable,
-		.disable = dsi_7nm_phy_disable,
-		.pll_init = dsi_pll_7nm_init,
-		.save_pll_state = dsi_7nm_pll_save_state,
-		.restore_pll_state = dsi_7nm_pll_restore_state,
+		.enable = dsi_phy_enable,
+		.disable = dsi_phy_disable,
+		.pll_init = dsi_pll_init,
+		.save_pll_state = dsi_pll_save_state,
+		.restore_pll_state = dsi_pll_restore_state,
 	},
 	.min_pll_rate = 600000000UL,
 #ifdef CONFIG_64BIT
@@ -1140,12 +1140,12 @@ const struct msm_dsi_phy_cfg dsi_phy_5nm_cfgs = {
 		},
 	},
 	.ops = {
-		.enable = dsi_7nm_phy_enable,
-		.disable = dsi_7nm_phy_disable,
-		.pll_init = dsi_pll_7nm_init,
-		.save_pll_state = dsi_7nm_pll_save_state,
-		.restore_pll_state = dsi_7nm_pll_restore_state,
-		.set_continuous_clock = dsi_7nm_set_continuous_clock,
+		.enable = dsi_phy_enable,
+		.disable = dsi_phy_disable,
+		.pll_init = dsi_pll_init,
+		.save_pll_state = dsi_pll_save_state,
+		.restore_pll_state = dsi_pll_restore_state,
+		.set_continuous_clock = dsi_set_continuous_clock,
 	},
 	.min_pll_rate = 600000000UL,
 #ifdef CONFIG_64BIT
@@ -1167,12 +1167,12 @@ const struct msm_dsi_phy_cfg dsi_phy_5nm_8350_cfgs = {
 		},
 	},
 	.ops = {
-		.enable = dsi_7nm_phy_enable,
-		.disable = dsi_7nm_phy_disable,
-		.pll_init = dsi_pll_7nm_init,
-		.save_pll_state = dsi_7nm_pll_save_state,
-		.restore_pll_state = dsi_7nm_pll_restore_state,
-		.set_continuous_clock = dsi_7nm_set_continuous_clock,
+		.enable = dsi_phy_enable,
+		.disable = dsi_phy_disable,
+		.pll_init = dsi_pll_init,
+		.save_pll_state = dsi_pll_save_state,
+		.restore_pll_state = dsi_pll_restore_state,
+		.set_continuous_clock = dsi_set_continuous_clock,
 	},
 	.min_pll_rate = 600000000UL,
 #ifdef CONFIG_64BIT
