@@ -204,8 +204,10 @@ static int __qcom_mdt_load(struct device *dev, const struct firmware *fw,
 						     max_addr - min_addr);
 			if (ret) {
 				/* Unable to set up relocation */
-				dev_err(dev, "error %d setting up firmware %s\n",
-					ret, fw_name);
+				dev_err(dev,
+					"PAS rejected memory setup for id %d at [%pa+%#zx]\n",
+					pas_id, &mem_phys,
+					(size_t)(max_addr - min_addr));
 				goto out;
 			}
 		}
@@ -231,7 +233,9 @@ static int __qcom_mdt_load(struct device *dev, const struct firmware *fw,
 
 		offset = phdr->p_paddr - mem_reloc;
 		if (offset < 0 || offset + phdr->p_memsz > mem_size) {
-			dev_err(dev, "segment outside memory range\n");
+			dev_err(dev,
+				"segment %d region [%#zx..%#zx] outside valid memory range [0..%#zx]\n",
+				i, offset, offset + phdr->p_memsz, mem_size);
 			ret = -EINVAL;
 			break;
 		}
