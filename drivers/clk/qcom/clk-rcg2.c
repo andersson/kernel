@@ -104,18 +104,28 @@ static int update_config(struct clk_rcg2 *rcg)
 	struct clk_hw *hw = &rcg->clkr.hw;
 	const char *name = clk_hw_get_name(hw);
 
+	printk("%s() name=%s", __func__, name);
+
+	printk("%s() regmap_update_bits(0x%08x, 0x%04x)", __func__, rcg->cmd_rcgr, CMD_UPDATE);
 	ret = regmap_update_bits(rcg->clkr.regmap, rcg->cmd_rcgr + CMD_REG,
 				 CMD_UPDATE, CMD_UPDATE);
-	if (ret)
+	if (ret) {
+		printk("%s() regmap_update_bits() failed", __func__);
 		return ret;
+	}
 
 	/* Wait for update to take effect */
 	for (count = 500; count > 0; count--) {
 		ret = regmap_read(rcg->clkr.regmap, rcg->cmd_rcgr + CMD_REG, &cmd);
-		if (ret)
+		printk("%s() regmap_read(0x%08x, 0x%08x) = 0x%04x", __func__, rcg->cmd_rcgr, CMD_UPDATE, cmd);
+		if (ret) {
+			printk("%s() regmap_read() failed", __func__);
 			return ret;
-		if (!(cmd & CMD_UPDATE))
+		}
+		if (!(cmd & CMD_UPDATE)) {
+			printk("%s() !(cmd & CMD_UPDATE)", __func__);
 			return 0;
+		}
 		udelay(1);
 	}
 
