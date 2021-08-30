@@ -1979,13 +1979,19 @@ int msm_dsi_host_register(struct mipi_dsi_host *host, bool check_defer)
 	struct msm_dsi_host *msm_host = to_msm_dsi_host(host);
 	int ret;
 
+	printk("%s()", __func__);
+
 	/* Register mipi dsi host */
 	if (!msm_host->registered) {
 		host->dev = &msm_host->pdev->dev;
 		host->ops = &dsi_host_ops;
+		printk("%s() mipi_dsi_host_register", __func__);
 		ret = mipi_dsi_host_register(host);
-		if (ret)
+		if (ret) {
+			printk("%s() mipi_dsi_host_register() failed",
+			       __func__);
 			return ret;
+		}
 
 		msm_host->registered = true;
 
@@ -1999,8 +2005,11 @@ int msm_dsi_host_register(struct mipi_dsi_host *host, bool check_defer)
 		 */
 		if (check_defer && msm_host->device_node) {
 			if (IS_ERR(of_drm_find_panel(msm_host->device_node)))
-				if (!of_drm_find_bridge(msm_host->device_node))
+				if (!of_drm_find_bridge(
+					    msm_host->device_node)) {
+					printk("%s() !of_drm_find_bridge(msm_host->device_node)failed", __func__);
 					return -EPROBE_DEFER;
+				}
 		}
 	}
 

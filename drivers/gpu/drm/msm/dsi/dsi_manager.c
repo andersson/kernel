@@ -823,7 +823,7 @@ int msm_dsi_manager_register(struct msm_dsi *msm_dsi)
 	printk("%s() 3", __func__);
 	msm_dsim->dsi[id] = msm_dsi;
 
-	printk("%s()4", __func__);
+	printk("%s() 4", __func__);
 	ret = dsi_mgr_parse_of(msm_dsi->pdev->dev.of_node, id);
 	if (ret) {
 		pr_err("%s: failed to parse OF DSI info\n", __func__);

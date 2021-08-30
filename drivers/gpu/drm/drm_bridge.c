@@ -1220,14 +1220,20 @@ struct drm_bridge *of_drm_find_bridge(struct device_node *np)
 {
 	struct drm_bridge *bridge;
 
+	printk("%s()", __func__);
+
 	mutex_lock(&bridge_lock);
 
-	list_for_each_entry(bridge, &bridge_list, list) {
+	list_for_each_entry (bridge, &bridge_list, list) {
+		printk("%s() bridge->of_node->name=%s", __func__,
+		       bridge->of_node->name);
 		if (bridge->of_node == np) {
 			mutex_unlock(&bridge_lock);
 			return bridge;
 		}
 	}
+
+	printk("%s() no bridge found", __func__);
 
 	mutex_unlock(&bridge_lock);
 	return NULL;

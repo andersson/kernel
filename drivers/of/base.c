@@ -1414,7 +1414,6 @@ static int __of_parse_phandle_with_args(const struct device_node *np,
 
  err:
 	of_node_put(it.node);
-	printk("%s() failed - %d", __func__, rc);
 	return rc;
 }
 
