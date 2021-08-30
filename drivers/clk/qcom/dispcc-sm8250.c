@@ -51,7 +51,7 @@ static struct alpha_pll_config disp_cc_pll0_config = {
 	.alpha = 0xE000,
 	.config_ctl_val = 0x20485699,
 	.config_ctl_hi_val = 0x00002261,
-	.config_ctl_hi1_val = 0x329A699C,
+	.config_ctl_hi1_val = 0x2A9A699C, // TODO: 0x329A699C used for sm8250
 	.user_ctl_val = 0x00000000,
 	.user_ctl_hi_val = 0x00000805,
 	.user_ctl_hi1_val = 0x00000000,
@@ -68,8 +68,8 @@ static struct clk_init_data disp_cc_pll0_init = {
 
 static struct clk_alpha_pll disp_cc_pll0 = {
 	.offset = 0x0,
-	.vco_table = vco_table,
-	.num_vco = ARRAY_SIZE(vco_table),
+	.vco_table = lucid_5lpe_vco,
+	.num_vco = ARRAY_SIZE(lucid_5lpe_vco),
 	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_LUCID],
 	.clkr.hw.init = &disp_cc_pll0_init
 };
@@ -79,7 +79,7 @@ static struct alpha_pll_config disp_cc_pll1_config = {
 	.alpha = 0x4000,
 	.config_ctl_val = 0x20485699,
 	.config_ctl_hi_val = 0x00002261,
-	.config_ctl_hi1_val = 0x329A699C,
+	.config_ctl_hi1_val = 0x2A9A699C, // TODO: 0x329A699C used for sm8250
 	.user_ctl_val = 0x00000000,
 	.user_ctl_hi_val = 0x00000805,
 	.user_ctl_hi1_val = 0x00000000,
@@ -96,8 +96,8 @@ static struct clk_init_data disp_cc_pll1_init = {
 
 static struct clk_alpha_pll disp_cc_pll1 = {
 	.offset = 0x1000,
-	.vco_table = vco_table,
-	.num_vco = ARRAY_SIZE(vco_table),
+	.vco_table = lucid_5lpe_vco,
+	.num_vco = ARRAY_SIZE(lucid_5lpe_vco),
 	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_LUCID],
 	.clkr.hw.init = &disp_cc_pll1_init
 };
@@ -550,7 +550,7 @@ static struct clk_rcg2 disp_cc_mdss_mdp_clk_src = {
 		.parent_data = disp_cc_parent_data_5,
 		.num_parents = ARRAY_SIZE(disp_cc_parent_data_5),
 		.flags = CLK_SET_RATE_PARENT,
-		.ops = &clk_rcg2_shared_ops,
+		.ops = &clk_rcg2_ops,
 	},
 };
 
