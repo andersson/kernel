@@ -1354,19 +1354,35 @@ static int msm_pdev_probe(struct platform_device *pdev)
 	}
 
 	ret = add_gpu_components(&pdev->dev, &match);
-	if (ret)
+	if (ret) {
+		printk("%s() add_gpu_components() -- fail", __func__);
 		goto fail;
+	}
+
+	printk("%s() add_gpu_components() -- success", __func__);
+
 
 	/* on all devices that I am aware of, iommu's which can map
 	 * any address the cpu can see are used:
 	 */
 	ret = dma_set_mask_and_coherent(&pdev->dev, ~0);
-	if (ret)
+	if (ret) {
+		printk("%s() dma_set_mask_and_coherent() -- fail", __func__);
+
 		goto fail;
+	}
+	printk("%s() add_gpu_components() -- success", __func__);
+
 
 	ret = component_master_add_with_match(&pdev->dev, &msm_drm_ops, match);
-	if (ret)
+	if (ret) {
+		printk("%s() component_master_add_with_match() -- fail", __func__);
 		goto fail;
+	}
+	printk("%s() component_master_add_with_match() -- success", __func__);
+
+
+	printk("%s() success", __func__);
 
 	return 0;
 

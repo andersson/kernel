@@ -35,8 +35,10 @@ static int dsi_get_version(const void __iomem *base, u32 *major, u32 *minor)
 {
 	u32 ver;
 
-	if (!major || !minor)
+	if (!major || !minor) {
+		printk("%s() !major || !minor", __func__);
 		return -EINVAL;
+	}
 
 	/*
 	 * From DSI6G(v3), addition of a 6G_HW_VERSION register at offset 0
@@ -59,6 +61,7 @@ static int dsi_get_version(const void __iomem *base, u32 *major, u32 *minor)
 			*minor = 0;
 			return 0;
 		} else {
+			printk("%s() ver <= MSM_DSI_VER_MAJOR_V2", __func__);
 			return -EINVAL;
 		}
 	} else {
@@ -75,6 +78,7 @@ static int dsi_get_version(const void __iomem *base, u32 *major, u32 *minor)
 			*minor = msm_readl(base + REG_DSI_6G_HW_VERSION);
 			return 0;
 		} else {
+			printk("%s() ver != MSM_DSI_VER_MAJOR_6G", __func__);
 			return -EINVAL;
 		}
 	}
@@ -2233,9 +2237,11 @@ int msm_dsi_host_set_src_pll(struct mipi_dsi_host *host,
 
 	msm_host->cphy_mode = src_phy->cphy_mode;
 
+	printk("%s()", __func__);
 	ret = msm_dsi_phy_get_clk_provider(src_phy,
 				&byte_clk_provider, &pixel_clk_provider);
 	if (ret) {
+		printk("%s() msm_dsi_phy_get_clk_provider() failed", __func__);
 		pr_info("%s: can't get provider from pll, don't set parent\n",
 			__func__);
 		return 0;
@@ -2243,6 +2249,7 @@ int msm_dsi_host_set_src_pll(struct mipi_dsi_host *host,
 
 	ret = clk_set_parent(msm_host->byte_clk_src, byte_clk_provider);
 	if (ret) {
+		printk("%s() clk_set_parent() failed", __func__);
 		pr_err("%s: can't set parent to byte_clk_src. ret=%d\n",
 			__func__, ret);
 		goto exit;
@@ -2250,6 +2257,7 @@ int msm_dsi_host_set_src_pll(struct mipi_dsi_host *host,
 
 	ret = clk_set_parent(msm_host->pixel_clk_src, pixel_clk_provider);
 	if (ret) {
+		printk("%s() clk_set_parent(pixel_clk_src) failed", __func__);
 		pr_err("%s: can't set parent to pixel_clk_src. ret=%d\n",
 			__func__, ret);
 		goto exit;
@@ -2258,6 +2266,7 @@ int msm_dsi_host_set_src_pll(struct mipi_dsi_host *host,
 	if (msm_host->dsi_clk_src) {
 		ret = clk_set_parent(msm_host->dsi_clk_src, pixel_clk_provider);
 		if (ret) {
+			printk("%s() clk_set_parent(dsi_clk_src) failed", __func__);
 			pr_err("%s: can't set parent to dsi_clk_src. ret=%d\n",
 				__func__, ret);
 			goto exit;
@@ -2267,6 +2276,7 @@ int msm_dsi_host_set_src_pll(struct mipi_dsi_host *host,
 	if (msm_host->esc_clk_src) {
 		ret = clk_set_parent(msm_host->esc_clk_src, byte_clk_provider);
 		if (ret) {
+			printk("%s() clk_set_parent(esc_clk_src) failed", __func__);
 			pr_err("%s: can't set parent to esc_clk_src. ret=%d\n",
 				__func__, ret);
 			goto exit;

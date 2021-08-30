@@ -71,13 +71,20 @@ static int dsi_mgr_setup_components(int id)
 	struct msm_dsi *clk_slave_dsi = dsi_mgr_get_dsi(DSI_CLOCK_SLAVE);
 	int ret;
 
+	printk("%s()", __func__);
+
 	if (!IS_BONDED_DSI()) {
 		ret = msm_dsi_host_register(msm_dsi->host, true);
-		if (ret)
+		if (ret) {
+			printk("%s() msm_dsi_host_register() failed", __func__);
 			return ret;
+		}
 
 		msm_dsi_phy_set_usecase(msm_dsi->phy, MSM_DSI_PHY_STANDALONE);
 		ret = msm_dsi_host_set_src_pll(msm_dsi->host, msm_dsi->phy);
+		if (ret < 0) {
+			printk("%s()", __func__);
+		}
 	} else if (!other_dsi) {
 		ret = 0;
 	} else {
@@ -93,11 +100,15 @@ static int dsi_mgr_setup_components(int id)
 		 * panel list. The panel's device is the master DSI device.
 		 */
 		ret = msm_dsi_host_register(slave_link_dsi->host, false);
-		if (ret)
+		if (ret) {
+			printk("%s() msm_dsi_host_register(false)", __func__);
 			return ret;
+		}
 		ret = msm_dsi_host_register(master_link_dsi->host, true);
-		if (ret)
+		if (ret) {
+			printk("%s() msm_dsi_host_register(true)", __func__);
 			return ret;
+		}
 
 		/* PLL0 is to drive both 2 DSI link clocks in bonded DSI mode. */
 		msm_dsi_phy_set_usecase(clk_master_dsi->phy,
@@ -105,9 +116,14 @@ static int dsi_mgr_setup_components(int id)
 		msm_dsi_phy_set_usecase(clk_slave_dsi->phy,
 					MSM_DSI_PHY_SLAVE);
 		ret = msm_dsi_host_set_src_pll(msm_dsi->host, clk_master_dsi->phy);
-		if (ret)
+		if (ret) {
+			printk("%s() msm_dsi_host_set_src_pll(msm_dsi)", __func__);
 			return ret;
+		}
 		ret = msm_dsi_host_set_src_pll(other_dsi->host, clk_master_dsi->phy);
+		if (ret) {
+			printk("%s() msm_dsi_host_set_src_pll(other_dsi)", __func__);
+		}
 	}
 
 	return ret;
@@ -790,30 +806,39 @@ int msm_dsi_manager_register(struct msm_dsi *msm_dsi)
 	int id = msm_dsi->id;
 	int ret;
 
+	printk("%s()", __func__);
+
 	if (id >= DSI_MAX) {
 		pr_err("%s: invalid id %d\n", __func__, id);
 		return -EINVAL;
 	}
+
+	printk("%s() 2", __func__);
 
 	if (msm_dsim->dsi[id]) {
 		pr_err("%s: dsi%d already registered\n", __func__, id);
 		return -EBUSY;
 	}
 
+	printk("%s() 3", __func__);
 	msm_dsim->dsi[id] = msm_dsi;
 
+	printk("%s()4", __func__);
 	ret = dsi_mgr_parse_of(msm_dsi->pdev->dev.of_node, id);
 	if (ret) {
 		pr_err("%s: failed to parse OF DSI info\n", __func__);
 		goto fail;
 	}
 
+	printk("%s() 5", __func__);
 	ret = dsi_mgr_setup_components(id);
 	if (ret) {
 		pr_err("%s: failed to register mipi dsi host for DSI %d: %d\n",
 			__func__, id, ret);
 		goto fail;
 	}
+
+	printk("%s() success", __func__);
 
 	DRM_DEBUG("success");
 
