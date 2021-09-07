@@ -215,17 +215,36 @@
 };
 
 &dsi0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
 	status = "okay";
 
-	panel {
+	ports {
+		port@1 {
+			reg = <1>;
+			dsi0_out: endpoint {
+				remote-endpoint = <&panel0_in>;
+				data-lanes = <0 1 2 3>;
+			};
+		};
+	};
+
+	panel@0 {
+		compatible = "visionox,r66451";
+		reg = <0>;
 		status = "okay";
 
-		compatible = "visionox,r66451";
-
 		reset-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
-		port {
-			panel0_in: endpoint {
-				remote-endpoint = <&dsi0_out>;
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				panel0_in: endpoint {
+					remote-endpoint = <&dsi0_out>;
+				};
 			};
 		};
 	};
@@ -233,11 +252,6 @@
 
 &dsi0_phy  {
 	status = "okay";
-};
-
-&dsi0_out {
-	remote-endpoint = <&panel0_in>;
-	data-lanes = <0 1 2 3>;
 };
 
 &mpss {
