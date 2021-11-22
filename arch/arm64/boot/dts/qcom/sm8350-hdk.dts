@@ -213,6 +213,20 @@
 	firmware-name = "qcom/sm8350/cdsp.mbn";
 };
 
+&gpu {
+	status = "okay";
+};
+
+&mdss {
+	status = "okay";
+};
+
+&mdss_dp {
+	status = "okay";
+
+	data-lanes = <0 1 2 3>;
+};
+
 &mpss {
 	status = "okay";
 	firmware-name = "qcom/sm8350/modem.mbn";
