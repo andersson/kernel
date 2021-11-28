@@ -2503,15 +2503,11 @@
 
 			power-domains = <&dispcc MDSS_GDSC>;
 
-			// TODO: Are these clocks used downstream
 			clocks = <&dispcc DISP_CC_MDSS_AHB_CLK>,
 				 <&gcc GCC_DISP_HF_AXI_CLK>,
 				 <&gcc GCC_DISP_SF_AXI_CLK>,
 				 <&dispcc DISP_CC_MDSS_MDP_CLK>;
 			clock-names = "iface", "bus", "nrt_bus", "core";
-
-			assigned-clocks = <&dispcc DISP_CC_MDSS_MDP_CLK>;
-			assigned-clock-rates = <460000000>;
 
 			interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-controller;
@@ -2532,11 +2528,12 @@
 				reg-names = "mdp", "vbif";
 
 				// TODO: Are these clocks used downstream
-				clocks = <&dispcc DISP_CC_MDSS_AHB_CLK>,
-					 <&gcc GCC_DISP_HF_AXI_CLK>,
+				clocks = <&gcc GCC_DISP_HF_AXI_CLK>,
+				         <&gcc GCC_DISP_SF_AXI_CLK>,
+					 <&dispcc DISP_CC_MDSS_AHB_CLK>,
 					 <&dispcc DISP_CC_MDSS_MDP_CLK>,
 					 <&dispcc DISP_CC_MDSS_VSYNC_CLK>;
-				clock-names = "iface", "bus", "core", "vsync";
+				clock-names = "bus", "nrt_bus", "iface", "core", "vsync";
 
 				assigned-clocks = <&dispcc DISP_CC_MDSS_MDP_CLK>,
 						  <&dispcc DISP_CC_MDSS_VSYNC_CLK>;
@@ -2544,7 +2541,8 @@
 						       <19200000>;
 
 				operating-points-v2 = <&mdp_opp_table>;
-				power-domains = <&rpmhpd SM8350_MMCX>;
+				power-domains = <&dispcc MDSS_GDSC>;
+				required-opps = <&rpmhpd_opp_nom>;
 
 				interrupt-parent = <&mdss>;
 				interrupts = <0 IRQ_TYPE_LEVEL_HIGH>;
@@ -2605,7 +2603,7 @@
 				reg = <0 0xae90000 0 0x200>,
 				      <0 0xae90200 0 0x200>,
 				      <0 0xae90400 0 0x600>,
-				      <0 0xae90a00 0 0x400>;
+				      <0 0xae91000 0 0x400>;
 				interrupt-parent = <&mdss>;
 				interrupts = <12>;
 				clocks = <&dispcc DISP_CC_MDSS_AHB_CLK>,
@@ -2627,8 +2625,7 @@
 			        #sound-dai-cells = <0>;
 
 				operating-points-v2 = <&dp_opp_table>;
-			        power-domains = <&dispcc MDSS_GDSC>;
-				required-opps = <&rpmhpd_opp_nom>;
+			        power-domains = <&rpmhpd SM8350_MMCX>;
 
 				status = "disabled";
 
@@ -2733,6 +2730,8 @@
 					 <&rpmhcc RPMH_CXO_CLK>;
 				clock-names = "iface", "ref";
 
+				power-domains = <&rpmhpd SM8350_MMCX>;
+
 				status = "disabled";
 
 				dsi_opp_table: dsi-opp-table {
@@ -2814,6 +2813,8 @@
 
 				#clock-cells = <1>;
 				#phy-cells = <0>;
+
+				power-domains = <&rpmhpd SM8350_MMCX>;
 
 				clocks = <&dispcc DISP_CC_MDSS_AHB_CLK>,
 					 <&rpmhcc RPMH_CXO_CLK>;
