@@ -7160,6 +7160,11 @@ int stmmac_dvr_probe(struct device *device,
 	pm_runtime_get_noresume(device);
 	pm_runtime_set_active(device);
 	pm_runtime_enable(device);
+	/*
+	 * Prevent runtime pm from being ON by default. Users can enable
+	 * it using power/control in sysfs.
+	 */
+	pm_runtime_forbid(device);
 
 	if (priv->hw->pcs != STMMAC_PCS_TBI &&
 	    priv->hw->pcs != STMMAC_PCS_RTBI) {
