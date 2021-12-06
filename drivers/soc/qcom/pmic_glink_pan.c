@@ -5,6 +5,8 @@
 #include <linux/auxiliary_bus.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
+#include <linux/property.h>
+#include <drm/drm_connector.h>
 
 #include <linux/soc/qcom/pmic_glink.h>
 
@@ -42,6 +44,11 @@ struct pmic_glink_altmode {
 
 	struct completion pan_ack;
 	struct pmic_glink_owner *owner;
+
+	struct fwnode_handle *dp_fwnode;
+	bool hpd;
+
+	struct work_struct work;
 };
 
 static int pmic_glink_altmode_write(struct pmic_glink_altmode *altmode, u32 cmd, u32 arg)
@@ -75,12 +82,31 @@ static int pmic_glink_altmode_enable(struct pmic_glink_altmode *altmode)
 	return 0;
 }
 
+static int pmic_glink_altmode_ack(struct pmic_glink_altmode *altmode, int port)
+{
+	unsigned long left;
+	int ret;
+
+	ret = pmic_glink_altmode_write(altmode, ALTMODE_PAN_ACK, port);
+	if (ret)
+		return ret;
+
+	left = wait_for_completion_timeout(&altmode->pan_ack, 5 * HZ);
+	if (!left) {
+		dev_err(altmode->dev, "timeout waiting for pan enable ack\n");
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
 static void pmic_glink_altmode_callback(const void *data, size_t len, void *priv)
 {
 	struct pmic_glink_altmode *altmode = priv;
 	const struct usbc_notify_ind_msg *notify;
 	const struct pmic_glink_hdr *hdr = data;
 	unsigned int opcode;
+	bool hpd;
 
 	dev_err(altmode->dev, "owner: %d, type: %d opcode: %#x\n", hdr->owner, hdr->type, hdr->opcode);
 
@@ -92,30 +118,59 @@ static void pmic_glink_altmode_callback(const void *data, size_t len, void *priv
 	case USBC_NOTIFY_IND:
 		notify = data;
 
-		print_hex_dump(KERN_ERR, "ALTMODE NOTIFY ", DUMP_PREFIX_OFFSET, 16, 1, notify->payload, NOTIFY_PAYLOAD_SIZE, true);
+		print_hex_dump(KERN_ERR, "ALTMODE NOTIFY ", DUMP_PREFIX_NONE, 16, 1, notify->payload, NOTIFY_PAYLOAD_SIZE, true);
+
+		hpd = !!(notify->payload[8] & BIT(6));
+
+		printk(KERN_ERR "%s() hpd: %d vs %d\n", __func__, hpd, altmode->hpd);
+
+		if (hpd != altmode->hpd) {
+			schedule_work(&altmode->work);
+			altmode->hpd = hpd;
+		}
+
 		break;
 	}
 }
+
+static void worker_fn(struct work_struct *work)
+{
+	struct pmic_glink_altmode *altmode = container_of(work, struct pmic_glink_altmode, work);
+
+	drm_connector_oob_hotplug_event(altmode->dp_fwnode);
+
+	pmic_glink_altmode_ack(altmode, 0);
+};
 
 static int pmic_glink_altmode_probe(struct auxiliary_device *adev,
 			       const struct auxiliary_device_id *id)
 {
 	struct pmic_glink_altmode *altmode;
+	struct fwnode_handle *fwnode;
 
 	altmode = devm_kzalloc(&adev->dev, sizeof(*altmode), GFP_KERNEL);
 	if (!altmode)
 		return -ENOMEM;
+
+	INIT_WORK(&altmode->work, worker_fn);
 
 	altmode->dev = &adev->dev;
 	altmode->pmic = dev_get_drvdata(adev->dev.parent);
 
 	init_completion(&altmode->pan_ack);
 
+	fwnode = dev_fwnode(&adev->dev);
+	altmode->dp_fwnode = fwnode_find_reference(fwnode, "displayport", 0);
+	if (IS_ERR(altmode->dp_fwnode)) {
+		dev_err(&adev->dev, "no displayport reference\n");
+		return -EINVAL;
+	}
+
 	altmode->owner = pmic_glink_register_callback(altmode->pmic, MSG_OWNER_USBC_PAN,
 						      pmic_glink_altmode_callback, altmode);
 	if (IS_ERR(altmode->owner))
 		return PTR_ERR(altmode->owner);
-	
+
 	pmic_glink_altmode_enable(altmode);
 
 	return 0;
