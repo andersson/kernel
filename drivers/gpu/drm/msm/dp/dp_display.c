@@ -417,6 +417,40 @@ static int dp_display_usbpd_configure_cb(struct device *dev)
 	return dp_display_process_hpd_high(dp);
 }
 
+void dp_display_oob_hotplug_event(struct msm_dp *dp_display)
+{
+	struct dp_display_private *dp;
+	static bool current_state;
+
+	dp = container_of(dp_display, struct dp_display_private, dp_display);
+
+	printk(KERN_ERR "=================================== %s() hpd_state: %d current_state: %d\n", __func__, dp->hpd_state, current_state);
+
+	if (!current_state) {
+		dp_display_host_init(dp, false);
+		dp_display_process_hpd_high(dp);
+	} else {
+		dp_add_event(dp, EV_USER_NOTIFICATION, false, 0);
+	}
+
+	current_state = !current_state;
+
+//	switch (dp->hpd_state) {
+//	case ST_DISCONNECTED:
+//	case ST_DISCONNECT_PENDING:
+//		dp_display_host_init(dp, false);
+//		dp_display_process_hpd_high(dp);
+//		break;
+//	case ST_CONNECTED:
+//		dp_add_event(dp, EV_USER_NOTIFICATION, false, 0);
+//		break;
+//	case ST_CONNECT_PENDING:
+//	case ST_DISPLAY_OFF:
+//	case ST_SUSPENDED:
+//		break;
+//	}
+}
+
 static int dp_display_usbpd_disconnect_cb(struct device *dev)
 {
 	int rc = 0;
@@ -1255,6 +1289,7 @@ static int dp_display_probe(struct platform_device *pdev)
 	dp->pdev = pdev;
 	dp->name = "drm_dp";
 	dp->dp_display.connector_type = desc->connector_type;
+	dp->dp_display.dev = &pdev->dev;
 
 	rc = dp_init_sub_modules(dp);
 	if (rc) {
