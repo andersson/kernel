@@ -484,42 +484,48 @@ static const struct dpu_ctl_cfg sm8150_ctl[] = {
 static const struct dpu_ctl_cfg sm8350_ctl[] = {
 	{
 	.name = "ctl_0", .id = CTL_0,
-	.base = 0x1000, .len = 0x1e0,
+	.base = 0x15000, .len = 0x1e8,
 	.features = BIT(DPU_CTL_SPLIT_DISPLAY) |
 		    BIT(DPU_CTL_PINGPONG_SPLIT) |
 		    BIT(DPU_CTL_ACTIVE_CFG) |
-		    BIT(DPU_CTL_UNIFIED_DSPP_FLUSH)
+		    BIT(DPU_CTL_UNIFIED_DSPP_FLUSH) |
+		    BIT(DPU_CTL_FETCH_ACTIVE)
 	},
 	{
 	.name = "ctl_1", .id = CTL_1,
-	.base = 0x1200, .len = 0x1e0,
+	.base = 0x16000, .len = 0x1e8,
 	.features = BIT(DPU_CTL_SPLIT_DISPLAY) |
 		    BIT(DPU_CTL_ACTIVE_CFG) |
-		    BIT(DPU_CTL_UNIFIED_DSPP_FLUSH)
+		    BIT(DPU_CTL_UNIFIED_DSPP_FLUSH) |
+		    BIT(DPU_CTL_FETCH_ACTIVE)
 	},
 	{
 	.name = "ctl_2", .id = CTL_2,
-	.base = 0x1400, .len = 0x1e0,
+	.base = 0x17000, .len = 0x1e8,
 	.features = BIT(DPU_CTL_ACTIVE_CFG) |
-		    BIT(DPU_CTL_UNIFIED_DSPP_FLUSH)
+		    BIT(DPU_CTL_UNIFIED_DSPP_FLUSH) |
+		    BIT(DPU_CTL_FETCH_ACTIVE)
 	},
 	{
 	.name = "ctl_3", .id = CTL_3,
-	.base = 0x1600, .len = 0x1e0,
+	.base = 0x18000, .len = 0x1e8,
 	.features = BIT(DPU_CTL_ACTIVE_CFG) |
-		    BIT(DPU_CTL_UNIFIED_DSPP_FLUSH)
+		    BIT(DPU_CTL_UNIFIED_DSPP_FLUSH) |
+		    BIT(DPU_CTL_FETCH_ACTIVE)
 	},
 	{
 	.name = "ctl_4", .id = CTL_4,
-	.base = 0x1800, .len = 0x1e0,
+	.base = 0x19000, .len = 0x1e8,
 	.features = BIT(DPU_CTL_ACTIVE_CFG) |
-		    BIT(DPU_CTL_UNIFIED_DSPP_FLUSH)
+		    BIT(DPU_CTL_UNIFIED_DSPP_FLUSH) |
+		    BIT(DPU_CTL_FETCH_ACTIVE)
 	},
 	{
 	.name = "ctl_5", .id = CTL_5,
-	.base = 0x1a00, .len = 0x1e0,
+	.base = 0x1a000, .len = 0x1e8,
 	.features = BIT(DPU_CTL_ACTIVE_CFG) |
-		    BIT(DPU_CTL_UNIFIED_DSPP_FLUSH)
+		    BIT(DPU_CTL_UNIFIED_DSPP_FLUSH) |
+		    BIT(DPU_CTL_FETCH_ACTIVE)
 	},
 };
 
@@ -982,12 +988,11 @@ static const struct dpu_intf_cfg sc7280_intf[] = {
 	INTF_BLK("intf_5", INTF_5, 0x39000, INTF_DP, MSM_DP_CONTROLLER_1, 24, INTF_SC7280_MASK, MDP_SSPP_TOP0_INTR, 22, 23),
 };
 
-// TODO: Investigate these values  ---->                                       ∨∨∨∨               ∨∨  ∨∨
 static const struct dpu_intf_cfg sm8350_intf[] = {
-	INTF_BLK("intf_0", INTF_0, 0x34000, INTF_DP, 0, 24, INTF_SC7180_MASK, MDP_SSPP_TOP0_INTR, 24, 25),
-	INTF_BLK("intf_1", INTF_1, 0x35000, INTF_DSI, 0, 24, INTF_SC7180_MASK, MDP_SSPP_TOP0_INTR, 26, 27),
-	INTF_BLK("intf_2", INTF_2, 0x36000, INTF_DSI, 1, 24, INTF_SC7180_MASK, MDP_SSPP_TOP0_INTR, 28, 29),
-	INTF_BLK("intf_3", INTF_3, 0x37000, INTF_DP, 1, 24, INTF_SC7180_MASK, MDP_SSPP_TOP0_INTR, 30, 31),
+	INTF_BLK("intf_0", INTF_0, 0x34000, INTF_DP, MSM_DP_CONTROLLER_0, 24, INTF_SC7280_MASK, MDP_SSPP_TOP0_INTR, 24, 25),
+	INTF_BLK("intf_1", INTF_1, 0x35000, INTF_DSI, 0, 24, INTF_SC7280_MASK, MDP_SSPP_TOP0_INTR, 26, 27),
+	INTF_BLK("intf_2", INTF_2, 0x36000, INTF_DSI, 1, 24, INTF_SC7280_MASK, MDP_SSPP_TOP0_INTR, 28, 29),
+	INTF_BLK("intf_3", INTF_3, 0x37000, INTF_DP, MSM_DP_CONTROLLER_1, 24, INTF_SC7280_MASK, MDP_SSPP_TOP0_INTR, 30, 31),
 };
 
 /*************************************************************
@@ -1346,8 +1351,8 @@ static void sm8150_cfg_init(struct dpu_mdss_cfg *dpu_cfg)
 		.mixer = sm8150_lm,
 		.dspp_count = ARRAY_SIZE(sm8150_dspp),
 		.dspp = sm8150_dspp,
-		.pingpong_count = ARRAY_SIZE(sm8350_pp),
-		.pingpong = sm8350_pp,
+		.pingpong_count = ARRAY_SIZE(sm8150_pp),
+		.pingpong = sm8150_pp,
 		.merge_3d_count = ARRAY_SIZE(sm8150_merge_3d),
 		.merge_3d = sm8150_merge_3d,
 		.intf_count = ARRAY_SIZE(sm8150_intf),
@@ -1369,8 +1374,8 @@ static void sm8250_cfg_init(struct dpu_mdss_cfg *dpu_cfg)
 {
 	*dpu_cfg = (struct dpu_mdss_cfg){
 		.caps = &sm8250_dpu_caps,
-		.mdp_count = ARRAY_SIZE(sm8350_mdp),
-		.mdp = sm8350_mdp,
+		.mdp_count = ARRAY_SIZE(sm8250_mdp),
+		.mdp = sm8250_mdp,
 		.ctl_count = ARRAY_SIZE(sm8350_ctl),
 		.ctl = sm8350_ctl,
 		.sspp_count = ARRAY_SIZE(sm8250_sspp),
@@ -1402,26 +1407,24 @@ static void sm8350_cfg_init(struct dpu_mdss_cfg *dpu_cfg)
 {
 	*dpu_cfg = (struct dpu_mdss_cfg){
 		.caps = &sm8350_dpu_caps,
-		.mdp_count = ARRAY_SIZE(sm8250_mdp),
-		.mdp = sm8250_mdp,
-		.ctl_count = ARRAY_SIZE(sm8150_ctl),
-		.ctl = sm8150_ctl,
+		.mdp_count = ARRAY_SIZE(sm8350_mdp),
+		.mdp = sm8350_mdp,
+		.ctl_count = ARRAY_SIZE(sm8350_ctl),
+		.ctl = sm8350_ctl,
 		.sspp_count = ARRAY_SIZE(sm8250_sspp),
 		.sspp = sm8250_sspp,
 		.mixer_count = ARRAY_SIZE(sm8150_lm),
 		.mixer = sm8150_lm,
 		.dspp_count = ARRAY_SIZE(sm8150_dspp),
 		.dspp = sm8150_dspp,
-		.pingpong_count = ARRAY_SIZE(sm8150_pp),
-		.pingpong = sm8150_pp,
+		.pingpong_count = ARRAY_SIZE(sm8350_pp),
+		.pingpong = sm8350_pp,
 		.merge_3d_count = ARRAY_SIZE(sm8350_merge_3d),
 		.merge_3d = sm8350_merge_3d,
 		.intf_count = ARRAY_SIZE(sm8350_intf),
 		.intf = sm8350_intf,
 		.vbif_count = ARRAY_SIZE(sdm845_vbif),
 		.vbif = sdm845_vbif,
-		.reg_dma_count = 1,
-		.dma_cfg = sm8350_regdma,
 		.perf = sm8350_perf_data,
 		.mdss_irqs = IRQ_SM8350_MASK,
 	};
