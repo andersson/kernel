@@ -123,17 +123,13 @@ static enum drm_mode_status dp_connector_mode_valid(
 	return dp_display_validate_mode(dp_disp, mode->clock);
 }
 
-void dp_display_oob_hotplug_event(struct msm_dp *dp_display);
+void dp_display_oob_hotplug_event(struct msm_dp *dp_display, unsigned int num_lanes);
 
-static void dp_oob_hotplug_event(struct drm_connector *connector)
+static void dp_oob_hotplug_event(struct drm_connector *connector, unsigned int num_lanes)
 {
-	struct msm_dp *dp_disp;
+	struct msm_dp *dp_disp = to_dp_connector(connector)->dp_display;
 
-	dp_disp = to_dp_connector(connector)->dp_display;
-
-	printk(KERN_ERR "======================= %s() ==========================\n", __func__);	
-
-	dp_display_oob_hotplug_event(dp_disp);
+	dp_display_oob_hotplug_event(dp_disp, num_lanes);
 }
 
 static const struct drm_connector_funcs dp_connector_funcs = {
