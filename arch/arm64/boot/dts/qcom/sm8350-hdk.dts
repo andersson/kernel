@@ -222,12 +222,28 @@
 	clock-frequency = <100000>;
 
 	fsa4480@42 {
-		compatible = "onsemi,fsa4480";
+		compatible = "fcs,fsa4480";
 		reg = <0x42>;
 
 		interrupts-extended = <&tlmm 2 IRQ_TYPE_LEVEL_LOW>;
 
 		vcc-supply = <&vreg_bob>;
+
+		mode-switch;
+		orientation-switch;
+		svid = /bits/ 16 <0xff01>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				fsa4480_ept: endpoint {
+					remote-endpoint = <&port0_altmode_fsa4480>;
+				};
+			};
+		};
 	};
 };
 
@@ -238,7 +254,16 @@
 &mdss_dp {
 	status = "okay";
 
-	data-lanes = <0 1 2 3>;
+	data-lanes = <0 1>;
+
+	ports {
+		port@1 {
+			reg = <1>;
+			mdss_dp_altmode: endpoint {
+				remote-endpoint = <&port0_altmode_dp>;
+			};
+		};
+	};
 };
 
 &mpss {
@@ -262,30 +287,31 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		displayport = <&mdss_dp>;
+
 		connector@0 {
 			compatible = "usb-c-connector";
 			reg = <0>;
 			power-role = "dual";
 			data-role = "dual";
-#if 0
+
 			ports {
 				#address-cells = <1>;
 				#size-cells = <0>;
 				port@0 {
 					reg = <0>;
-					ucsi_port_0_dp: endpoint {
-						remote-endpoint = <&dp0_mode>;
+					port0_altmode_dp: endpoint {
+						remote-endpoint = <&mdss_dp_altmode>;
 					};
 				};
 
 				port@1 {
 					reg = <1>;
-					ucsi_port_0_switch: endpoint {
-						remote-endpoint = <&usb_prim_qmp_switch>;
+					port0_altmode_fsa4480: endpoint {
+						remote-endpoint = <&fsa4480_ept>;
 					};
 				};
 			};
-#endif
 		};
 	};
 };
