@@ -417,38 +417,24 @@ static int dp_display_usbpd_configure_cb(struct device *dev)
 	return dp_display_process_hpd_high(dp);
 }
 
-void dp_display_oob_hotplug_event(struct msm_dp *dp_display)
+static int dp_display_usbpd_attention_cb(struct device *dev);
+
+void dp_display_oob_hotplug_event(struct msm_dp *dp_display, bool hpd_state)
 {
 	struct dp_display_private *dp;
-	static bool current_state;
 
 	dp = container_of(dp_display, struct dp_display_private, dp_display);
 
-	printk(KERN_ERR "=================================== %s() hpd_state: %d current_state: %d\n", __func__, dp->hpd_state, current_state);
+	printk(KERN_ERR "=================================== %s() hpd_state: %d is_connected: %d\n", __func__, dp->hpd_state, dp_display->is_connected);
 
-	if (!current_state) {
+	if (!dp_display->is_connected && hpd_state) {
 		dp_display_host_init(dp, false);
 		dp_display_process_hpd_high(dp);
-	} else {
+	} else if (!hpd_state) {
 		dp_add_event(dp, EV_USER_NOTIFICATION, false, 0);
+	} else {
+		dp_display_usbpd_attention_cb(&dp->pdev->dev);
 	}
-
-	current_state = !current_state;
-
-//	switch (dp->hpd_state) {
-//	case ST_DISCONNECTED:
-//	case ST_DISCONNECT_PENDING:
-//		dp_display_host_init(dp, false);
-//		dp_display_process_hpd_high(dp);
-//		break;
-//	case ST_CONNECTED:
-//		dp_add_event(dp, EV_USER_NOTIFICATION, false, 0);
-//		break;
-//	case ST_CONNECT_PENDING:
-//	case ST_DISPLAY_OFF:
-//	case ST_SUSPENDED:
-//		break;
-//	}
 }
 
 static int dp_display_usbpd_disconnect_cb(struct device *dev)

@@ -115,17 +115,17 @@ static enum drm_mode_status dp_connector_mode_valid(
 	return dp_display_validate_mode(dp_disp, mode->clock);
 }
 
-void dp_display_oob_hotplug_event(struct msm_dp *dp_display);
+void dp_display_oob_hotplug_event(struct msm_dp *dp_display, bool hpd_state);
 
-static void dp_oob_hotplug_event(struct drm_connector *connector)
+static void dp_oob_hotplug_event(struct drm_connector *connector, bool hpd_state)
 {
 	struct msm_dp *dp_disp;
 
 	dp_disp = to_dp_connector(connector)->dp_display;
 
-	printk(KERN_ERR "======================= %s() ==========================\n", __func__);	
+	printk(KERN_ERR "======================= %s(%d) ==========================\n", __func__, hpd_state);
 
-	dp_display_oob_hotplug_event(dp_disp);
+	dp_display_oob_hotplug_event(dp_disp, hpd_state);
 }
 
 static const struct drm_connector_funcs dp_connector_funcs = {

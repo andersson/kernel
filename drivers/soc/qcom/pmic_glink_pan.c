@@ -106,9 +106,8 @@ static void pmic_glink_altmode_callback(const void *data, size_t len, void *priv
 	const struct usbc_notify_ind_msg *notify;
 	const struct pmic_glink_hdr *hdr = data;
 	unsigned int opcode;
-	bool hpd;
 
-	dev_err(altmode->dev, "owner: %d, type: %d opcode: %#x\n", hdr->owner, hdr->type, hdr->opcode);
+	// dev_err(altmode->dev, "owner: %d, type: %d opcode: %#x\n", hdr->owner, hdr->type, hdr->opcode);
 
 	opcode = le32_to_cpu(hdr->opcode) & 0xff;
 	switch (opcode) {
@@ -120,14 +119,9 @@ static void pmic_glink_altmode_callback(const void *data, size_t len, void *priv
 
 		print_hex_dump(KERN_ERR, "ALTMODE NOTIFY ", DUMP_PREFIX_NONE, 16, 1, notify->payload, NOTIFY_PAYLOAD_SIZE, true);
 
-		hpd = !!(notify->payload[8] & BIT(6));
+		altmode->hpd = !!(notify->payload[8] & BIT(6));
 
-		printk(KERN_ERR "%s() hpd: %d vs %d\n", __func__, hpd, altmode->hpd);
-
-		if (hpd != altmode->hpd) {
-			schedule_work(&altmode->work);
-			altmode->hpd = hpd;
-		}
+		schedule_work(&altmode->work);
 
 		break;
 	}
@@ -137,7 +131,8 @@ static void worker_fn(struct work_struct *work)
 {
 	struct pmic_glink_altmode *altmode = container_of(work, struct pmic_glink_altmode, work);
 
-	drm_connector_oob_hotplug_event(altmode->dp_fwnode);
+	printk(KERN_ERR "%s() hpd: %d\n", __func__, altmode->hpd);
+	drm_connector_oob_hotplug_event(altmode->dp_fwnode, altmode->hpd);
 
 	pmic_glink_altmode_ack(altmode, 0);
 };
