@@ -262,6 +262,8 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		displayport = <&mdss_dp>;
+
 		connector@0 {
 			compatible = "usb-c-connector";
 			reg = <0>;
