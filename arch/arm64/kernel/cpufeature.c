@@ -1835,6 +1835,7 @@ static bool has_address_auth_cpucap(const struct arm64_cpu_capabilities *entry, 
 static bool has_address_auth_metacap(const struct arm64_cpu_capabilities *entry,
 				     int scope)
 {
+	return false;
 	return has_address_auth_cpucap(cpu_hwcaps_ptrs[ARM64_HAS_ADDRESS_AUTH_ARCH], scope) ||
 	       has_address_auth_cpucap(cpu_hwcaps_ptrs[ARM64_HAS_ADDRESS_AUTH_IMP_DEF], scope);
 }
@@ -1842,6 +1843,7 @@ static bool has_address_auth_metacap(const struct arm64_cpu_capabilities *entry,
 static bool has_generic_auth(const struct arm64_cpu_capabilities *entry,
 			     int __unused)
 {
+	return false;
 	return __system_matches_cap(ARM64_HAS_GENERIC_AUTH_ARCH) ||
 	       __system_matches_cap(ARM64_HAS_GENERIC_AUTH_IMP_DEF);
 }
