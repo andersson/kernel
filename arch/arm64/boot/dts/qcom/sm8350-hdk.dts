@@ -311,6 +311,13 @@
 						remote-endpoint = <&fsa4480_ept>;
 					};
 				};
+
+				port@2 {
+					reg = <2>;
+					port0_qmp_switch: endpoint {
+						remote-endpoint = <&usb_1_qmp_switch>;
+					};
+				};
 			};
 		};
 	};
@@ -369,6 +376,16 @@
 
 	vdda-phy-supply = <&vreg_l6b_1p2>;
 	vdda-pll-supply = <&vreg_l1b_0p88>;
+
+	mode-switch;
+	orientation-switch;
+	svid = /bits/ 16 <0xff01>;
+
+	port {
+		usb_1_qmp_switch: endpoint {
+			remote-endpoint = <&port0_qmp_switch>;
+		};
+	};
 };
 
 &usb_2 {
