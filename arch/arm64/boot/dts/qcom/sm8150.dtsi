@@ -925,8 +925,8 @@
 				<&gcc GCC_EMAC_SLV_AHB_CLK>,
 				<&gcc GCC_EMAC_PTP_CLK>,
 				<&gcc GCC_EMAC_RGMII_CLK>;
-			interrupts = <GIC_SPI 690 IRQ_TYPE_LEVEL_HIGH>,
-					      <GIC_SPI 700 IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <GIC_SPI 689 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 699 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "macirq", "eth_lpi";
 
 			power-domains = <&gcc EMAC_GDSC>;
