@@ -385,8 +385,9 @@
 	snps,ptp-ref-clk-rate = <250000000>;
 	snps,ptp-req-clk-rate = <96000000>;
 
-	snps,mtl-rx-config = <&mtl_rx_setup>;
-	snps,mtl-tx-config = <&mtl_tx_setup>;
+	// XXX: The multiqueue configuration causes lockups under load beyond simple pings
+	// snps,mtl-rx-config = <&mtl_rx_setup>;
+	// snps,mtl-tx-config = <&mtl_tx_setup>;
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&ethernet_defaults>;
