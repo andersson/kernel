@@ -500,32 +500,49 @@
 	};
 
 	ethernet_defaults: ethernet-defaults {
-		rgmii {
-			pins = 	"gpio4", "gpio5", "gpio6", "gpio7", "gpio59",
-				"gpio114", "gpio115", "gpio116", "gpio117",
-				"gpio118", "gpio119", "gpio120", "gpio121", "gpio122";
+		mdc {
+			pins = "gpio7";
+			function = "rgmii";
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio59";
+			function = "rgmii";
+			bias-pull-up;
+		};
+
+		rgmii-rx {
+			pins = "gpio117", "gpio118", "gpio119", "gpio120", "gpio115", "gpio116";
 			function = "rgmii";
 			bias-disable;
 			drive-strength = <2>;
 		};
 
-		emac_phy {
+		rgmii-tx {
+			pins = "gpio122", "gpio4", "gpio5", "gpio6", "gpio114", "gpio121";
+			function = "rgmii";
+			bias-pull-up;
+			drive-strength = <16>;
+		};
+
+		phy-intr {
 			pins = 	"gpio124";
 			function = "emac_phy";
 			bias-disable;
 			drive-strength = <8>;
 		};
 
-		emac_pps {
+		pps {
 			pins = 	"gpio81";
 			function = "emac_pps";
 			bias-disable;
 			drive-strength = <8>;
 		};
 
-		phy_reset {
+		phy-reset {
 			pins = 	"gpio79";
-			function = "phase_flag";
+			function = "gpio";
 			bias-pull-up;
 			drive-strength = <16>;
 		};
