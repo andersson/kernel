@@ -360,7 +360,7 @@
 
 &usb_1_dwc3 {
 	/* TODO: Define USB-C connector properly */
-	dr_mode = "peripheral";
+	dr_mode = "host";
 };
 
 &usb_1_hsphy {
