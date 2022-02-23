@@ -248,6 +248,18 @@ properties:
 
       - items:
           - enum:
+              - lenovo,flex-5g
+              - microsoft,surface-prox
+              - qcom,sc8180x-primus
+          - const: qcom,sc8180x
+
+      - items:
+          - enum:
+              - qcom,sc8280xp-crd
+          - const: qcom,sc8280xp
+
+      - items:
+          - enum:
               - xiaomi,lavender
           - const: qcom,sdm660
 
