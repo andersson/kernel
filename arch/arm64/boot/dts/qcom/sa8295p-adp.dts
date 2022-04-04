@@ -65,6 +65,14 @@
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 			regulator-allow-set-load;
 		};
+
+		vreg_l11a: ldo11 {
+			regulator-name = "vreg_l11a";
+			regulator-min-microvolt = <880000>;
+			regulator-max-microvolt = <880000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+			regulator-allow-set-load;
+		};
 	};
 
 	pmm8540-c-regulators {
@@ -158,6 +166,30 @@
 	};
 };
 
+&pcie2a {
+	status = "okay";
+};
+
+&pcie2a_phy {
+	vdda-phy-supply = <&vreg_l11a>;
+	vdda-pll-supply = <&vreg_l3a>;
+
+	status = "okay";
+};
+
+&pcie3a {
+	wake-gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>;
+
+	status = "okay";
+};
+
+&pcie3a_phy {
+	vdda-phy-supply = <&vreg_l11a>;
+	vdda-pll-supply = <&vreg_l3a>;
+
+	status = "okay";
+};
+
 &qup2 {
 	status = "okay";
 };
@@ -180,6 +212,18 @@
 &remoteproc_nsp1 {
 	status = "okay";
 	firmware-name = "qcom/sa8540p/cdsp1.mbn";
+};
+
+&tlmm {
+	/* FIXME: add all pins? */
+	pcie3a_default_state: pcie3a-default {
+		wake {
+			pins = "gpio56";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
 };
 
 &ufs_mem_hc {
