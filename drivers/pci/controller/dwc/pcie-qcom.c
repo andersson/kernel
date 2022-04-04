@@ -27,6 +27,7 @@
 #include <linux/reset.h>
 #include <linux/slab.h>
 #include <linux/types.h>
+#include <linux/interconnect.h>
 
 #include "../../pci.h"
 #include "pcie-designware.h"
@@ -1666,6 +1667,24 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 		ret = PTR_ERR(pcie->phy);
 		goto err_pm_runtime_put;
 	}
+
+	/* FIXME: integrate */
+	do {
+		struct icc_path *path;
+
+		/* FIXME: name */
+		path = of_icc_get(&pdev->dev, "pcie-ddr");
+		if (!path)
+			break;
+
+		dev_info(&pdev->dev, "enabling interconnect\n");
+
+		ret = icc_enable(path);
+		if (ret) {
+			dev_err(&pdev->dev, "failed to enable interconnect path\n");
+			break;
+		}
+	} while (0);
 
 	ret = pcie->cfg->ops->get_resources(pcie);
 	if (ret)
