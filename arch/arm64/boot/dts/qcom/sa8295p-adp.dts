@@ -265,3 +265,16 @@
 	vdda-phy-supply = <&vreg_l4c>;
 	vdda-pll-supply = <&vreg_l1c>;
 };
+
+/* PINCTRL */
+&tlmm {
+	/* FIXME: add all pins? */
+	pcie3a_default_state: pcie3a-default {
+		wake {
+			pins = "gpio56";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+};
