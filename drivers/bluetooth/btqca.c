@@ -369,11 +369,11 @@ static int qca_tlv_send_segment(struct hci_dev *hdev, int seg_size,
 	 * VSE event. WCN3991 sends version command response as a payload to
 	 * command complete event.
 	 */
-	if (soc_type >= QCA_WCN3991) {
-		event_type = 0;
-		rlen = sizeof(*edl);
-		rtype = EDL_PATCH_TLV_REQ_CMD;
-	}
+//	if (soc_type >= QCA_WCN3991) {
+//		event_type = 0;
+//		rlen = sizeof(*edl);
+//		rtype = EDL_PATCH_TLV_REQ_CMD;
+//	}
 
 	skb = __hci_cmd_sync_ev(hdev, EDL_PATCH_CMD_OPCODE, seg_size + 2, cmd,
 				event_type, HCI_INIT_TIMEOUT);
@@ -604,7 +604,7 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
 	if (qca_is_wcn399x(soc_type)) {
 		snprintf(config.fwname, sizeof(config.fwname),
 			 "qca/crbtfw%02x.tlv", rom_ver);
-	} else if (soc_type == QCA_QCA6390) {
+	} else if (soc_type == QCA_QCA6390 || soc_type == QCA_WCN6855) {
 		snprintf(config.fwname, sizeof(config.fwname),
 			 "qca/htbtfw%02x.tlv", rom_ver);
 	} else if (soc_type == QCA_WCN6750) {
@@ -642,7 +642,7 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
 				 "qca/crnv%02x.bin", rom_ver);
 		}
 	}
-	else if (soc_type == QCA_QCA6390)
+	else if (soc_type == QCA_QCA6390 || soc_type == QCA_WCN6855)
 		snprintf(config.fwname, sizeof(config.fwname),
 			 "qca/htnv%02x.bin", rom_ver);
 	else if (soc_type == QCA_WCN6750)
@@ -671,6 +671,7 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
 	case QCA_WCN3990:
 	case QCA_WCN3991:
 	case QCA_WCN3998:
+	case QCA_WCN6855:
 	case QCA_WCN6750:
 		hci_set_msft_opcode(hdev, 0xFD70);
 		break;
@@ -685,7 +686,7 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
 		return err;
 	}
 
-	if (soc_type == QCA_WCN3991 || soc_type == QCA_WCN6750) {
+	if (soc_type == QCA_WCN3991 || soc_type == QCA_WCN6750 || soc_type == QCA_WCN6855) {
 		/* get fw build info */
 		err = qca_read_fw_build_info(hdev);
 		if (err < 0)
