@@ -18,6 +18,7 @@
 
 	aliases {
 		serial0 = &qup2_uart17;
+		serial1 = &qup0_uart2;
 	};
 
 	backlight {
@@ -216,6 +217,30 @@
 	};
 };
 
+&qup0_uart2 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&qup0_uart2_state>;
+
+	bluetooth {
+		compatible = "qcom,wcn6855-bt";
+
+	//	vddio-supply = <&vreg_s4a_1p8>;
+	//	vddxo-supply = <&vreg_l7a_1p8>;
+	//	vddrf-supply = <&vreg_l17a_1p3>;
+	//	vddch0-supply = <&vreg_l25a_3p3>;
+	//	vddch1-supply = <&vreg_l23a_3p3>;
+		max-speed = <3200000>;
+
+		enable-gpios = <&tlmm 133 GPIO_ACTIVE_HIGH>;
+		swctrl-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&bt_en>;
+	};
+};
+
 &qup1 {
 	status = "okay";
 };
@@ -366,6 +391,22 @@
 &tlmm {
 	gpio-reserved-ranges = <74 6>, <83 4>, <125 2>, <128 2>, <154 7>;
 
+	bt_en: bt-en-state {
+		hstp-sw-ctrl {
+			pins = "gpio132";
+			function = "gpio";
+			bias-pull-down;
+		};
+
+		hstp-bt-en {
+			pins = "gpio133";
+			function = "gpio";
+			drive-strength = <16>;
+			output-low;
+			bias-disable;
+		};
+	};
+
 	kybd_default: kybd-default-state {
 		disable {
 			pins = "gpio102";
@@ -400,6 +441,27 @@
 
 		bias-disable;
 		drive-strength = <16>;
+	};
+
+	qup0_uart2_state: qup0-uart2-state {
+		cts {
+			pins = "gpio121";
+			function = "qup2";
+			bias-disable;
+		};
+
+		rts-tx {
+			pins = "gpio122", "gpio123";
+			function = "qup2";
+			drive-strength = <2>;
+			bias-disable;
+		};
+
+		rx {
+			pins = "gpio124";
+			function = "qup2";
+			bias-pull-up;
+		};
 	};
 
 	tpad_default: tpad-default-state {
